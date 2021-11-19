@@ -1,0 +1,21 @@
+transport location = $EGS_HOMEegs_brachy/lib/transport/low_energy_default
+
+histories = 1e8
+checkpoints in series = 1
+checkpoints in parallel = 1
+geometry error limit = 250
+
+minimum electron energy = 0.512
+maximum electron energy = 2.011
+minimum photon energy = 0.001
+maximum photon energy = 1.500
+material location = $EGS_HOMEegs_brachy/lib/media/material.dat
+
+muen location = $EGS_HOMEegs_brachy/lib/muen/brachy_xcom_1.5MeV_egsphant.muendat
+
+HU to egsphant conversion table = /home/martinov/egs_brachy_GUI/database/HU_conversion/default_CT_calib.hu2rho
+
+volume correction mode = correct
+volume correction density = 1e8
+
+tissue assignment schemes = Muscle_fat_patient Male_tissue_patient Female_tissue_patient Air Water Breast Prostate
