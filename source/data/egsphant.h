@@ -76,7 +76,8 @@ public:
     double getDensity(int px, int py, int pz);
     int getIndex(QString axis, double p);
     QImage getEGSPhantPicDen(QString axis, double ai, double af,
-                             double bi, double bf, double d, int res);
+                             double bi, double bf, double d, int res,
+							 double di, double df);
     QImage getEGSPhantPicMed(QString axis, double ai, double af,
                              double bi, double bf, double d, int res);
 

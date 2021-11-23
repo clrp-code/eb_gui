@@ -68,6 +68,7 @@ public:
 				
 	QScrollArea *canvasArea;
 	QLabel      *canvas;
+	QImage      *canvasPic;
 	QPushButton *saveDataButton;
 	QPushButton *saveImageButton;
 	QLabel      *canvasInfo;
@@ -84,6 +85,8 @@ public:
 	QVBoxLayout *profileLayout;
 	
 	// Preview bounds
+	QImage       *blackPic;
+	
 	QFrame       *dimFrame;
 	QGridLayout  *dimLayout;
 	
@@ -109,6 +112,9 @@ public:
 	QLineEdit    *unitsEdit;
 	
 	// Phantom selection
+	QImage       *phantPic;
+	EGSPhant	 *phant;
+	
 	QFrame       *phantFrame;
 	QGridLayout  *phantLayout;
 	
@@ -117,30 +123,30 @@ public:
 	QRadioButton *mediaButton;
 	QRadioButton *densityButton;
 	
-	EGSPhant	 *phant;
-	bool		 phantLoaded;
-	
 	QLabel       *densityLabel;
 	QLineEdit    *densityMin;
 	QLineEdit    *densityMax;
 	
 	// Map selection
+	QImage      *mapPic;
+	Dose		*mapDose;
+	
 	QFrame      *mapFrame;
 	QGridLayout *mapLayout;
 			    
 	QComboBox   *mapDoseBox;
-	
-	Dose		*mapDose;
-	bool		mapDoseLoaded;
-			    
+				    
 	QLabel      *mapMinLabel;
 	QLabel      *mapMaxLabel;
 	QLineEdit   *mapMinDose;
 	QLineEdit   *mapMaxDose;
 	QPushButton *mapMinButton;
+	QPushButton *mapMidButton;
 	QPushButton *mapMaxButton;
 	
 	// Isodose selection
+	QImage                 *isoPic;
+	
 	QFrame                 *isoFrame;
 	QGridLayout            *isoLayout;
 	
@@ -148,7 +154,6 @@ public:
 	QVector <QComboBox*>   isoDoseBox;
 	
 	QVector <Dose*>		   isoDoses;
-	QVector <bool>		   isoDosesLoaded;
 			               
 	QLabel                 *isoColourLabel;
 	QVector <QLineEdit*>   isoColourDose;
@@ -157,16 +162,34 @@ public:
 public slots:
 
 	// GUI functions
+	// All render commands, with a live wrapper function.  All changes (outside of the render buttons)
+	// are connected to the live functions, so they only render the image when live rendering is checked
 	void render();
+	
+	// Preview
+    void previewRenderLive();
     void previewRender();
+    void previewCanvasRender(); // Change of dimensions
+    void previewCanvasRenderLive();
+    void previewPhantRender(); // Change of egsphant, change of media/density, change of density range
+    void previewPhantRenderLive();
+    void previewMapRender(); // Change of dose, change of values, change of colours
+    void previewMapRenderLive();
+    void previewIsoRender(); // Change of doses, changes of values, change of colours
+    void previewIsoRenderLive();
+	
+	void previewChangeAxis();
+	void previewChangeColor(int i);
+	
+	// Histogram
+    void histoRenderLive();
     void histoRender();
+	
+	// Profile
+    void profileRenderLive();
     void profileRender();
 	
-    void previewCanvasRender();
-    void previewPhantRender();
-    void previewMapRender();
-    void previewIsoRender();	
-	
+	// Use this when someone navigates away from the tab to avoid crashing
 	void resetLayout();
 
 public:

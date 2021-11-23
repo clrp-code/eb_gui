@@ -234,9 +234,7 @@ void Interface::createGlobalWidgets() {
 	
 	doseGrid  = new QGridLayout();
 	doseFrame = new QFrame();
-	
-	doseRepopulate();
-	
+		
 	doseGrid->addWidget(doseLabel   , 0, 0, 1, 3);
 	doseGrid->addWidget(doseListView, 1, 0, 1, 3);
 	doseGrid->addWidget(doseImport  , 2, 0, 1, 1);
@@ -271,6 +269,7 @@ void Interface::createLayout() {
 	sourceRepopulate();
 	transformationRepopulate();
 	geometryRepopulate();
+	doseRepopulate();
 	
 	// Set up window
 	setLayout(mainLayout);
@@ -324,8 +323,11 @@ void Interface::connectLayout() {
 // Global widget functions
 void Interface::phantomRepopulate() {
 	phantomListView->clear();
+	((doseInterface*)doseInt)->phantSelect->clear();
+	((doseInterface*)doseInt)->phantSelect->addItem("none");
 	for (int i = 0; i < data->localNamePhants.size(); i++) {
 		phantomListView->addItem(data->localNamePhants[i]);
+		((doseInterface*)doseInt)->phantSelect->addItem(data->localNamePhants[i]);
 	}
 	if (!phantomOnlyLocal->isChecked())
 		for (int i = 0; i < data->libNamePhants.size(); i++) {
@@ -384,8 +386,23 @@ void Interface::geometryAddNew() {
 
 void Interface::doseRepopulate() {
 	doseListView->clear();
-	for (int i = 0; i < data->localNameDoses.size(); i++)
+	
+	((doseInterface*)doseInt)->mapDoseBox->clear();
+	((doseInterface*)doseInt)->isoDoseBox[0]->clear();
+	((doseInterface*)doseInt)->isoDoseBox[1]->clear();
+	((doseInterface*)doseInt)->isoDoseBox[2]->clear();
+	((doseInterface*)doseInt)->mapDoseBox->addItem("none");
+	((doseInterface*)doseInt)->isoDoseBox[0]->addItem("none");
+	((doseInterface*)doseInt)->isoDoseBox[1]->addItem("none");
+	((doseInterface*)doseInt)->isoDoseBox[2]->addItem("none");
+	
+	for (int i = 0; i < data->localNameDoses.size(); i++) {
 		doseListView->addItem(data->localNameDoses[i]);
+		((doseInterface*)doseInt)->mapDoseBox->addItem(data->localNameDoses[i]);
+		((doseInterface*)doseInt)->isoDoseBox[0]->addItem(data->localNameDoses[i]);
+		((doseInterface*)doseInt)->isoDoseBox[1]->addItem(data->localNameDoses[i]);
+		((doseInterface*)doseInt)->isoDoseBox[2]->addItem(data->localNameDoses[i]);
+	}
 }
 
 void Interface::phantomViewLog() {

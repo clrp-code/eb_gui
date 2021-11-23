@@ -57,6 +57,36 @@ doseInterface::doseInterface(Interface* p) {
 
 // Destructor
 doseInterface::~doseInterface() {
+	delete canvasPic;
+	delete blackPic;
+	delete phantPic;
+	delete phant;
+	delete mapPic;
+	delete mapDose;
+	delete isoPic;
+	delete isoDoses[2];
+	delete isoDoses[1];
+	delete isoDoses[0];
+	
+	switch(optionsBox->currentIndex()) {
+		case 0 :
+			delete histoLayout;
+			delete profileLayout;			
+			break;
+		case 1 :
+			delete previewLayout;
+			delete profileLayout;	
+			break;
+		case 2 :
+			delete previewLayout;
+			delete histoLayout;
+			break;
+		default :
+			delete previewLayout;
+			delete histoLayout;
+			delete profileLayout;
+			break;
+	}
 }
 
 // Layout Settings
@@ -71,6 +101,7 @@ void doseInterface::createLayout() {
 				    
 	canvasArea      = new QScrollArea();
 	canvas          = new QLabel();
+	canvasPic       = new QImage();
 	saveDataButton  = new QPushButton("Save data");
 	saveImageButton = new QPushButton("Save image");
 	canvasInfo      = new QLabel("");
@@ -81,8 +112,8 @@ void doseInterface::createLayout() {
 	renderingLayout = new QGridLayout();
 	renderButton    = new QPushButton("Render");
 	renderCheckBox  = new QCheckBox("Live render");
-	resolutionLabel = new QLabel("Resolution scaling");
-	resolutionScale = new QLineEdit("1");
+	resolutionLabel = new QLabel("Pixels per cm");
+	resolutionScale = new QLineEdit("20");
 	
 	resolutionScale->setValidator(&allowedNats);
 	renderingLayout->addWidget(renderButton   , 0, 0, 1, 1);
@@ -98,6 +129,9 @@ void doseInterface::createLayout() {
 	
 	// Preview ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 	// Preview bounds
+	blackPic          = new QImage(400,400,QImage::Format_ARGB32);
+	blackPic->fill(qRgb(0,0,0));
+	
 	dimFrame          = new QFrame();
 	dimLayout         = new QGridLayout();
 	
@@ -155,22 +189,27 @@ void doseInterface::createLayout() {
 	previewLayout->addWidget(dimFrame);
 	
 	// Phantom selection
+	phantPic      = new QImage(400,400,QImage::Format_ARGB32);
+	phant         = new EGSPhant();
+	
 	phantFrame    = new QFrame();
 	phantLayout   = new QGridLayout();
 	
 	mediaButton   = new QRadioButton("media");
 	densityButton = new QRadioButton("density");
 	phantSelect   = new QComboBox();
-	mediaButton->setChecked(true);
 	phantSelect->addItem("none");
-	
-	phantLoaded   = false;
 	
 	densityLabel  = new QLabel("Density range");
 	densityMin    = new QLineEdit("0");
 	densityMax    = new QLineEdit("3");
 	densityMin->setValidator(&allowedPosReals);
 	densityMax->setValidator(&allowedPosReals);
+	
+	mediaButton->setChecked(true);
+	densityLabel->setDisabled(true);
+	densityMin->setDisabled(true);
+	densityMax->setDisabled(true);
 	
 	phantLayout->addWidget(phantSelect  , 0, 0, 1, 2);
 	phantLayout->addWidget(mediaButton  , 1, 0, 1, 1);
@@ -184,13 +223,14 @@ void doseInterface::createLayout() {
 	previewLayout->addWidget(phantFrame);
 	
 	// Map selection
+	mapPic        = new QImage(400,400,QImage::Format_ARGB32);	
+	mapDose       = new Dose();
+	
 	mapFrame      = new QFrame();
 	mapLayout     = new QGridLayout();
 				  
 	mapDoseBox    = new QComboBox();
 	mapDoseBox->addItem("none");
-				  
-	mapDoseLoaded = false;
 	
 	mapMinLabel   = new QLabel("min");
 	mapMaxLabel   = new QLabel("max");
@@ -201,23 +241,28 @@ void doseInterface::createLayout() {
 	mapMaxDose->setValidator(&allowedPosReals);
 	
 	mapMinButton  = new QPushButton();
+	mapMidButton  = new QPushButton();
 	mapMaxButton  = new QPushButton();
 	mapMinButton->setStyleSheet("QPushButton {background-color: rgb(0,0,255)}");
+	mapMidButton->setStyleSheet("QPushButton {background-color: rgb(0,255,0)}");
 	mapMaxButton->setStyleSheet("QPushButton {background-color: rgb(255,0,0)}");
 	
-	mapLayout->addWidget(mapDoseBox  , 0, 0, 1, 2);
-	mapLayout->addWidget(mapMinLabel , 1, 0, 1, 1);
-	mapLayout->addWidget(mapMaxLabel , 1, 1, 1, 1);
-	mapLayout->addWidget(mapMinDose  , 2, 0, 1, 1);
-	mapLayout->addWidget(mapMaxDose  , 2, 1, 1, 1);
-	mapLayout->addWidget(mapMinButton, 3, 0, 1, 1);
-	mapLayout->addWidget(mapMaxButton, 3, 1, 1, 1);
+	mapLayout->addWidget(mapDoseBox  , 0, 0, 1, 6);
+	mapLayout->addWidget(mapMinLabel , 1, 0, 1, 3);
+	mapLayout->addWidget(mapMaxLabel , 1, 3, 1, 3);
+	mapLayout->addWidget(mapMinDose  , 2, 0, 1, 3);
+	mapLayout->addWidget(mapMaxDose  , 2, 3, 1, 3);
+	mapLayout->addWidget(mapMinButton, 3, 0, 1, 2);
+	mapLayout->addWidget(mapMidButton, 3, 2, 1, 2);
+	mapLayout->addWidget(mapMaxButton, 3, 4, 1, 2);
 	
 	mapFrame->setLayout(mapLayout);
 	mapFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
 	previewLayout->addWidget(mapFrame);
 	
 	// Isodose selection
+	isoPic        = new QImage(400,400,QImage::Format_ARGB32);	
+	
 	isoFrame       = new QFrame();
 	isoLayout      = new QGridLayout();
 	
@@ -225,11 +270,11 @@ void doseInterface::createLayout() {
 	
 	// Lines 1 - 3
 	isoDoseLabel.append(new QLabel("solid")); isoDoseBox.append(new QComboBox());
-	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose()); isoDosesLoaded.append(false);
+	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose());
 	isoDoseLabel.append(new QLabel("dashed")); isoDoseBox.append(new QComboBox());
-	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose()); isoDosesLoaded.append(false);
+	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose());
 	isoDoseLabel.append(new QLabel("dotted")); isoDoseBox.append(new QComboBox());
-	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose()); isoDosesLoaded.append(false);
+	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose());
 	
 	// Colors 1 - 5
 	isoColourDose.append(new QLineEdit("20")); isoColourButton.append(new QPushButton()); isoColourButton.last()->setStyleSheet("QPushButton {background-color: rgb(0,0,255)}");
@@ -281,14 +326,98 @@ void doseInterface::createLayout() {
 }
 
 void doseInterface::connectLayout() {
+	connect(renderCheckBox, SIGNAL(stateChanged(int)),
+			this, SLOT(refresh()));
 	
+	// Preview ~~~~~~~~~~~~~~
+	// Dimensions
+	connect(xAxisButton, SIGNAL(toggled(bool)),
+			this, SLOT(previewChangeAxis()));
+	connect(xAxisButton, SIGNAL(toggled(bool)),
+			this, SLOT(previewCanvasRenderLive()));
+	connect(yAxisButton, SIGNAL(toggled(bool)),
+			this, SLOT(previewChangeAxis()));
+	connect(yAxisButton, SIGNAL(toggled(bool)),
+			this, SLOT(previewCanvasRenderLive()));
+	connect(zAxisButton, SIGNAL(toggled(bool)),
+			this, SLOT(previewChangeAxis()));
+	connect(zAxisButton, SIGNAL(toggled(bool)),
+			this, SLOT(previewCanvasRenderLive()));
+			
+	connect(vertBoundaryMin, SIGNAL(textEdited(QString)),
+			this, SLOT(previewCanvasRenderLive()));
+	connect(vertBoundaryMax, SIGNAL(textEdited(QString)),
+			this, SLOT(previewCanvasRenderLive()));
+	connect(horBoundaryMin, SIGNAL(textEdited(QString)),
+			this, SLOT(previewCanvasRenderLive()));
+	connect(horBoundaryMax, SIGNAL(textEdited(QString)),
+			this, SLOT(previewCanvasRenderLive()));
+	connect(depthMin, SIGNAL(textEdited(QString)),
+			this, SLOT(previewCanvasRenderLive()));
+	connect(legendBox, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(previewCanvasRenderLive()));
+	connect(unitsEdit, SIGNAL(textEdited(QString)),
+			this, SLOT(previewCanvasRenderLive()));
+			
+	// Egsphant
+	connect(phantSelect, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(previewPhantRenderLive()));
+	connect(mediaButton, SIGNAL(toggled(bool)),
+			this, SLOT(previewPhantRenderLive()));
+	connect(mediaButton, SIGNAL(toggled(bool)),
+			this, SLOT(previewRefresh()));
+	connect(densityButton, SIGNAL(toggled(bool)),
+			this, SLOT(previewPhantRenderLive()));
+	connect(densityButton, SIGNAL(toggled(bool)),
+			this, SLOT(previewRefresh()));
+	connect(densityMin, SIGNAL(textEdited(QString)),
+			this, SLOT(previewPhantRenderLive()));
+	connect(densityMax, SIGNAL(textEdited(QString)),
+			this, SLOT(previewPhantRenderLive()));
+			
+	// Map
+	connect(mapDoseBox, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(previewMapRenderLive()));
+	connect(mapMinDose, SIGNAL(textEdited(QString)),
+			this, SLOT(previewMapRenderLive()));
+	connect(mapMaxDose, SIGNAL(textEdited(QString)),
+			this, SLOT(previewMapRenderLive()));	
+	
+	// Isodose
+	QVector <QComboBox*>   isoDoseBox;
+	QVector <QLineEdit*>   isoColourDose;	
+			
+	// Change all colours
+	QSignalMapper* sigMap = new QSignalMapper(this); // Should get deleted as a child of this
+	connect(mapMinButton, SIGNAL(pressed()),
+			sigMap, SLOT(map()));
+	connect(mapMidButton, SIGNAL(pressed()),
+			sigMap, SLOT(map()));
+	connect(mapMaxButton, SIGNAL(pressed()),
+			sigMap, SLOT(map()));
+	for (int i = 0; i < 5; i++)
+		connect(isoColourButton[i], SIGNAL(pressed()),
+				sigMap, SLOT(map()));
+				
+	sigMap->setMapping(mapMinButton, 0);
+	sigMap->setMapping(mapMidButton, 1);
+	sigMap->setMapping(mapMaxButton, 2);
+	for (int i = 0; i < 5; i++)
+		sigMap->setMapping(isoColourButton[i], 3+i);
+	
+	connect(sigMap, SIGNAL(mapped(int)),
+			this, SLOT(previewChangeColor(int))) ;
 }
 
 // Swap panels
 void doseInterface::resetLayout() {
 	switch(optionsBox->currentIndex()) {
 		case 0 :
-			
+			mapDoseBox->setCurrentIndex(0);
+			isoDoseBox[0]->setCurrentIndex(0);
+			isoDoseBox[1]->setCurrentIndex(0);
+			isoDoseBox[2]->setCurrentIndex(0);
+			phantSelect->setCurrentIndex(0);
 			break;
 		case 1 :
 			
@@ -327,7 +456,102 @@ void doseInterface::refresh() {
 	}
 }
 
+void doseInterface::previewChangeAxis() {
+	if (xAxisButton->isChecked()) {
+		vertBoundaryLabel->setText("y range");
+		horBoundaryLabel->setText("z range");
+		depthLabel->setText("x depth");
+	}
+	else if (yAxisButton->isChecked()) {
+		vertBoundaryLabel->setText("x range");
+		horBoundaryLabel->setText("z range");
+		depthLabel->setText("y depth");
+	}
+	else if (zAxisButton->isChecked()) {
+		vertBoundaryLabel->setText("x range");
+		horBoundaryLabel->setText("y range");
+		depthLabel->setText("z depth");
+	}
+}
+
+void doseInterface::previewChangeColor(int i) {
+	QColor colour;
+	switch (i) {
+		case 0 :
+			colour = QColorDialog::getColor(mapMinButton->palette().color(QPalette::Button));
+		break;
+		case 1 :
+			colour = QColorDialog::getColor(mapMidButton->palette().color(QPalette::Button));
+		break;
+		case 2 :
+			colour = QColorDialog::getColor(mapMaxButton->palette().color(QPalette::Button));
+		break;
+		case 3 :
+		case 4 :
+		case 5 :
+		case 6 :
+		case 7 :
+			colour = QColorDialog::getColor(isoColourButton[i-3]->palette().color(QPalette::Button));
+		break;
+		default:
+		// do nothing
+		break;
+	}
+		
+    if(colour.isValid())
+    {
+		switch (i) {
+			case 0 :
+				mapMinButton->setStyleSheet(QString("QPushButton {background-color: rgb("+
+				QString::number(colour.red())+","+
+				QString::number(colour.green())+","+
+				QString::number(colour.blue())+")}"));
+			break;
+			case 1 :
+				mapMidButton->setStyleSheet(QString("QPushButton {background-color: rgb("+
+				QString::number(colour.red())+","+
+				QString::number(colour.green())+","+
+				QString::number(colour.blue())+")}"));
+			break;
+			case 2 :
+				mapMaxButton->setStyleSheet(QString("QPushButton {background-color: rgb("+
+				QString::number(colour.red())+","+
+				QString::number(colour.green())+","+
+				QString::number(colour.blue())+")}"));
+			break;
+			case 3 :
+			case 4 :
+			case 5 :
+			case 6 :
+			case 7 :
+				isoColourButton[i-3]->setStyleSheet(QString("QPushButton {background-color: rgb("+
+				QString::number(colour.red())+","+
+				QString::number(colour.green())+","+
+				QString::number(colour.blue())+")}"));
+			break;
+			default:
+			// do nothing
+			break;
+		}
+		
+		if (i < 3)
+			previewMapRenderLive();
+		else
+			previewIsoRenderLive();
+    }
+}
+	
 void doseInterface::previewRefresh() {
+	if (mediaButton->isChecked()) {
+		densityLabel->setDisabled(true);
+		densityMin->setDisabled(true);
+		densityMax->setDisabled(true);
+	}
+	else if (mediaButton->isChecked()) {
+		densityLabel->setDisabled(false);
+		densityMin->setDisabled(false);
+		densityMax->setDisabled(false);
+	}
 }
 
 void doseInterface::histoRefresh() {
@@ -354,30 +578,76 @@ void doseInterface::render() {
 	}
 }
 	
+void doseInterface::previewCanvasRenderLive() {if(renderCheckBox->isChecked()) previewCanvasRender();}
 void doseInterface::previewCanvasRender() {
+	int width  = abs(horBoundaryMin->text().toDouble() - horBoundaryMin->text().toDouble())*resolutionScale->text().toInt();
+	int height = abs(vertBoundaryMin->text().toDouble() - vertBoundaryMin->text().toDouble())*resolutionScale->text().toInt();
+	delete blackPic;
+	blackPic = new QImage(width,height,QImage::Format_ARGB32);
 	
+	previewRender();
 }
 
+void doseInterface::previewPhantRenderLive() {if(renderCheckBox->isChecked()) previewPhantRender();}
 void doseInterface::previewPhantRender() {
+	QString axis = xAxisButton->isChecked()?"x axis":(yAxisButton->isChecked()?"y axis":"z axis");
 	
+	if (phantSelect->currentIndex()) {
+		if (mediaButton->isChecked()) {
+			*phantPic = phant->getEGSPhantPicMed(axis, horBoundaryMin->text().toDouble(), horBoundaryMax->text().toDouble(),
+												 vertBoundaryMin->text().toDouble(), vertBoundaryMax->text().toDouble(),
+												 depthMin->text().toDouble(), resolutionScale->text().toDouble());
+		}
+		else if (densityButton->isChecked()) {
+			*phantPic = phant->getEGSPhantPicDen(axis, horBoundaryMin->text().toDouble(), horBoundaryMax->text().toDouble(),
+												 vertBoundaryMin->text().toDouble(), vertBoundaryMax->text().toDouble(),
+												 depthMin->text().toDouble(), resolutionScale->text().toDouble(),
+												 densityMin->text().toDouble(), densityMax->text().toDouble());
+		}
+	}
+	
+	previewRender();
 }
 
+void doseInterface::previewMapRenderLive() {if(renderCheckBox->isChecked()) previewMapRender();}
 void doseInterface::previewMapRender() {
 	
+	
+	previewRender();
 }
 
+void doseInterface::previewIsoRenderLive() {if(renderCheckBox->isChecked()) previewIsoRender();}
 void doseInterface::previewIsoRender() {
 	
+	
+	previewRender();
 }
 
+void doseInterface::previewRenderLive() {if(renderCheckBox->isChecked()) previewRender();}
 void doseInterface::previewRender() {
+	// Choose base canvas
+	if (phantSelect->currentIndex())
+		*canvasPic = *phantPic;
+	else
+		*canvasPic = *blackPic;
 	
+	QPainter paint (canvasPic); // Now use it as our canvas
+	
+	// Add colour map
+	if (mapDoseBox->currentIndex())
+		paint.drawImage(0,0,*mapPic);
+		
+	// Add isodose contours
+	if (isoDoseBox[0]->currentIndex()+isoDoseBox[1]->currentIndex()+isoDoseBox[2]->currentIndex())
+		paint.drawImage(0,0,*isoPic);
 }
 
+void doseInterface::histoRenderLive() {if(renderCheckBox->isChecked()) histoRender();}
 void doseInterface::histoRender() {
-	
+		
 }
 
+void doseInterface::profileRenderLive() {if(renderCheckBox->isChecked()) profileRender();}
 void doseInterface::profileRender() {
 	
 }

@@ -642,14 +642,14 @@ QImage EGSPhant::getEGSPhantPicMed(QString axis, double ai, double af,
     // Create a temporary image
     int width  = (af-ai)*res;
     int height = (bf-bi)*res;
-    QImage image(height, width, QImage::Format_RGB32);
+    QImage image(height, width, QImage::Format_ARGB32);
     double hInc, wInc, cInc;
     double h, w, c = 0;
 
     // Calculate the size (in cm) of pixels, and then the range for grayscaling
     wInc = 1/double(res);
     hInc = 1/double(res);
-    cInc = 255.0/media.size();
+    cInc = 255.0/media.size()+1;
 
     for (int i = height-1; i >= 0; i--)
         for (int j = 0; j < width; j++) {
@@ -660,14 +660,19 @@ QImage EGSPhant::getEGSPhantPicMed(QString axis, double ai, double af,
             // get the media, which differs based on axis through which image is
             // sliced
             if (!axis.compare("x axis")) {
-                c = getMedia(d, h, w) - 49;
+                c = getMedia(d, h, w) - 48;
             }
             else if (!axis.compare("y axis")) {
-                c = getMedia(h, d, w) - 49;
+                c = getMedia(h, d, w) - 48;
             }
             else if (!axis.compare("z axis")) {
-                c = getMedia(h, w, d) - 49;
+                c = getMedia(h, w, d) - 48;
             }
+			
+			// if c is out of bounds, set it to zero
+			// else if c is an upper-case letter, remove the 7 ascii chars between 9 and A
+			// else if c is a lower-case letter, remove the 13 non-alphanumeric chars between 9 and a
+			c = (c==-1)?0:(c<10?c:(c<36?c-7:c-13));
 
             // finally, paint the pixel
             image.setPixel(i, j, qRgb(int(cInc*c), int(cInc*c), int(cInc*c)));
@@ -677,7 +682,8 @@ QImage EGSPhant::getEGSPhantPicMed(QString axis, double ai, double af,
 }
 
 QImage EGSPhant::getEGSPhantPicDen(QString axis, double ai, double af,
-                                   double bi, double bf, double d, int res) {
+                                   double bi, double bf, double d, int res,
+								   double di, double df) {
     // Create a temporary image
     int width  = (af-ai)*res;
     int height = (bf-bi)*res;
@@ -688,7 +694,7 @@ QImage EGSPhant::getEGSPhantPicDen(QString axis, double ai, double af,
     // Calculate the size (in cm) of pixels, and then the range for grayscaling
     wInc = 1/double(res);
     hInc = 1/double(res);
-    cInc = 255.0/maxDensity;
+    cInc = 255.0/(df-di);
 
     for (int i = height-1; i >= 0; i--)
         for (int j = 0; j < width; j++) {
@@ -707,6 +713,11 @@ QImage EGSPhant::getEGSPhantPicDen(QString axis, double ai, double af,
             else if (!axis.compare("z axis")) {
                 c = getDensity(h, w, d);
             }
+			
+			// if c is out of bounds, set it to zero
+			// else if c is below the minimum density, set it to minimum density
+			// else if c is above the maximum density, set it to maximum density
+			c = (c==-1)?0:(c<di?di:(c>df?df:c));
 
             // finally, paint the pixel
             image.setPixel(i, j, qRgb(int(cInc*c), int(cInc*c), int(cInc*c)));

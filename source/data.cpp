@@ -166,6 +166,9 @@ int Data::loadDefaults() {
 	delete files;
 	
 	// local GUI data
+	if (!QDir(gui_location+"/database/egsphant/").exists())
+		QDir().mkdir(gui_location+"/database/egsphant/");
+	
 	files = new QDirIterator(gui_location+"/database/egsphant/", {"*.egsphant","*.egsphant.gz","*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories);
 	while(files->hasNext()) {
 		files->next();
@@ -173,6 +176,9 @@ int Data::loadDefaults() {
 		localDirPhants << files->path();
 	}
 	delete files;
+	
+	if (!QDir(gui_location+"/database/transformation/").exists())
+		QDir().mkdir(gui_location+"/database/transformation/");
 	
 	files = new QDirIterator(gui_location+"/database/transformation/", QDirIterator::Subdirectories);
 	while(files->hasNext()) {
@@ -185,6 +191,9 @@ int Data::loadDefaults() {
 		}
 	}
 	delete files;
+	
+	if (!QDir(gui_location+"/database/dose/").exists())
+		QDir().mkdir(gui_location+"/database/dose/");
 	
 	files = new QDirIterator(gui_location+"/database/dose/", {"*.3ddose","*.3ddose.gz"}, QDir::NoFilter, QDirIterator::Subdirectories);
 	while(files->hasNext()) {
