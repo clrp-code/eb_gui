@@ -99,7 +99,7 @@ int Data::loadDefaults() {
 			else if (text.left(27).compare("volume correction density =") == 0)	
 				def_volDen = text.right(text.length()-27).trimmed();
 			else if (text.left(33).compare("HU to egsphant conversion table =") == 0)	
-				hu_location = text.right(text.length()-33).trimmed();
+				hu_location = gui_location+text.right(text.length()-33).trimmed();
 			else if (text.left(27).compare("tissue assignment schemes =") == 0)
 				TAS_names = text.right(text.length()-27).trimmed().split(" ", QString::SkipEmptyParts);
 	    }
