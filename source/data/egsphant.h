@@ -65,6 +65,8 @@ public:
     void loadEGSPhantFilePlus(QString path);
     void loadbEGSPhantFile(QString path);
     void loadbEGSPhantFilePlus(QString path);
+    void loadgzEGSPhantFile(QString path);
+	void loadgzEGSPhantFilePlus(QString path);
 	
     void savegzEGSPhantFile(QString path);
 	void savegzEGSPhantFilePlus(QString path);

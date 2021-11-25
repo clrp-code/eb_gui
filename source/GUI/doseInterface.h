@@ -181,6 +181,10 @@ public slots:
 	void previewChangeAxis();
 	void previewChangeColor(int i);
 	
+	void loadEgsphant();
+	void loadMapDose();
+	void loadIsoDose(int i);
+	
 	// Histogram
     void histoRenderLive();
     void histoRender();

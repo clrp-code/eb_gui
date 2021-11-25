@@ -503,7 +503,7 @@ void phantInterface::createEGSphant() {
 	err = parent->data->buildEgsphant(&phantom, &textLog, structIndex.size(), defaultTAS,
 								&structIndex, &tasIndex, &makeMasks);
 	
-	if (err == 0) {		
+	if (err == 0) {
 		// Connect the progress bar
 		parent->nameProgress("Saving in local egsphant database");
 		connect(&phantom, SIGNAL(madeProgress(double)),

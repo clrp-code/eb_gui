@@ -679,7 +679,6 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 				xMid = (phant->x[i]+phant->x[i+1])/2.0;
 				
 				tempHU = HU[k][j][i];
-				nj = phant->ny-1-j; // Reversed j index for density and media assignment
 				
 				// Linear search because I don't think these arrays every get big
 				// get the right density
@@ -696,7 +695,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 					phant->maxDensity = temp;
 				
 				// Assign density
-				phant->d[i][nj][k] = temp;
+				phant->d[i][j][k] = temp;
 			}
 		}
 	}
@@ -786,7 +785,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 			// Now do threshold replacement to all voxels in voxels set
 			QSet<int>::iterator it = voxels.begin();
 			int count = 0;
-			increment = 5.0/voxels.size(); // 5%
+			increment = 2.5/voxels.size(); // 2.5%
 			int i, j, k;
 			
 			while (it != voxels.end()) {
@@ -918,8 +917,30 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 		}
 		*log = *log + QString::number(zMid) + " ";
 	}
+	
+	// Reverse y-axis - this really should be done on the fly above, but the logical_and
+	// proved difficult in the short-term, so here's a temporary fix
+	emit newProgressName("Inverting y-axis");
+	increment = 2.5/phant->nz; // 2.5%
+	char tempMed;
+	double tempDen;
+	for (int k = 0; k < phant->nz; k++) {
+		for (int j = 0; j < int(phant->ny/2); j++) {
+			nj = phant->ny-1-j;
+			for (int i = 0; i < phant->nx; i++) {
+				tempMed = phant->m[i][j][k];
+				tempDen = phant->d[i][j][k];
+				phant->m[i][j][k] = phant->m[i][nj][k];
+				phant->d[i][j][k] = phant->d[i][nj][k];
+				phant->m[i][nj][k] = tempMed;
+				phant->d[i][nj][k] = tempDen;
+			}
+		}
+		emit madeProgress(increment);
+	}	
+	
 	*log = *log + "\n\nEGSPhant building is complete\n";
-			
+	
 	#if defined(DEBUG_BUILDEGSPHANT)
 		std::cout << "Egsphant built\n"; std::cout.flush();
 	#endif

@@ -107,6 +107,7 @@ void EGSPhant::savegzEGSPhantFile(QString path) {
 	// Ripped fairly whole-cloth from egs_brachy
 	ogzstream ogout(path.toStdString().c_str());
 	std::ostream* out = (std::ostream*)(&ogout);
+	
 	if (out->good()) {
 		// Media count
 		(*out) << media.size() << "\n";
@@ -503,6 +504,151 @@ void EGSPhant::loadbEGSPhantFilePlus(QString path) {
     }
 }
 
+void EGSPhant::loadgzEGSPhantFile(QString path) {
+	// Ripped fairly whole-cloth from egs_brachy
+	igzstream ogin(path.toStdString().c_str());
+	std::istream* data = (std::istream*)(&ogin);
+	
+    // Increment size of the status bar
+    double increment;
+	
+	if (data->good()) {
+		int nmed;
+		*data >> nmed;
+		
+		std::string med;
+		for (int i=0; i < nmed; i++) {
+			*data >> med;
+            media.append(QString(med.c_str()));
+		}
+		
+		// estepe is ignored!
+		double estepe;
+		for (int i=0; i < nmed; i++) {
+			*data >> estepe;
+		}
+		
+		/* read in all bounds and create the geometry */
+		double bound;
+		
+		*data >> nx >> ny >> nz;
+		
+		for (int i=0; i < nx+1; i++) {
+			*data >> bound;
+			x.append(bound);
+		}
+		for (int i=0; i < ny+1; i++) {
+			*data >> bound;
+			y.append(bound);
+		}
+		for (int i=0; i < nz+1; i++) {
+			*data >> bound;
+			z.append(bound);
+		}
+		
+        {
+            QVector <char> mz(nz, 0);
+            QVector <QVector <char> > my(ny, mz);
+            QVector <QVector <QVector <char> > > mx(nx, my);
+            m = mx;
+        }
+				
+		/* now we've got all geometry information so construct our geom */
+		// read in region media and set them in the geometry
+		increment = 100.0/double(nz); // 30%
+		char cur_med;
+        for (int k = 0; k < nz; k++) {
+            for (int j = 0; j < ny; j++)
+                for (int i = 0; i < nx; i++) {
+					*data >> cur_med;
+                    m[i][j][k] = cur_med;
+                }
+            emit madeProgress(increment); // Update progress bar
+        }
+	}
+}
+
+void EGSPhant::loadgzEGSPhantFilePlus(QString path) {	
+	// Ripped fairly whole-cloth from egs_brachy
+	igzstream ogin(path.toStdString().c_str());
+	std::istream* data = (std::istream*)(&ogin);
+	
+    // Increment size of the status bar
+    double increment;
+	
+	if (data->good()) {
+		int nmed;
+		*data >> nmed;
+		
+		std::string med;
+		for (int i=0; i < nmed; i++) {
+			*data >> med;
+            media.append(QString(med.c_str()));
+		}
+		
+		
+		// estepe is ignored!
+		double estepe;
+		for (int i=0; i < nmed; i++) {
+			*data >> estepe;
+		}
+		
+		/* read in all bounds and create the geometry */
+		double bound;
+		
+		*data >> nx >> ny >> nz;
+		
+		for (int i=0; i < nx+1; i++) {
+			*data >> bound;
+			x.append(bound);
+		}
+		for (int i=0; i < ny+1; i++) {
+			*data >> bound;
+			y.append(bound);
+		}
+		for (int i=0; i < nz+1; i++) {
+			*data >> bound;
+			z.append(bound);
+		}
+		
+        {
+            QVector <char> mz(nz, 0);
+            QVector <QVector <char> > my(ny, mz);
+            QVector <QVector <QVector <char> > > mx(nx, my);
+            m = mx;
+            QVector <double> dz(nz, 0);
+            QVector <QVector <double> > dy(ny, dz);
+            QVector <QVector <QVector <double> > > dx(nx, dy);
+            d = dx;
+        }
+				
+		/* now we've got all geometry information so construct our geom */
+		// read in region media and set them in the geometry
+		increment = 30.0/double(nz); // 30%
+		char cur_med;
+        for (int k = 0; k < nz; k++) {
+            for (int j = 0; j < ny; j++)
+                for (int i = 0; i < nx; i++) {
+					*data >> cur_med;
+                    m[i][j][k] = cur_med;
+                }
+            emit madeProgress(increment); // Update progress bar
+        }
+		
+		// read in region rhos and set the relative rho value if required
+		increment = 70.0/double(nz); // 70%
+		double cur_rho;
+        for (int k = 0; k < nz; k++) {
+            for (int j = 0; j < ny; j++)
+                for (int i = 0; i < nx; i++) {
+					*data >> cur_rho;
+                    d[i][j][k] = cur_rho;
+                }
+            emit madeProgress(increment); // Update progress bar
+        }
+	}
+}
+
 char EGSPhant::getMedia(double px, double py, double pz) {
     int ix, iy, iz;
     ix = iy = iz = -1;
@@ -592,7 +738,6 @@ double EGSPhant::getDensity(int px, int py, int pz) {
     return -1; // We are not within our bounds
 }
 
-
 void EGSPhant::setDensity(int px, int py, int pz, double density) {
     // This is to insure that no area outside the vectors is accessed
     if (px < nx && px >= 0 && py < ny && py >= 0 && pz < nz && pz >= 0) {
@@ -640,19 +785,22 @@ int EGSPhant::getIndex(QString axis, double p) {
 QImage EGSPhant::getEGSPhantPicMed(QString axis, double ai, double af,
                                    double bi, double bf, double d, int res) {
     // Create a temporary image
-    int width  = (af-ai)*res;
-    int height = (bf-bi)*res;
-    QImage image(height, width, QImage::Format_ARGB32);
+    int width  = (af-ai)*res; // Reversed on the image
+    int height = (bf-bi)*res; // Reversed on the image
+    QImage image(height, width, QImage::Format_ARGB32_Premultiplied);
     double hInc, wInc, cInc;
-    double h, w, c = 0;
+    double h, w;
+	int c;
+	char med;
+	QString indeces("123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
 
     // Calculate the size (in cm) of pixels, and then the range for grayscaling
     wInc = 1/double(res);
     hInc = 1/double(res);
-    cInc = 255.0/media.size()+1;
+    cInc = 255.0/double(media.size()+1);
 
-    for (int i = height-1; i >= 0; i--)
-        for (int j = 0; j < width; j++) {
+    for (int i = 0; i < height; i++)
+        for (int j = 1; j <= width; j++) {
             // determine the location of the current pixel in the phantom
             h = (double(bi)) + hInc * double(i);
             w = (double(ai)) + wInc * double(j);
@@ -660,22 +808,19 @@ QImage EGSPhant::getEGSPhantPicMed(QString axis, double ai, double af,
             // get the media, which differs based on axis through which image is
             // sliced
             if (!axis.compare("x axis")) {
-                c = getMedia(d, h, w) - 48;
+                med = getMedia(d, h, w);
             }
             else if (!axis.compare("y axis")) {
-                c = getMedia(h, d, w) - 48;
+                med = getMedia(h, d, w);
             }
             else if (!axis.compare("z axis")) {
-                c = getMedia(h, w, d) - 48;
+                med = getMedia(h, w, d);
             }
 			
-			// if c is out of bounds, set it to zero
-			// else if c is an upper-case letter, remove the 7 ascii chars between 9 and A
-			// else if c is a lower-case letter, remove the 13 non-alphanumeric chars between 9 and a
-			c = (c==-1)?0:(c<10?c:(c<36?c-7:c-13));
+			c = (indeces.indexOf(med)+1)*cInc;
 
             // finally, paint the pixel
-            image.setPixel(i, j, qRgb(int(cInc*c), int(cInc*c), int(cInc*c)));
+            image.setPixel(i, width-j, qRgb(c, c, c));
         }
 
     return image; // return the image created
@@ -685,19 +830,20 @@ QImage EGSPhant::getEGSPhantPicDen(QString axis, double ai, double af,
                                    double bi, double bf, double d, int res,
 								   double di, double df) {
     // Create a temporary image
-    int width  = (af-ai)*res;
-    int height = (bf-bi)*res;
-    QImage image(height, width, QImage::Format_RGB32);
+    int width  = (af-ai)*res; // Reversed on the image
+    int height = (bf-bi)*res; // Reversed on the image
+    QImage image(height, width, QImage::Format_ARGB32_Premultiplied);
     double hInc, wInc, cInc;
-    double h, w, c = 0;
+    double h, w, den = 0;
+	int	c;
 
     // Calculate the size (in cm) of pixels, and then the range for grayscaling
     wInc = 1/double(res);
     hInc = 1/double(res);
     cInc = 255.0/(df-di);
 
-    for (int i = height-1; i >= 0; i--)
-        for (int j = 0; j < width; j++) {
+    for (int i = 0; i < height; i++)
+        for (int j = 1; j <= width; j++) {
             // determine the location of the current pixel in the phantom
             h = (double(bi)) + hInc * double(i);
             w = (double(ai)) + wInc * double(j);
@@ -705,22 +851,22 @@ QImage EGSPhant::getEGSPhantPicDen(QString axis, double ai, double af,
             // get the density, which differs based on axis through which image
             // os sliced
             if (!axis.compare("x axis")) {
-                c = getDensity(d, h, w);
+                den = getDensity(d, h, w);
             }
             else if (!axis.compare("y axis")) {
-                c = getDensity(h, d, w);
+                den = getDensity(h, d, w);
             }
             else if (!axis.compare("z axis")) {
-                c = getDensity(h, w, d);
+                den = getDensity(h, w, d);
             }
 			
 			// if c is out of bounds, set it to zero
 			// else if c is below the minimum density, set it to minimum density
 			// else if c is above the maximum density, set it to maximum density
-			c = (c==-1)?0:(c<di?di:(c>df?df:c));
+			c = ((den==-1)?0:(den<di?di:(den>df?df:den)))*cInc;
 
             // finally, paint the pixel
-            image.setPixel(i, j, qRgb(int(cInc*c), int(cInc*c), int(cInc*c)));
+            image.setPixel(i, width-j, qRgb(c, c, c));
         }
 
     return image; // return the image created

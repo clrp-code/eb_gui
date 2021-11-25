@@ -129,7 +129,7 @@ void doseInterface::createLayout() {
 	
 	// Preview ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 	// Preview bounds
-	blackPic          = new QImage(400,400,QImage::Format_ARGB32);
+	blackPic          = new QImage(400,400,QImage::Format_ARGB32_Premultiplied);
 	blackPic->fill(qRgb(0,0,0));
 	
 	dimFrame          = new QFrame();
@@ -189,7 +189,7 @@ void doseInterface::createLayout() {
 	previewLayout->addWidget(dimFrame);
 	
 	// Phantom selection
-	phantPic      = new QImage(400,400,QImage::Format_ARGB32);
+	phantPic      = new QImage(400,400,QImage::Format_ARGB32_Premultiplied);
 	phant         = new EGSPhant();
 	
 	phantFrame    = new QFrame();
@@ -223,7 +223,7 @@ void doseInterface::createLayout() {
 	previewLayout->addWidget(phantFrame);
 	
 	// Map selection
-	mapPic        = new QImage(400,400,QImage::Format_ARGB32);	
+	mapPic        = new QImage(400,400,QImage::Format_ARGB32_Premultiplied);	
 	mapDose       = new Dose();
 	
 	mapFrame      = new QFrame();
@@ -261,7 +261,7 @@ void doseInterface::createLayout() {
 	previewLayout->addWidget(mapFrame);
 	
 	// Isodose selection
-	isoPic        = new QImage(400,400,QImage::Format_ARGB32);	
+	isoPic        = new QImage(400,400,QImage::Format_ARGB32_Premultiplied);	
 	
 	isoFrame       = new QFrame();
 	isoLayout      = new QGridLayout();
@@ -328,6 +328,8 @@ void doseInterface::createLayout() {
 void doseInterface::connectLayout() {
 	connect(renderCheckBox, SIGNAL(stateChanged(int)),
 			this, SLOT(refresh()));
+	connect(renderButton, SIGNAL(pressed()),
+			this, SLOT(render()));
 	
 	// Preview ~~~~~~~~~~~~~~
 	// Dimensions
@@ -361,7 +363,7 @@ void doseInterface::connectLayout() {
 			
 	// Egsphant
 	connect(phantSelect, SIGNAL(currentIndexChanged(int)),
-			this, SLOT(previewPhantRenderLive()));
+			this, SLOT(loadEgsphant()));
 	connect(mediaButton, SIGNAL(toggled(bool)),
 			this, SLOT(previewPhantRenderLive()));
 	connect(mediaButton, SIGNAL(toggled(bool)),
@@ -377,18 +379,27 @@ void doseInterface::connectLayout() {
 			
 	// Map
 	connect(mapDoseBox, SIGNAL(currentIndexChanged(int)),
-			this, SLOT(previewMapRenderLive()));
+			this, SLOT(loadMapDose()));
 	connect(mapMinDose, SIGNAL(textEdited(QString)),
 			this, SLOT(previewMapRenderLive()));
 	connect(mapMaxDose, SIGNAL(textEdited(QString)),
 			this, SLOT(previewMapRenderLive()));	
 	
 	// Isodose
-	QVector <QComboBox*>   isoDoseBox;
-	QVector <QLineEdit*>   isoColourDose;	
+	QSignalMapper* sigMap = new QSignalMapper(this); // Should get deleted as a child of this
+	for (int i = 0; i < 3; i++) {
+		connect(isoDoseBox[i], SIGNAL(currentIndexChanged(int)),
+				sigMap, SLOT(map()));
+	}
+	sigMap->setMapping(isoDoseBox[0], 0);
+	sigMap->setMapping(isoDoseBox[1], 1);
+	sigMap->setMapping(isoDoseBox[2], 2);
+	
+	connect(sigMap, SIGNAL(mapped(int)),
+			this, SLOT(loadIsoDose(int)));
 			
 	// Change all colours
-	QSignalMapper* sigMap = new QSignalMapper(this); // Should get deleted as a child of this
+	sigMap = new QSignalMapper(this); // Should get deleted as a child of this
 	connect(mapMinButton, SIGNAL(pressed()),
 			sigMap, SLOT(map()));
 	connect(mapMidButton, SIGNAL(pressed()),
@@ -406,7 +417,7 @@ void doseInterface::connectLayout() {
 		sigMap->setMapping(isoColourButton[i], 3+i);
 	
 	connect(sigMap, SIGNAL(mapped(int)),
-			this, SLOT(previewChangeColor(int))) ;
+			this, SLOT(previewChangeColor(int)));
 }
 
 // Swap panels
@@ -456,6 +467,27 @@ void doseInterface::refresh() {
 	}
 }
 
+// Render functions
+void doseInterface::render() {
+	switch(optionsBox->currentIndex()) {
+		case 0 :
+			previewCanvasRender(); // This will build the canvas and all subimages
+			break;
+		case 1 :
+			histoRender();
+			break;
+		case 2 :
+			profileRender();
+			break;
+		default :
+			// change nothing
+			break;
+	}
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+//                                Preview                              //
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 void doseInterface::previewChangeAxis() {
 	if (xAxisButton->isChecked()) {
 		vertBoundaryLabel->setText("y range");
@@ -542,39 +574,15 @@ void doseInterface::previewChangeColor(int i) {
 }
 	
 void doseInterface::previewRefresh() {
-	if (mediaButton->isChecked()) {
-		densityLabel->setDisabled(true);
-		densityMin->setDisabled(true);
-		densityMax->setDisabled(true);
-	}
-	else if (mediaButton->isChecked()) {
+	if (densityButton->isChecked()) {
 		densityLabel->setDisabled(false);
 		densityMin->setDisabled(false);
 		densityMax->setDisabled(false);
 	}
-}
-
-void doseInterface::histoRefresh() {
-}
-
-void doseInterface::profileRefresh() {
-}
-
-// Render functions
-void doseInterface::render() {
-	switch(optionsBox->currentIndex()) {
-		case 0 :
-			previewRender();
-			break;
-		case 1 :
-			histoRender();
-			break;
-		case 2 :
-			profileRender();
-			break;
-		default :
-			// change nothing
-			break;
+	else {
+		densityLabel->setDisabled(true);
+		densityMin->setDisabled(true);
+		densityMax->setDisabled(true);
 	}
 }
 	
@@ -583,7 +591,12 @@ void doseInterface::previewCanvasRender() {
 	int width  = abs(horBoundaryMin->text().toDouble() - horBoundaryMin->text().toDouble())*resolutionScale->text().toInt();
 	int height = abs(vertBoundaryMin->text().toDouble() - vertBoundaryMin->text().toDouble())*resolutionScale->text().toInt();
 	delete blackPic;
-	blackPic = new QImage(width,height,QImage::Format_ARGB32);
+	blackPic = new QImage(width,height,QImage::Format_ARGB32_Premultiplied);
+	
+	// Invoke all subrenders to reflect the change to the axes
+	previewPhantRender();
+	previewMapRender();
+	previewIsoRender();
 	
 	previewRender();
 }
@@ -606,27 +619,25 @@ void doseInterface::previewPhantRender() {
 		}
 	}
 	
-	previewRender();
+	previewRenderLive();
 }
 
 void doseInterface::previewMapRenderLive() {if(renderCheckBox->isChecked()) previewMapRender();}
 void doseInterface::previewMapRender() {
 	
-	
-	previewRender();
+	previewRenderLive();
 }
 
 void doseInterface::previewIsoRenderLive() {if(renderCheckBox->isChecked()) previewIsoRender();}
 void doseInterface::previewIsoRender() {
 	
-	
-	previewRender();
+	previewRenderLive();
 }
 
 void doseInterface::previewRenderLive() {if(renderCheckBox->isChecked()) previewRender();}
 void doseInterface::previewRender() {
 	// Choose base canvas
-	if (phantSelect->currentIndex())
+	if (phantSelect->currentIndex()) // Not none
 		*canvasPic = *phantPic;
 	else
 		*canvasPic = *blackPic;
@@ -634,17 +645,78 @@ void doseInterface::previewRender() {
 	QPainter paint (canvasPic); // Now use it as our canvas
 	
 	// Add colour map
-	if (mapDoseBox->currentIndex())
+	if (mapDoseBox->currentIndex()) // Not none
 		paint.drawImage(0,0,*mapPic);
 		
 	// Add isodose contours
-	if (isoDoseBox[0]->currentIndex()+isoDoseBox[1]->currentIndex()+isoDoseBox[2]->currentIndex())
+	if (isoDoseBox[0]->currentIndex()+isoDoseBox[1]->currentIndex()+isoDoseBox[2]->currentIndex()) // Not all none
 		paint.drawImage(0,0,*isoPic);
+		
+	canvas->setPixmap(QPixmap::fromImage(*canvasPic));
+    canvas->setFixedSize(canvasPic->width(), canvasPic->height());
+    canvas->repaint();
+}
+
+void doseInterface::loadEgsphant() {
+	int i = phantSelect->currentIndex()-1;
+	if (i < 0) {return;} // Exit if none is selected or box is empty in setup
+	
+	if (i >= parent->data->localDirPhants.size()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected egsphant index is larger than the local phantom count.  Aborting"));		
+		return;
+	}
+	
+	QString file = parent->data->localDirPhants[i]+parent->data->localNamePhants[i]; // Get file location
+	
+	// Connect the progress bar
+	parent->nameProgress("Loading egsphant file");
+	connect(phant, SIGNAL(madeProgress(double)),
+			parent, SLOT(updateProgress(double)));
+		
+	if (file.endsWith(".egsphant.gz"))
+		phant->loadgzEGSPhantFilePlus(file);
+	else if (file.endsWith(".begsphant"))
+		phant->loadbEGSPhantFilePlus(file);
+	else if (file.endsWith(".egsphant"))
+		phant->loadEGSPhantFilePlus(file);
+	else {
+		QMessageBox::warning(0, "File error",
+		tr("Selected file is not of type egsphant.gz, begsphant, or egsphant.  Aborting"));
+		parent->finishedProgress();
+		return;		
+	}
+	
+	parent->finishedProgress();
+}
+
+void doseInterface::loadMapDose() {
+	int i = mapDoseBox->currentIndex()-1;
+	if (i < 0) {return;} // Exit if none is selected or box is empty in setup
+}
+
+void doseInterface::loadIsoDose(int i) {
+	int j = isoDoseBox[i]->currentIndex()-1;
+	if (j < 0) {return;} // Exit if none is selected or box is empty in setup
+}
+	
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+//                               Histogram                             //
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+
+void doseInterface::histoRefresh() {
 }
 
 void doseInterface::histoRenderLive() {if(renderCheckBox->isChecked()) histoRender();}
 void doseInterface::histoRender() {
 		
+}
+	
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+//                                Profile                              //
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+
+void doseInterface::profileRefresh() {
 }
 
 void doseInterface::profileRenderLive() {if(renderCheckBox->isChecked()) profileRender();}
