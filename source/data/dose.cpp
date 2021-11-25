@@ -393,13 +393,13 @@ void Dose::readIn(QString path, int n) {
     file = new QFile(path);
 
     // Determine the increment size of the status bar this 3ddose file gets
-    double increment = Dose::MAX_PROGRESS/double (n);
+    double increment = 100.0/double(n);
 
     if (file->open(QIODevice::ReadOnly | QIODevice::Text)) {
         input = new QTextStream(file);
 
-        emit progressMade(increment*0.005); // Update progress bar
-
+        emit madeProgress(increment*0.005); // Update progress bar
+		
         // Read in the number of voxels
         *input >> x;
         *input >> y;
@@ -426,7 +426,7 @@ void Dose::readIn(QString path, int n) {
                 err[i][j].resize(z);
             }
 
-        emit progressMade(increment*0.01); // Update progress bar
+        emit madeProgress(increment*0.01); // Update progress bar
 
         // Read in boundaries
         for (int i = 0; i <= x; i++) {
@@ -439,7 +439,7 @@ void Dose::readIn(QString path, int n) {
             *input >> cz[k];
         }
 
-        emit progressMade(increment*0.01); // Update progress bar
+        emit madeProgress(increment*0.01); // Update progress bar
 
         // Resize increments so that the rest of the section of the progress
         // bar is divided by two times the number of z values, so that each
@@ -454,7 +454,7 @@ void Dose::readIn(QString path, int n) {
                     *input >> val[i][j][k];
                 }
 
-            emit progressMade(increment); // Update progress bar
+            emit madeProgress(increment); // Update progress bar
         }
 
         // Read in all the errors
@@ -464,7 +464,7 @@ void Dose::readIn(QString path, int n) {
                     *input >> err[i][j][k];
                 }
 
-            emit progressMade(increment); // Update progress bar
+            emit madeProgress(increment); // Update progress bar
         }
 
         delete input;
@@ -480,13 +480,13 @@ void Dose::readBIn(QString path, int n) {
     file = new QFile(path);
 
     // Determine the increment size of the status bar this 3ddose file gets
-    double increment = Dose::MAX_PROGRESS/double (n);
+    double increment = 100.0/double(n);
 
     if (file->open(QIODevice::ReadOnly)) {
         input = new QDataStream(file);
 		input->setByteOrder(QDataStream::LittleEndian);
 
-        emit progressMade(increment*0.005); // Update progress bar
+        emit madeProgress(increment*0.005); // Update progress bar
 
         // Insure XYZ format
         unsigned char temp;
@@ -522,7 +522,7 @@ void Dose::readBIn(QString path, int n) {
                 err[i][j].resize(z);
             }
 
-        emit progressMade(increment*0.01); // Update progress bar
+        emit madeProgress(increment*0.01); // Update progress bar
 
         // Read in boundaries
         for (int i = 0; i <= x; i++) {
@@ -535,7 +535,7 @@ void Dose::readBIn(QString path, int n) {
             *input >> cz[k];
         }
 
-        emit progressMade(increment*0.01); // Update progress bar
+        emit madeProgress(increment*0.01); // Update progress bar
 
         // Resize increments so that the rest of the section of the progress
         // bar is divided by two times the number of z values, so that each
@@ -550,7 +550,7 @@ void Dose::readBIn(QString path, int n) {
                     *input >> val[i][j][k];
                 }
 
-            emit progressMade(increment); // Update progress bar
+            emit madeProgress(increment); // Update progress bar
         }
 
         // Read in all the errors
@@ -560,7 +560,7 @@ void Dose::readBIn(QString path, int n) {
                     *input >> err[i][j][k];
                 }
 
-            emit progressMade(increment); // Update progress bar
+            emit madeProgress(increment); // Update progress bar
         }
 
         delete input;
@@ -576,19 +576,19 @@ void Dose::readOut(QString path, int n) {
     file = new QFile(path);
 
     // Determine the increment size of the status bar this 3ddose file gets
-    double increment = Dose::MAX_PROGRESS/double (n);
+    double increment = 100.0/double(n);
 
     if (file->open(QIODevice::WriteOnly | QIODevice::Text)) {
         input = new QTextStream(file);
 
-        emit progressMade(increment*0.005); // Update progress bar
+        emit madeProgress(increment*0.005); // Update progress bar
 
         // Print the number of voxels
         *input << QString::number(x) << tr(" ");
         *input << QString::number(y) << tr(" ");
         *input << QString::number(z) << tr("\n");
 
-        emit progressMade(increment*0.01); // Update progress bar
+        emit madeProgress(increment*0.01); // Update progress bar
 
         // Print the boundaries
         for (int i = 0; i <= x; i++) {
@@ -606,7 +606,7 @@ void Dose::readOut(QString path, int n) {
         }
         *input << tr("\n");
 
-        emit progressMade(increment*0.01); // Update progress bar
+        emit madeProgress(increment*0.01); // Update progress bar
 
         // Resize increments so that the rest of the section of the progress
         // bar is divided by two times the number of z values, so that each
@@ -620,7 +620,7 @@ void Dose::readOut(QString path, int n) {
                 for (int i = 0; i < x; i++) {
                     *input << QString::number(val[i][j][k]) << tr(" ");
                 }
-            emit progressMade(increment); // Update progress bar
+            emit madeProgress(increment); // Update progress bar
         }
         *input << tr("\n");
 
@@ -630,7 +630,7 @@ void Dose::readOut(QString path, int n) {
                 for (int i = 0; i < x; i++) {
                     *input << QString::number(err[i][j][k]) << tr(" ");
                 }
-            emit progressMade(increment); // Update progress bar
+            emit madeProgress(increment); // Update progress bar
         }
         *input << tr("\n\n");
 
@@ -646,19 +646,19 @@ void Dose::readBOut(QString path, int n) {
     file = new QFile(path);
 
     // Determine the increment size of the status bar this 3ddose file gets
-    double increment = Dose::MAX_PROGRESS/double (n);
+    double increment = 100.0/double(n);
 
     if (file->open(QIODevice::WriteOnly)) {
         input = new QDataStream(file);
 		input->setByteOrder(QDataStream::LittleEndian);
 
-        emit progressMade(increment*0.005); // Update progress bar
+        emit madeProgress(increment*0.005); // Update progress bar
 
         *input << (unsigned char)(1);
         // Print the number of voxels
         *input << x << y << z;
 
-        emit progressMade(increment*0.01); // Update progress bar
+        emit madeProgress(increment*0.01); // Update progress bar
 
         // Print the boundaries
         for (int i = 0; i <= x; i++) {
@@ -673,7 +673,7 @@ void Dose::readBOut(QString path, int n) {
             *input << cz[k];
         }
 
-        emit progressMade(increment*0.01); // Update progress bar
+        emit madeProgress(increment*0.01); // Update progress bar
 
         // Resize increments so that the rest of the section of the progress
         // bar is divided by two times the number of z values, so that each
@@ -687,7 +687,7 @@ void Dose::readBOut(QString path, int n) {
                 for (int i = 0; i < x; i++) {
                     *input << val[i][j][k];
                 }
-            emit progressMade(increment); // Update progress bar
+            emit madeProgress(increment); // Update progress bar
         }
 
         // Read out errors
@@ -696,7 +696,7 @@ void Dose::readBOut(QString path, int n) {
                 for (int i = 0; i < x; i++) {
                     *input << err[i][j][k];
                 }
-            emit progressMade(increment); // Update progress bar
+            emit madeProgress(increment); // Update progress bar
         }
 
         delete input;
@@ -2056,6 +2056,63 @@ const QString Dose::getTitle() {
 
 void Dose::setTitle(QString name) {
     title = name;
+}
+
+QImage Dose::getColourMap(QString axis, double ai, double af, double bi, double bf, double d, int res,
+						  double di, double df, QColor min, QColor mid, QColor max) {
+    // Create a temporary image
+    int width  = (af-ai)*res; // Reversed on the image
+    int height = (bf-bi)*res; // Reversed on the image
+    QImage image(height, width, QImage::Format_ARGB32_Premultiplied);
+    double hInc, wInc;
+    double h, w, dose = 0;
+	double c = (df+di)/2.0, weight, invWeight;
+
+    // Calculate the size (in cm) of pixels, and then the range for grayscaling
+    wInc = 1/double(res);
+    hInc = 1/double(res);
+
+    for (int i = 0; i < height; i++)
+        for (int j = 1; j <= width; j++) {
+            // determine the location of the current pixel in the phantom
+            h = (double(bi)) + hInc * double(i);
+            w = (double(ai)) + wInc * double(j);
+
+            // get the density, which differs based on axis through which image
+            // os sliced
+            if (!axis.compare("x axis")) {
+                dose = getDose(d, h, w);
+            }
+            else if (!axis.compare("y axis")) {
+                dose = getDose(h, d, w);
+            }
+            else if (!axis.compare("z axis")) {
+                dose = getDose(h, w, d);
+            }
+			
+			if (dose < c) {
+				dose      = di>dose?di:dose;
+				weight    = (dose-di)/(c-di);
+				invWeight = 1.0-weight;
+				
+				// finally, paint the pixel
+				image.setPixel(i, width-j, qRgb((weight*mid.red()  )+(invWeight*min.red()  ),
+												(weight*mid.green())+(invWeight*min.green()),
+												(weight*mid.blue() )+(invWeight*min.blue() )));
+			}
+			else {
+				dose      = df<dose?df:dose;
+				weight    = (df-dose)/(df-c);
+				invWeight = 1.0-weight;
+				
+				// finally, paint the pixel
+				image.setPixel(i, width-j, qRgb((weight*mid.red()  )+(invWeight*max.red()  ),
+												(weight*mid.green())+(invWeight*max.green()),
+												(weight*mid.blue() )+(invWeight*max.blue() )));
+			}
+        }
+
+    return image; // return the image created
 }
 
 /*******************************************************************************

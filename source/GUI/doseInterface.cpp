@@ -604,18 +604,33 @@ void doseInterface::previewCanvasRender() {
 void doseInterface::previewPhantRenderLive() {if(renderCheckBox->isChecked()) previewPhantRender();}
 void doseInterface::previewPhantRender() {
 	QString axis = xAxisButton->isChecked()?"x axis":(yAxisButton->isChecked()?"y axis":"z axis");
+	double horMin = horBoundaryMin->text().toDouble(), horMax = horBoundaryMax->text().toDouble();
+	double vertMin = vertBoundaryMin->text().toDouble(), vertMax = vertBoundaryMax->text().toDouble();
+	double depth, res;
 	
+	if (horMin > horMax) {
+		depth  = horMin;
+		horMin = horMax;
+		horMax = depth;
+	}
+	
+	if (vertMin > vertMax) {
+		depth   = vertMin;
+		vertMin = vertMax;
+		vertMax = depth;
+	}
+
+	depth = depthMin->text().toDouble();
+	res   = resolutionScale->text().toDouble();
+		
 	if (phantSelect->currentIndex()) {
 		if (mediaButton->isChecked()) {
-			*phantPic = phant->getEGSPhantPicMed(axis, horBoundaryMin->text().toDouble(), horBoundaryMax->text().toDouble(),
-												 vertBoundaryMin->text().toDouble(), vertBoundaryMax->text().toDouble(),
-												 depthMin->text().toDouble(), resolutionScale->text().toDouble());
+			*phantPic = phant->getEGSPhantPicMed(axis, horMin, horMax, vertMin, vertMax, depth, res);
 		}
 		else if (densityButton->isChecked()) {
-			*phantPic = phant->getEGSPhantPicDen(axis, horBoundaryMin->text().toDouble(), horBoundaryMax->text().toDouble(),
-												 vertBoundaryMin->text().toDouble(), vertBoundaryMax->text().toDouble(),
-												 depthMin->text().toDouble(), resolutionScale->text().toDouble(),
-												 densityMin->text().toDouble(), densityMax->text().toDouble());
+			*phantPic = phant->getEGSPhantPicDen(axis, horMin, horMax, vertMin, vertMax, depth, res,
+												 densityMin->text().toDouble(),
+												 densityMax->text().toDouble());
 		}
 	}
 	
@@ -624,12 +639,57 @@ void doseInterface::previewPhantRender() {
 
 void doseInterface::previewMapRenderLive() {if(renderCheckBox->isChecked()) previewMapRender();}
 void doseInterface::previewMapRender() {
+	QString axis = xAxisButton->isChecked()?"x axis":(yAxisButton->isChecked()?"y axis":"z axis");
+	double horMin = horBoundaryMin->text().toDouble(), horMax = horBoundaryMax->text().toDouble();
+	double vertMin = vertBoundaryMin->text().toDouble(), vertMax = vertBoundaryMax->text().toDouble();
+	double depth, res;
+	
+	if (horMin > horMax) {
+		depth  = horMin;
+		horMin = horMax;
+		horMax = depth;
+	}
+	
+	if (vertMin > vertMax) {
+		depth   = vertMin;
+		vertMin = vertMax;
+		vertMax = depth;
+	}
+
+	depth = depthMin->text().toDouble();
+	res   = resolutionScale->text().toDouble();
+	
+	if (mapDoseBox->currentIndex())
+		*mapPic = mapDose->getColourMap(axis, horMin, horMax, vertMin, vertMax, depth, res,
+										mapMinDose->text().toDouble(), mapMaxDose->text().toDouble(),
+										mapMinButton->palette().color(QPalette::Button),
+										mapMidButton->palette().color(QPalette::Button),
+										mapMaxButton->palette().color(QPalette::Button));
 	
 	previewRenderLive();
 }
 
 void doseInterface::previewIsoRenderLive() {if(renderCheckBox->isChecked()) previewIsoRender();}
 void doseInterface::previewIsoRender() {
+	QString axis = xAxisButton->isChecked()?"x axis":(yAxisButton->isChecked()?"y axis":"z axis");
+	double horMin = horBoundaryMin->text().toDouble(), horMax = horBoundaryMax->text().toDouble();
+	double vertMin = vertBoundaryMin->text().toDouble(), vertMax = vertBoundaryMax->text().toDouble();
+	double depth, res;
+	
+	if (horMin > horMax) {
+		depth  = horMin;
+		horMin = horMax;
+		horMax = depth;
+	}
+	
+	if (vertMin > vertMax) {
+		depth   = vertMin;
+		vertMin = vertMax;
+		vertMax = depth;
+	}
+
+	depth = depthMin->text().toDouble();
+	res   = resolutionScale->text().toDouble();
 	
 	previewRenderLive();
 }
@@ -645,8 +705,10 @@ void doseInterface::previewRender() {
 	QPainter paint (canvasPic); // Now use it as our canvas
 	
 	// Add colour map
+	paint.setOpacity(0.5);
 	if (mapDoseBox->currentIndex()) // Not none
 		paint.drawImage(0,0,*mapPic);
+	paint.setOpacity(1);
 		
 	// Add isodose contours
 	if (isoDoseBox[0]->currentIndex()+isoDoseBox[1]->currentIndex()+isoDoseBox[2]->currentIndex()) // Not all none
@@ -670,7 +732,7 @@ void doseInterface::loadEgsphant() {
 	QString file = parent->data->localDirPhants[i]+parent->data->localNamePhants[i]; // Get file location
 	
 	// Connect the progress bar
-	parent->nameProgress("Loading egsphant file");
+	parent->resetProgress("Loading egsphant file");
 	connect(phant, SIGNAL(madeProgress(double)),
 			parent, SLOT(updateProgress(double)));
 		
@@ -693,6 +755,32 @@ void doseInterface::loadEgsphant() {
 void doseInterface::loadMapDose() {
 	int i = mapDoseBox->currentIndex()-1;
 	if (i < 0) {return;} // Exit if none is selected or box is empty in setup
+	
+	if (i >= parent->data->localDirDoses.size()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected dose index is larger than the local dose count.  Aborting"));		
+		return;
+	}
+	
+	QString file = parent->data->localDirDoses[i]+parent->data->localNameDoses[i]; // Get file location
+	
+	// Connect the progress bar
+	parent->resetProgress("Loading 3ddose file");
+	connect(mapDose, SIGNAL(madeProgress(double)),
+			parent, SLOT(updateProgress(double)));
+		
+	if (file.endsWith(".b3ddose"))
+		mapDose->readBIn(file, 1);
+	else if (file.endsWith(".3ddose"))
+		mapDose->readIn(file, 1);
+	else {
+		QMessageBox::warning(0, "File error",
+		tr("Selected file is not of type 3ddose or b3ddose.  Aborting"));
+		parent->finishedProgress();
+		return;		
+	}
+	
+	parent->finishedProgress();
 }
 
 void doseInterface::loadIsoDose(int i) {

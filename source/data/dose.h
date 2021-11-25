@@ -53,7 +53,7 @@ class Dose : public QObject {
     Q_OBJECT
 
 signals:
-    void progressMade(double n); // Update the progress bar
+    void madeProgress(double n); // Update the progress bar
 
 public:
     // The constructor uses the n to determine how many .3ddose files will be
@@ -196,8 +196,9 @@ public:
                     double bi, double bf, int res);
     int interp(int x1, int x2, double y1, double y2, double y0);
 
-    // Progress bar resolution
-    const static int MAX_PROGRESS = 1000000000;
+	// Get colourmap
+	QImage getColourMap(QString axis, double ai, double af, double bi, double bf, double d, int res,
+						double di, double df, QColor min, QColor mid, QColor max);
 };
 
 /*******************************************************************************
