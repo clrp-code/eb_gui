@@ -144,8 +144,13 @@ public:
 	QPushButton *mapMidButton;
 	QPushButton *mapMaxButton;
 	
+	QLabel      *mapOpacLabel;
+	QSlider     *mapOpacSlider;	
+	
 	// Isodose selection
-	QImage                 *isoPic;
+	QVector <QVector <QLineF> > solid;
+	QVector <QVector <QLineF> > dashed;
+	QVector <QVector <QLineF> > dotted;
 	
 	QFrame                 *isoFrame;
 	QGridLayout            *isoLayout;
@@ -180,6 +185,7 @@ public slots:
 	
 	void previewChangeAxis();
 	void previewChangeColor(int i);
+	void previewResetBounds();
 	
 	void loadEgsphant();
 	void loadMapDose();

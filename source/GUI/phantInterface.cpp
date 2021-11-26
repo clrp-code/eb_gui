@@ -116,6 +116,8 @@ void phantInterface::createLayout() {
 	calibEdit      = new QLineEdit  (parent->data->hu_location);
 	calibEdit->setDisabled(true);
 	
+	calibLoad->setDisabled(true); // To be implemented
+	
 	ttt = tr("Select the CT HU to density conversion table.");
 	calibLabel->setToolTip(ttt);
 	calibLoad->setToolTip(ttt);

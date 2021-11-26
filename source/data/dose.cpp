@@ -2066,11 +2066,13 @@ QImage Dose::getColourMap(QString axis, double ai, double af, double bi, double 
     QImage image(height, width, QImage::Format_ARGB32_Premultiplied);
     double hInc, wInc;
     double h, w, dose = 0;
-	double c = (df+di)/2.0, weight, invWeight;
+	double c, weight, invWeight;
+	double red, green, blue;
 
     // Calculate the size (in cm) of pixels, and then the range for grayscaling
     wInc = 1/double(res);
     hInc = 1/double(res);
+	c = (df+di)/2.0;
 
     for (int i = 0; i < height; i++)
         for (int j = 1; j <= width; j++) {
@@ -2095,21 +2097,27 @@ QImage Dose::getColourMap(QString axis, double ai, double af, double bi, double 
 				weight    = (dose-di)/(c-di);
 				invWeight = 1.0-weight;
 				
-				// finally, paint the pixel
-				image.setPixel(i, width-j, qRgb((weight*mid.red()  )+(invWeight*min.red()  ),
-												(weight*mid.green())+(invWeight*min.green()),
-												(weight*mid.blue() )+(invWeight*min.blue() )));
+				red   = (mid.red()  * weight) + (min.red()  * invWeight);
+				green = (mid.green()* weight) + (min.green()* invWeight);
+				blue  = (mid.blue() * weight) + (min.blue() * invWeight);
 			}
 			else {
 				dose      = df<dose?df:dose;
 				weight    = (df-dose)/(df-c);
 				invWeight = 1.0-weight;
 				
-				// finally, paint the pixel
-				image.setPixel(i, width-j, qRgb((weight*mid.red()  )+(invWeight*max.red()  ),
-												(weight*mid.green())+(invWeight*max.green()),
-												(weight*mid.blue() )+(invWeight*max.blue() )));
+				red   = (mid.red()  * weight) + (max.red()  * invWeight);
+				green = (mid.green()* weight) + (max.green()* invWeight);
+				blue  = (mid.blue() * weight) + (max.blue() * invWeight);
 			}
+			
+			// Rescale to max brightness
+			weight = red>blue?red:blue;
+			weight = weight>green?weight:green;
+			weight = 255.0/weight;
+			
+			// finally, paint the pixel
+			image.setPixel(i, width-j, qRgb(red*weight,green*weight,blue*weight));
         }
 
     return image; // return the image created

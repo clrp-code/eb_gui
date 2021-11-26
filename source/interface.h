@@ -137,7 +137,6 @@ public:
 	QLabel*      doseLabel;
 	QListWidget* doseListView;
 	QPushButton* doseImport;
-	QPushButton* doseCreate;
 	QPushButton* doseDelete;
 	
 	QGridLayout* doseGrid;

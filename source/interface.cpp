@@ -46,9 +46,9 @@
 Interface::Interface()
 // [\d*] one digit followed by:
 // 1) some number of digits
-// 2) (e|E)[+]?\d{1,2} character e or E, an optional +, then 1-2 digits 
+// 2) (e|E)[+-]?\d{1,2} character e or E, an optional +, then 1-2 digits 
 // 3) .\d*(e|E)[+]?\d{1,2} dot ., some number of digits, character e or E, an optional +, then 1-2 digits 
-	: allowedNums(QRegExp("\\d(\\d*|(e|E)[+]?\\d{1,2}|[.]\\d*(e|E)[+-]?\\d{1,2})")) {
+	: allowedNums(QRegExp("\\d(\\d*|(e|E)[+-]?\\d{1,2}|[.]\\d*(e|E)[+-]?\\d{1,2})")) {
 	// Create the data backend
 	data = new Data();
 	int err = data->loadDefaults(); // load default parameters
@@ -99,6 +99,8 @@ void Interface::createGlobalWidgets() {
 	phantomCreate    = new QPushButton(tr("Create")); 
 	phantomView      = new QPushButton(tr("View log")); 
 	phantomDelete    = new QPushButton(tr("Delete"));
+	
+	phantomCreate->setDisabled(true); // To be implemented
 	
 	phantomGrid  = new QGridLayout();
 	phantomFrame = new QFrame();
@@ -176,6 +178,8 @@ void Interface::createGlobalWidgets() {
 	transformationDwellEdit   = new QLineEdit("none selected");
 	transformationDwellEdit->setDisabled(true);
 	
+	transformationCreate->setDisabled(true); // To be implemented
+	
 	transformationGrid  = new QGridLayout();
 	transformationFrame = new QFrame();
 		
@@ -210,6 +214,8 @@ void Interface::createGlobalWidgets() {
 	geometryChooser->addItem("eye_plaques");
 	geometryChooser->addItem("applicators");
 	
+	geometryCreate->setDisabled(true); // To be implemented
+	
 	geometryList->setTabPosition(QTabWidget::West);
 	
 	geometryGrid->addWidget(geometryLabel   , 0, 0, 1, 6);
@@ -229,17 +235,15 @@ void Interface::createGlobalWidgets() {
 	doseListView  = new QListWidget();
 	//doseListView->setSelectionMode(QAbstractItemView::SingleSelection);
 	doseImport    = new QPushButton(tr("Import"));
-	doseCreate    = new QPushButton(tr("Create"));
 	doseDelete    = new QPushButton(tr("Delete"));
 	
 	doseGrid  = new QGridLayout();
 	doseFrame = new QFrame();
 		
-	doseGrid->addWidget(doseLabel   , 0, 0, 1, 3);
-	doseGrid->addWidget(doseListView, 1, 0, 1, 3);
+	doseGrid->addWidget(doseLabel   , 0, 0, 1, 2);
+	doseGrid->addWidget(doseListView, 1, 0, 1, 2);
 	doseGrid->addWidget(doseImport  , 2, 0, 1, 1);
-	doseGrid->addWidget(doseCreate  , 2, 1, 1, 1);
-	doseGrid->addWidget(doseDelete  , 2, 2, 1, 1);
+	doseGrid->addWidget(doseDelete  , 2, 1, 1, 1);
 
 	doseFrame->setFrameStyle(QFrame::Box | QFrame::Raised);
 	doseFrame->setLineWidth(LINE_WIDTH);
