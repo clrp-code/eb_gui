@@ -102,6 +102,8 @@ int Data::loadDefaults() {
 				hu_location = gui_location+text.right(text.length()-33).trimmed();
 			else if (text.left(27).compare("tissue assignment schemes =") == 0)
 				TAS_names = text.right(text.length()-27).trimmed().split(" ", QString::SkipEmptyParts);
+			else if (text.left(24).compare("isodose line thickness =") == 0)
+				isodoseLineThickness = text.right(text.length()-24).trimmed().toInt();
 	    }
 
         delete input;
@@ -123,7 +125,7 @@ int Data::loadDefaults() {
 	
 	// egs_brachy library data
 	QDirIterator* files;
-	files = new QDirIterator(eb_location+"/lib/geometry/sources/", {"*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories);
+	files = new QDirIterator(eb_location+"/lib/geometry/sources/", {"*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories); // #nofilter #nomakeup
 	while(files->hasNext()) {
 		files->next();
 		libNameSources << files->fileName().left(files->fileName().length()-5);
@@ -131,7 +133,7 @@ int Data::loadDefaults() {
 	}
 	delete files;
 	
-	files = new QDirIterator(eb_location+"/lib/geometry/phantoms/", {"*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories);
+	files = new QDirIterator(eb_location+"/lib/geometry/phantoms/", {"*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories); // #nofilter #nomakeup
 	while(files->hasNext()) {
 		files->next();
 		libNamePhants << files->fileName();
@@ -139,7 +141,7 @@ int Data::loadDefaults() {
 	}
 	delete files;
 	
-	files = new QDirIterator(eb_location+"/lib/geometry/transformations/", QDirIterator::Subdirectories);
+	files = new QDirIterator(eb_location+"/lib/geometry/transformations/", QDirIterator::Subdirectories); // #nofilter #nomakeup
 	while(files->hasNext()) {
 		files->next();
 		if (files->fileName() != "." && files->fileName() != "..") {
@@ -149,7 +151,7 @@ int Data::loadDefaults() {
 	}
 	delete files;
 	
-	files = new QDirIterator(eb_location+"/lib/geometry/eye_plaques/", {"*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories);
+	files = new QDirIterator(eb_location+"/lib/geometry/eye_plaques/", {"*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories); // #nofilter #nomakeup
 	while(files->hasNext()) {
 		files->next();
 		libNameGeometries << files->fileName().left(files->fileName().length()-5);
@@ -157,7 +159,7 @@ int Data::loadDefaults() {
 	}
 	delete files;
 	
-	files = new QDirIterator(eb_location+"/lib/geometry/applicators/", {"*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories);
+	files = new QDirIterator(eb_location+"/lib/geometry/applicators/", {"*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories); // #nofilter #nomakeup
 	while(files->hasNext()) {
 		files->next();
 		libNameGeometries << files->fileName().left(files->fileName().length()-5);
@@ -169,7 +171,7 @@ int Data::loadDefaults() {
 	if (!QDir(gui_location+"/database/egsphant/").exists())
 		QDir().mkdir(gui_location+"/database/egsphant/");
 	
-	files = new QDirIterator(gui_location+"/database/egsphant/", {"*.egsphant","*.egsphant.gz","*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories);
+	files = new QDirIterator(gui_location+"/database/egsphant/", {"*.egsphant","*.egsphant.gz","*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories); // #nofilter #nomakeup //
 	while(files->hasNext()) {
 		files->next();
 		localNamePhants << files->fileName();
@@ -195,7 +197,7 @@ int Data::loadDefaults() {
 	if (!QDir(gui_location+"/database/dose/").exists())
 		QDir().mkdir(gui_location+"/database/dose/");
 	
-	files = new QDirIterator(gui_location+"/database/dose/", {"*.3ddose","*.3ddose.gz"}, QDir::NoFilter, QDirIterator::Subdirectories);
+	files = new QDirIterator(gui_location+"/database/dose/", {"*.3ddose","*.3ddose.gz"}, QDir::NoFilter, QDirIterator::Subdirectories);  // #nofilter #nomakeup
 	while(files->hasNext()) {
 		files->next();
 		if (files->fileName() != "." && files->fileName() != "..") {
@@ -211,7 +213,7 @@ int Data::loadDefaults() {
 	QStringList TAS_reference = TAS_names;
 	TAS_names.clear();
 	
-	files = new QDirIterator(gui_location+"/database/tissue_assignment_scheme/", {"*.txt"}, QDir::NoFilter, QDirIterator::Subdirectories);
+	files = new QDirIterator(gui_location+"/database/tissue_assignment_scheme/", {"*.txt"}, QDir::NoFilter, QDirIterator::Subdirectories); // #nofilter #nomakeup
 	while(files->hasNext()) {
 		files->next();
 		QFile TAS_file(files->path()+files->fileName());

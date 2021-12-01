@@ -1838,6 +1838,7 @@ void Dose::getContour(QVector <QVector <QLineF> > *con,
     if (n == -1) {
         return;
     }
+	
     int cases = 0, tl = 0, tr = 0, bl = 0, br = 0;
     int fa, fb, flag = false;
     QVector <int> px, py;
@@ -1846,6 +1847,7 @@ void Dose::getContour(QVector <QVector <QLineF> > *con,
 
     px.clear();
     py.clear();
+	
     // Setup dose and pixel arrays
     if (!axis.compare("X")) {
         for (int i = 0; i < y; i++)
@@ -1856,8 +1858,7 @@ void Dose::getContour(QVector <QVector <QLineF> > *con,
                     if (cz[j] > ai && cz[j+1] < af) {
                         temp.append(val[n][i][j]);
                         if (!flag)
-                            py.append(int(((cz[j]+cz[j+1])/2.0-ai)
-                                          *double(res)));
+                            py.append(int(((cz[j]+cz[j+1])/2.0-ai)*double(res)));
                     }
                 flag++;
                 d.append(temp);
@@ -1872,8 +1873,7 @@ void Dose::getContour(QVector <QVector <QLineF> > *con,
                     if (cz[j] > ai && cz[j+1] < af) {
                         temp.append(val[i][n][j]);
                         if (!flag)
-                            py.append(int(((cz[j]+cz[j+1])/2.0-ai)
-                                          *double(res)));
+                            py.append(int(((cz[j]+cz[j+1])/2.0-ai)*double(res)));
                     }
                 flag++;
                 d.append(temp);
@@ -1888,15 +1888,13 @@ void Dose::getContour(QVector <QVector <QLineF> > *con,
                     if (cy[j] > ai && cy[j+1] < af) {
                         temp.append(val[i][j][n]);
                         if (!flag)
-                            py.append(int(((cy[j]+cy[j+1])/2.0-ai)
-                                          *double(res)));
+                            py.append(int(((cy[j]+cy[j+1])/2.0-ai)*double(res)));
                     }
                 flag++;
                 d.append(temp);
             }
     }
-
-
+	
     for (int i = 0; i < px.size()-1; i++)
         for (int j = 0; j < py.size()-1; j++)
             for (int p = 0; p < doses.size(); p++) {

@@ -43,7 +43,38 @@
 #include "data.h"
 #include "libraries/gzstream.h"
 
-#define LINE_WIDTH 2 // Global QFrame widgets' frame line width
+// Global QFrame widgets' frame line width
+#define LINE_WIDTH 2
+
+// List of media indices used in egsphants
+#define EGSPHANT_CHARS "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+// Regex strings used to validate different input types
+// 0) [-]? - Allow negative sign
+// 1) \\d - Look for at least one decimal character
+// 2) \\d* - Look for any number of decimal characters
+// 3) ([.]\\d*)? - Allow a decimal point followed by any number of decimal characters
+// 4a) ([eE][+-]? - Allow an e or E character, followed by an allowed plus or minus character
+// 4b) \\d{1,3})? - and look for 1-3 digits to follow the 4a input
+#define REGEX_REAL "[-]?\\d\\d*([.]\\d*)?[eE][+-]?\\d{1,3}"
+#define REGEX_REAL_POS "\\d\\d*([.]\\d*)?[eE][+-]?\\d{1,3}"
+
+// Same as above, but add a space or comma afterwards and allow repetition
+#define REGEX_REAL_POS_ARR "(\\d\\d*([.]\\d*)?([eE][+-]?\\d{1,3})?[ ,])*"
+
+// 0) [-]? - Allow negative sign
+// 1) \\d* - Look for any number of decimal characters
+#define REGEX_NATURAL "[-]?\\d*"
+#define REGEX_NATURAL_POS "\\d*"
+
+// 1) (\\d - Look for one decimal character
+// 2) (\\d)?) - Allow a second decimal character
+// 3) | - Or
+// 4) 100 - Look for 100
+#define REGEX_PERCENT "((\\d(\\d)?)|100)"
+
+// Same as above, but add a space or comma afterwards and allow repetition
+#define REGEX_PERCENT_ARR "(((\\d(\\d)?)|100)[ ,])*"
 
 // Forward declare the EGS_geom class defined at the bottom so that they can
 // be included in the layout

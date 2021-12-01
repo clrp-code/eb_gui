@@ -223,7 +223,7 @@ QString EGSInput::buildInput() {
 	output = output + "\tscore energy deposition = " + SO_edep + "\n";
 	output = output + "\tmuen file               = " + SO_muenFile + "\n";
 	output = output + "\tmuen for media          = " + SO_muenMed + "\n";
-	if (sourceDwells.length())
+	if (SO_scale != 1)
 		output = output + "\tdose scaling factor     = " + SO_scale + "\n";
 	output = output + ":stop scoring options:\n";
 	output = output + "#----------------------------------------------------------------------------------------------------\n";

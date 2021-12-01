@@ -44,7 +44,7 @@ phantInterface::phantInterface()
 // 1) some number of digits
 // 2) (e|E)[+]?\d{1,2} character e or E, an optional +, then 1-2 digits 
 // 3) .\d*(e|E)[+]?\d{1,2} dot ., some number of digits, character e or E, an optional +, then 1-2 digits 
-	: allowedNums(QRegExp("\\d(\\d*|(e|E)[+]?\\d{1,2}|[.]\\d*(e|E)[+]?\\d{1,2})")) {
+	: allowedNums(QRegExp(REGEX_REAL_POS)) {
 	parent = (Interface*)parentWidget();
 	
 	log = new logWindow();
@@ -58,7 +58,7 @@ phantInterface::phantInterface(Interface* p)
 // 1) some number of digits
 // 2) (e|E)[+]?\d{1,2} character e or E, an optional +, then 1-2 digits 
 // 3) .\d*(e|E)[+]?\d{1,2} dot ., some number of digits, character e or E, an optional +, then 1-2 digits 
-	: allowedNums(QRegExp("\\d(\\d*|(e|E)[+]?\\d{1,2}|[.]\\d*(e|E)[+]?\\d{1,2})")) {
+	: allowedNums(QRegExp(REGEX_REAL_POS)) {
 	parent = p;
 	
 	log = new logWindow();

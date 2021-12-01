@@ -48,7 +48,7 @@ Interface::Interface()
 // 1) some number of digits
 // 2) (e|E)[+-]?\d{1,2} character e or E, an optional +, then 1-2 digits 
 // 3) .\d*(e|E)[+]?\d{1,2} dot ., some number of digits, character e or E, an optional +, then 1-2 digits 
-	: allowedNums(QRegExp("\\d(\\d*|(e|E)[+-]?\\d{1,2}|[.]\\d*(e|E)[+-]?\\d{1,2})")) {
+	: allowedNums(QRegExp(REGEX_REAL_POS)) {
 	// Create the data backend
 	data = new Data();
 	int err = data->loadDefaults(); // load default parameters
@@ -327,11 +327,17 @@ void Interface::connectLayout() {
 // Global widget functions
 void Interface::phantomRepopulate() {
 	phantomListView->clear();
+	
 	((doseInterface*)doseInt)->phantSelect->clear();
 	((doseInterface*)doseInt)->phantSelect->addItem("none");
+	
+	((doseInterface*)doseInt)->histPhantSelect->clear();
+	((doseInterface*)doseInt)->histPhantSelect->addItem("none");
+	
 	for (int i = 0; i < data->localNamePhants.size(); i++) {
 		phantomListView->addItem(data->localNamePhants[i]);
 		((doseInterface*)doseInt)->phantSelect->addItem(data->localNamePhants[i]);
+		((doseInterface*)doseInt)->histPhantSelect->addItem(data->localNamePhants[i]);
 	}
 	if (!phantomOnlyLocal->isChecked())
 		for (int i = 0; i < data->libNamePhants.size(); i++) {
@@ -395,6 +401,9 @@ void Interface::doseRepopulate() {
 	((doseInterface*)doseInt)->isoDoseBox[0]->clear();
 	((doseInterface*)doseInt)->isoDoseBox[1]->clear();
 	((doseInterface*)doseInt)->isoDoseBox[2]->clear();
+	((doseInterface*)doseInt)->histDoseSelect->clear();
+	((doseInterface*)doseInt)->resetDoses();
+	
 	((doseInterface*)doseInt)->mapDoseBox->addItem("none");
 	((doseInterface*)doseInt)->isoDoseBox[0]->addItem("none");
 	((doseInterface*)doseInt)->isoDoseBox[1]->addItem("none");
@@ -406,6 +415,7 @@ void Interface::doseRepopulate() {
 		((doseInterface*)doseInt)->isoDoseBox[0]->addItem(data->localNameDoses[i]);
 		((doseInterface*)doseInt)->isoDoseBox[1]->addItem(data->localNameDoses[i]);
 		((doseInterface*)doseInt)->isoDoseBox[2]->addItem(data->localNameDoses[i]);
+		((doseInterface*)doseInt)->histDoseSelect->addItem(data->localNameDoses[i]);
 	}
 }
 
@@ -1053,7 +1063,7 @@ void Interface::finishedProgress(){
 // EGS_geom~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EGS_geom::EGS_geom(QString n, int ind) : name (n), index(ind),
-allowedNums(QRegExp("[-]?\\d(\\d*|(e|E)[+-]?\\d{1,2}|[.]\\d*(e|E)[+-]?\\d{1,2})")),
+allowedNums(QRegExp(REGEX_REAL)),
 // -?[\d*] potential -, then one digit followed by:
 // 1) some number of digits
 // 2) (e|E)[+-]?\d{1,2} character e or E, an optional + or -, then 1-2 digits 

@@ -40,9 +40,12 @@
 
 // Constructors
 doseInterface::doseInterface() :
-allowedReals(QRegExp("[-]?\\d(\\d*|(e|E)[+-]?\\d{1,3}|[.]\\d*(e|E)[+-]?\\d{1,3})")),
-allowedPosReals(QRegExp("\\d(\\d*|(e|E)[+-]?\\d{1,3}|[.]\\d*(e|E)[+-]?\\d{1,3})")),
-allowedNats(QRegExp("(\\d{1,3})")) {
+allowedReals(QRegExp(REGEX_REAL)),
+allowedPosReals(QRegExp(REGEX_REAL_POS)),
+allowedPosRealArrs(QRegExp(REGEX_REAL_POS_ARR)),
+allowedNats(QRegExp(REGEX_NATURAL_POS)),
+allowedPercents(QRegExp(REGEX_PERCENT)),
+allowedPercentArrs(QRegExp(REGEX_PERCENT_ARR)) {
 	parent = (Interface*)parentWidget();
 	
 	createLayout();
@@ -50,9 +53,12 @@ allowedNats(QRegExp("(\\d{1,3})")) {
 }
 
 doseInterface::doseInterface(Interface* p) :
-allowedReals(QRegExp("[-]?\\d(\\d*|(e|E)[+-]?\\d{1,3}|[.]\\d*(e|E)[+-]?\\d{1,3})")),
-allowedPosReals(QRegExp("\\d(\\d*|(e|E)[+-]?\\d{1,3}|[.]\\d*(e|E)[+-]?\\d{1,3})")),
-allowedNats(QRegExp("(\\d{1,3})")) {
+allowedReals(QRegExp(REGEX_REAL)),
+allowedPosReals(QRegExp(REGEX_REAL_POS)),
+allowedPosRealArrs(QRegExp(REGEX_REAL_POS_ARR)),
+allowedNats(QRegExp(REGEX_NATURAL_POS)),
+allowedPercents(QRegExp(REGEX_PERCENT)),
+allowedPercentArrs(QRegExp(REGEX_PERCENT_ARR)) {
 	parent = p;
 	createLayout();
 	connectLayout();
@@ -69,38 +75,13 @@ doseInterface::~doseInterface() {
 	delete isoDoses[2];
 	delete isoDoses[1];
 	delete isoDoses[0];
-	
-	switch(optionsBox->currentIndex()) {
-		case 0 :
-			delete histoLayout;
-			delete profileLayout;			
-			break;
-		case 1 :
-			delete previewLayout;
-			delete profileLayout;	
-			break;
-		case 2 :
-			delete previewLayout;
-			delete histoLayout;
-			break;
-		default :
-			delete previewLayout;
-			delete histoLayout;
-			delete profileLayout;
-			break;
-	}
 }
 
 // Layout Settings
 void doseInterface::createLayout() {
 	mainLayout = new QGridLayout();
 	
-	// Shared objects ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
-	optionsBox      = new QComboBox();
-	optionsBox->addItem("egsphant & colour maps");
-	optionsBox->addItem("histograms");
-	optionsBox->addItem("profiles");
-				    
+	// Shared objects ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //				    
 	canvasArea      = new QScrollArea();
 	canvas          = new QLabel();
 	canvasPic       = new QImage();
@@ -126,8 +107,14 @@ void doseInterface::createLayout() {
 	rendering->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
 	
 	previewLayout = new QVBoxLayout();
-	histoLayout = new QVBoxLayout();
+	histoLayout   = new QVBoxLayout();
 	profileLayout = new QVBoxLayout();
+	
+	previewFrame  = new QFrame();
+	histoFrame    = new QFrame();
+	profileFrame  = new QFrame();
+	
+	optionsTab    = new QTabWidget();
 	
 	// Preview ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 	// Preview bounds	
@@ -203,6 +190,7 @@ void doseInterface::createLayout() {
 	
 	phantFrame    = new QFrame();
 	phantLayout   = new QGridLayout();
+	phantLabel    = new QLabel("Phantom");
 	
 	mediaButton   = new QRadioButton("media");
 	densityButton = new QRadioButton("density");
@@ -221,12 +209,13 @@ void doseInterface::createLayout() {
 	densityMin->setDisabled(true);
 	densityMax->setDisabled(true);
 	
-	phantLayout->addWidget(phantSelect  , 0, 0, 1, 2);
-	phantLayout->addWidget(mediaButton  , 1, 0, 1, 1);
-	phantLayout->addWidget(densityButton, 1, 1, 1, 1);
-	phantLayout->addWidget(densityLabel , 2, 0, 1, 2);
-	phantLayout->addWidget(densityMin   , 3, 0, 1, 1);
-	phantLayout->addWidget(densityMax   , 3, 1, 1, 1);
+	phantLayout->addWidget(phantLabel   , 0, 0, 1, 2);
+	phantLayout->addWidget(phantSelect  , 0, 2, 1, 4);
+	phantLayout->addWidget(mediaButton  , 1, 0, 1, 3);
+	phantLayout->addWidget(densityButton, 1, 3, 1, 3);
+	phantLayout->addWidget(densityLabel , 2, 0, 1, 6);
+	phantLayout->addWidget(densityMin   , 3, 0, 1, 3);
+	phantLayout->addWidget(densityMax   , 3, 3, 1, 3);
 	
 	phantFrame->setLayout(phantLayout);
 	phantFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
@@ -238,6 +227,7 @@ void doseInterface::createLayout() {
 	
 	mapFrame      = new QFrame();
 	mapLayout     = new QGridLayout();
+	mapLabel      = new QLabel("Colour map");
 				  
 	mapDoseBox    = new QComboBox();
 	mapDoseBox->addItem("none");
@@ -246,7 +236,7 @@ void doseInterface::createLayout() {
 	mapMinLabel   = new QLabel("min");
 	mapMaxLabel   = new QLabel("max");
 	
-	mapMinDose    = new QLineEdit("0");
+	mapMinDose    = new QLineEdit("20");
 	mapMaxDose    = new QLineEdit("100");
 	mapMinDose->setValidator(&allowedPosReals);
 	mapMaxDose->setValidator(&allowedPosReals);
@@ -263,7 +253,8 @@ void doseInterface::createLayout() {
 	mapOpacSlider->setRange(0,100);
 	mapOpacSlider->setValue(50);
 	
-	mapLayout->addWidget(mapDoseBox   , 0, 0, 1, 6);
+	mapLayout->addWidget(mapLabel     , 0, 0, 1, 2);
+	mapLayout->addWidget(mapDoseBox   , 0, 2, 1, 4);
 	mapLayout->addWidget(mapMinLabel  , 1, 0, 1, 3);
 	mapLayout->addWidget(mapMaxLabel  , 1, 3, 1, 3);
 	mapLayout->addWidget(mapMinDose   , 2, 0, 1, 3);
@@ -285,13 +276,13 @@ void doseInterface::createLayout() {
 	isoColourLabel = new QLabel("Colours");
 	
 	// Lines 1 - 3
-	isoDoseLabel.append(new QLabel("solid")); isoDoseBox.append(new QComboBox());
+	isoDoseLabel.append(new QLabel("solid line")); isoDoseBox.append(new QComboBox());
 	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose());
 	isoDoseBox.last()->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
-	isoDoseLabel.append(new QLabel("dashed")); isoDoseBox.append(new QComboBox());
+	isoDoseLabel.append(new QLabel("dashed line")); isoDoseBox.append(new QComboBox());
 	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose());
 	isoDoseBox.last()->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
-	isoDoseLabel.append(new QLabel("dotted")); isoDoseBox.append(new QComboBox());
+	isoDoseLabel.append(new QLabel("dotted line")); isoDoseBox.append(new QComboBox());
 	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose());
 	isoDoseBox.last()->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 	
@@ -308,44 +299,157 @@ void doseInterface::createLayout() {
 	isoColourDose.last()->setValidator(&allowedPosReals);
 	
 	for (int i = 0; i < 3; i++) {
-		isoLayout->addWidget(isoDoseLabel[i], i, 0, 1, 2);
-		isoLayout->addWidget(isoDoseBox[i]  , i, 2, 1, 3);
+		isoLayout->addWidget(isoDoseLabel[i], 0, i*5, 1, 5);
+		isoLayout->addWidget(isoDoseBox[i]  , 1, i*5, 1, 5);
 	}
 	
-	isoLayout->addWidget(isoColourLabel, 3, 0, 1, 5);
+	isoLayout->addWidget(isoColourLabel, 2, 0, 1, 15);
 	
 	for (int i = 0; i < 5; i++) {
-		isoLayout->addWidget(isoColourDose[i]  , 4, i, 1, 1);
-		isoLayout->addWidget(isoColourButton[i], 5, i, 1, 1);
+		isoLayout->addWidget(isoColourDose[i]  , 3, i*3, 1, 3);
+		isoLayout->addWidget(isoColourButton[i], 4, i*3, 1, 3);
 	}
 	
 	isoFrame->setLayout(isoLayout);
 	isoFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+	isoFrame->setDisabled(true); // Fix/reimplement getContour in dose class
 	previewLayout->addWidget(isoFrame);
 	
 	// Histogram ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+	// Phantom selection
+	histPhantLabel  = new QLabel("Phantom");
+	histPhant       = new EGSPhant();
+	histPhantSelect = new QComboBox();
+	histPhantSelect->addItem("none");
+	
+	histPhantFrame  = new QFrame();
+	histPhantLayout = new QGridLayout();
+	
+	histPhantLayout->addWidget(histPhantLabel , 0, 0, 1, 1);
+	histPhantLayout->addWidget(histPhantSelect, 1, 0, 1, 1);
+	
+	histPhantFrame->setLayout(histPhantLayout);
+	histPhantFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+	histoLayout->addWidget(histPhantFrame);
+	
+	// Filters
+	histFilterLabel  = new QLabel("Filters");
+	
+	histMaskLabel    = new QLabel("Mask");
+	histMaskSelect   = new QComboBox();
+	histMaskSelect->addItem("none");
+	histMask         = new EGSPhant();
+	
+	histMediumLabel  = new QLabel("Media");
+	histMediumView   = new QListWidget();
+	histMediumView->setSelectionMode(QAbstractItemView::MultiSelection);
+	
+	histPercMinLabel = new QLabel("Ignore lower x%");
+	histPercMinEdit  = new QLineEdit("0");
+	histPercMinEdit->setValidator(&allowedPercents);
+	histPercMaxLabel = new QLabel("Ignore upper x%");
+	histPercMaxEdit  = new QLineEdit("0");
+	histPercMaxEdit->setValidator(&allowedPercents);
+	
+	histFilterFrame  = new QFrame();
+	histFilterLayout = new QGridLayout();
+	
+	histFilterLayout->addWidget(histFilterLabel , 0, 0, 1, 6);
+	histFilterLayout->addWidget(histMaskLabel   , 1, 0, 1, 2);
+	histFilterLayout->addWidget(histMaskSelect  , 1, 2, 1, 4);
+	histFilterLayout->addWidget(histMediumLabel , 2, 0, 1, 6);
+	histFilterLayout->addWidget(histMediumView  , 3, 0, 1, 6);
+	
+	histFilterLayout->addWidget(histPercMinLabel, 4, 0, 1, 3);
+	histFilterLayout->addWidget(histPercMinEdit , 4, 3, 1, 3);
+	histFilterLayout->addWidget(histPercMaxLabel, 5, 0, 1, 3);
+	histFilterLayout->addWidget(histPercMaxEdit , 5, 3, 1, 3);
+	
+	histFilterFrame->setLayout(histFilterLayout);
+	histFilterFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+	histoLayout->addWidget(histFilterFrame);
+	
+	// Doses
+	histDosesLabel   = new QLabel("Doses");
+	histLoadButton   = new QPushButton("Load");
+	histDoseSelect   = new QComboBox();
+	histDeleteButton = new QPushButton("Delete");
+	
+	histLoadedView   = new QListWidget();
+					 
+	histLegendBox    = new QCheckBox("Legend");
+	histDiffBox      = new QCheckBox("Differential");
+					 
+	histDosesFrame   = new QFrame();
+	histDosesLayout  = new QGridLayout();
+	
+	histDosesLayout->addWidget(histDosesLabel  , 0, 0, 1, 4);
+	histDosesLayout->addWidget(histLoadButton  , 1, 0, 1, 1);
+	histDosesLayout->addWidget(histDoseSelect  , 1, 1, 1, 3);
+	histDosesLayout->addWidget(histLoadedView  , 2, 0, 1, 4);
+	histDosesLayout->addWidget(histDeleteButton, 3, 0, 1, 4);
+	histDosesLayout->addWidget(histLegendBox   , 4, 0, 1, 2);
+	histDosesLayout->addWidget(histDiffBox     , 4, 2, 1, 2);
+	
+	histDosesFrame->setLayout(histDosesLayout);
+	histDosesFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+	histoLayout->addWidget(histDosesFrame);
+	
+	// Added data
+	histOutputLabel  = new QLabel("Metrics");
+	
+	histDxLabel      = new QLabel("Dx");
+	histDxEdit       = new QLineEdit("10,20,80,90");
+	histVxLabel      = new QLabel("Vx");
+	histVxEdit       = new QLineEdit("20,40,60,80,100");
+	histDxEdit->setValidator(&allowedPercentArrs);
+	histVxEdit->setValidator(&allowedPosRealArrs);
+	
+	histCalcButton   = new QPushButton("Calculate");
+	histSaveButton   = new QPushButton("Output");
+	
+	histOutputFrame  = new QFrame();
+	histOutputLayout = new QGridLayout();
+	
+	histOutputLayout->addWidget(histOutputLabel , 0, 0, 1, 4);
+	histOutputLayout->addWidget(histDxLabel     , 1, 0, 1, 1);
+	histOutputLayout->addWidget(histDxEdit      , 1, 1, 1, 3);
+	histOutputLayout->addWidget(histVxLabel     , 2, 0, 1, 1);
+	histOutputLayout->addWidget(histVxEdit      , 2, 1, 1, 3);
+	histOutputLayout->addWidget(histCalcButton  , 3, 0, 1, 2);
+	histOutputLayout->addWidget(histSaveButton  , 3, 2, 1, 2);
+	
+	histOutputFrame->setLayout(histOutputLayout);
+	histOutputFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+	histoLayout->addWidget(histOutputFrame);
 	
 	// Profile ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 	
 	// Main layout
-	mainLayout->addWidget(optionsBox     , 0, 0, 1, 1);
+	mainLayout->addWidget(optionsTab     , 0, 0, 2, 1);
 	mainLayout->addWidget(canvasArea     , 0, 1, 4, 4);
 	mainLayout->addWidget(rendering      , 3, 0, 2, 1);
 	mainLayout->addWidget(canvasInfo     , 4, 1, 1, 1);
 	mainLayout->addWidget(saveDataButton , 4, 3, 1, 1);
 	mainLayout->addWidget(saveImageButton, 4, 4, 1, 1);
 	
-	mainLayout->addLayout(previewLayout  , 1, 0, 1, 1);	
-	
 	mainLayout->setColumnStretch(0, 1);
 	mainLayout->setColumnStretch(1, 5);
 	mainLayout->setRowStretch(2, 5);
+	
+	previewFrame->setLayout(previewLayout);
+	histoFrame->setLayout(histoLayout);
+	profileFrame->setLayout(profileLayout);
+	
+	optionsTab->addTab(previewFrame, "Preview");
+	optionsTab->addTab(histoFrame, "DVH");
+	optionsTab->addTab(profileFrame, "Profile");	
 	
 	setLayout(mainLayout);
 }
 
 void doseInterface::connectLayout() {
-	connect(optionsBox, SIGNAL(currentIndexChanged(int)),
+	connect(optionsTab, SIGNAL(currentChanged(int)),
 			this, SLOT(refresh()));
 	connect(renderCheckBox, SIGNAL(stateChanged(int)),
 			this, SLOT(refresh()));
@@ -436,16 +540,26 @@ void doseInterface::connectLayout() {
 	sigMap->setMapping(mapMinButton, 0);
 	sigMap->setMapping(mapMidButton, 1);
 	sigMap->setMapping(mapMaxButton, 2);
+	
 	for (int i = 0; i < 5; i++)
 		sigMap->setMapping(isoColourButton[i], 3+i);
 	
 	connect(sigMap, SIGNAL(mapped(int)),
 			this, SLOT(previewChangeColor(int)));
+			
+	// Histogram ~~~~~~~~~~~~
+	connect(histPhantSelect, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(loadFilterEgsphant()));
+	connect(histMaskSelect, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(loadMaskEgsphant()));	
+	
+	
+	// Profile ~~~~~~~~~~~~~~
 }
 
 // Swap panels
 void doseInterface::resetLayout() {
-	switch(optionsBox->currentIndex()) {
+	switch(optionsTab->currentIndex()) {
 		case 0 :
 			mapDoseBox->setCurrentIndex(0);
 			isoDoseBox[0]->setCurrentIndex(0);
@@ -454,7 +568,7 @@ void doseInterface::resetLayout() {
 			phantSelect->setCurrentIndex(0);
 			break;
 		case 1 :
-			
+			histPhantSelect->setCurrentIndex(0);
 			break;
 		case 2 :
 			
@@ -465,6 +579,13 @@ void doseInterface::resetLayout() {
 	}
 }
 
+// Delete loaded doses, called when repopulating dose
+void doseInterface::resetDoses() {
+	for (int i = histDoses.size()-1; i >= 0; i--)
+		delete histDoses[i];
+	histDoses.clear();
+}
+	
 // Refresh
 void doseInterface::refresh() {
 	if (renderCheckBox->isChecked()) {
@@ -474,21 +595,26 @@ void doseInterface::refresh() {
 	else
 		renderButton->setDisabled(false);
 	
-	switch(optionsBox->currentIndex()) {
+	switch(optionsTab->currentIndex()) {
 		case 0 :
 			previewRefresh();
 			resolutionLabel->setDisabled(false);
 			resolutionScale->setDisabled(false);
+			renderCheckBox->setDisabled(false);
 			break;
 		case 1 :
 			histoRefresh();
 			resolutionLabel->setDisabled(true);
 			resolutionScale->setDisabled(true);
+			renderCheckBox->setDisabled(true);
+			renderCheckBox->setChecked(false);
 			break;
 		case 2 :
 			profileRefresh();
 			resolutionLabel->setDisabled(true);
 			resolutionScale->setDisabled(true);
+			renderCheckBox->setDisabled(true);
+			renderCheckBox->setChecked(false);
 			break;
 		default :
 			// change nothing
@@ -498,7 +624,7 @@ void doseInterface::refresh() {
 
 // Render functions
 void doseInterface::render() {
-	switch(optionsBox->currentIndex()) {
+	switch(optionsTab->currentIndex()) {
 		case 0 :
 			previewCanvasRender(); // This will build the canvas and all subimages
 			break;
@@ -707,7 +833,7 @@ void doseInterface::previewIsoRender() {
 	if ((isoDoseBox[0]->currentIndex()+isoDoseBox[1]->currentIndex()+isoDoseBox[2]->currentIndex()) < 1)
 		return;
 	
-	QString axis = xAxisButton->isChecked()?"x axis":(yAxisButton->isChecked()?"y axis":"z axis");
+	QString axis = xAxisButton->isChecked()?"X":(yAxisButton->isChecked()?"Y":"Z");
 	double horMin = horBoundaryMin->text().toDouble(), horMax = horBoundaryMax->text().toDouble();
 	double vertMin = vertBoundaryMin->text().toDouble(), vertMax = vertBoundaryMax->text().toDouble();
 	double depth, res;
@@ -735,10 +861,10 @@ void doseInterface::previewIsoRender() {
 		doses.append(isoColourDose[j]->text().toDouble());
 	
 	if (isoDoseBox[0]->currentIndex())
-		isoDoses[0]->getContour(&solid, doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
-	if (isoDoseBox[1]->currentIndex())
+		isoDoses[0]->getContour(&solid,  doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
+	if (isoDoseBox[1]->currentIndex())                                       
 		isoDoses[1]->getContour(&dashed, doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
-	if (isoDoseBox[2]->currentIndex())
+	if (isoDoseBox[2]->currentIndex())                                       
 		isoDoses[2]->getContour(&dotted, doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
 	
 	previewRenderLive();
@@ -762,7 +888,7 @@ void doseInterface::previewRender() {
 		
 	// Add isodose contours
     QPen pen;
-    pen.setWidth(canvasPic->height()<canvasPic->width()?int(canvasPic->height()/25.0):int(canvasPic->width()/25.0));
+    pen.setWidth(parent->data->isodoseLineThickness);
 	
 	for (int i = 0; i < 3; i++)
 		if (isoDoseBox[i]->currentIndex()) {			
@@ -901,6 +1027,106 @@ void doseInterface::loadIsoDose(int i) {
 	
 	parent->finishedProgress();
 	previewCanvasRenderLive();
+}
+
+void doseInterface::loadFilterEgsphant() {	
+	int i = histPhantSelect->currentIndex()-1;
+	if (i < 0) {return;} // Exit if none is selected or box is empty in setup
+	
+	if (i >= parent->data->localDirPhants.size()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected egsphant index is larger than the local phantom count.  Aborting"));		
+		return;
+	}
+	
+	QString file = parent->data->localDirPhants[i]+parent->data->localNamePhants[i]; // Get file location
+	
+	// Connect the progress bar
+	parent->resetProgress("Loading egsphant file");
+	connect(histPhant, SIGNAL(madeProgress(double)),
+			parent, SLOT(updateProgress(double)));
+		
+	if (file.endsWith(".egsphant.gz")) {
+		histPhant->loadgzEGSPhantFilePlus(file);
+		file = file.left(file.size()-12).split("/").last();
+	}
+	else if (file.endsWith(".begsphant")) {
+		histPhant->loadbEGSPhantFilePlus(file);
+		file = file.left(file.size()-10).split("/").last();
+	}
+	else if (file.endsWith(".egsphant")) {
+		histPhant->loadEGSPhantFilePlus(file);
+		file = file.left(file.size()-9).split("/").last();
+	}
+	else {
+		QMessageBox::warning(0, "File error",
+		tr("Selected file is not of type egsphant.gz, begsphant, or egsphant.  Aborting"));
+		parent->finishedProgress();
+		return;		
+	}
+	
+	parent->finishedProgress();
+	
+	// media data	
+	histMediumView->clear();
+	for (int i = 0; i < histPhant->media.size(); i++)
+		histMediumView->addItem(histPhant->media[i]);
+	
+	// local mask data	
+	localNameMasks.clear();
+	localDirMasks.clear();
+	
+	QDirIterator files (parent->data->gui_location+"/database/mask/", {QString(file)+".*.egsphant.gz"},
+						QDir::NoFilter, QDirIterator::Subdirectories);
+	while(files.hasNext()) {
+		files.next();
+		localNameMasks << files.fileName();
+		localDirMasks << files.path();
+	}
+	
+	histMaskSelect->clear();
+	histMaskSelect->addItem("none");
+	for (int i = 0; i < localNameMasks.size(); i++)
+		histMaskSelect->addItem(localNameMasks[i]);
+}
+
+void doseInterface::loadMaskEgsphant() {	
+	int i = histMaskSelect->currentIndex()-1;
+	if (i < 0) {return;} // Exit if none is selected or box is empty in setup
+	
+	if (i >= localDirMasks.size()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected mask index is larger than the local phantom count.  Aborting"));		
+		return;
+	}
+	
+	QString file = localDirMasks[i]+localNameMasks[i]; // Get file location
+	
+	// Connect the progress bar
+	parent->resetProgress("Loading mask file");
+	connect(histMask, SIGNAL(madeProgress(double)),
+			parent, SLOT(updateProgress(double)));
+		
+	if (file.endsWith(".egsphant.gz")) {
+		histMask->loadgzEGSPhantFilePlus(file);
+		file = file.left(file.size()-12).split("/").last();
+	}
+	else if (file.endsWith(".begsphant")) {
+		histMask->loadbEGSPhantFilePlus(file);
+		file = file.left(file.size()-10).split("/").last();
+	}
+	else if (file.endsWith(".egsphant")) {
+		histMask->loadEGSPhantFilePlus(file);
+		file = file.left(file.size()-9).split("/").last();
+	}
+	else {
+		QMessageBox::warning(0, "File error",
+		tr("Selected file is not of type egsphant.gz, begsphant, or egsphant.  Aborting"));
+		parent->finishedProgress();
+		return;		
+	}
+	
+	parent->finishedProgress();
 }
 
 void doseInterface::previewResetBounds() {

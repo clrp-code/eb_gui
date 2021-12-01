@@ -61,11 +61,12 @@ public:
 	
 	QRegExpValidator allowedReals;
 	QRegExpValidator allowedPosReals;
+	QRegExpValidator allowedPosRealArrs;
 	QRegExpValidator allowedNats;
+	QRegExpValidator allowedPercents;
+	QRegExpValidator allowedPercentArrs;
 	
 	// Shared objects
-	QComboBox   *optionsBox;
-				
 	QScrollArea *canvasArea;
 	QLabel      *canvas;
 	QImage      *canvasPic;
@@ -81,9 +82,17 @@ public:
 	QLineEdit   *resolutionScale;
 	
 	QVBoxLayout *previewLayout;
+	QFrame      *previewFrame;
 	QVBoxLayout *histoLayout;
+	QFrame      *histoFrame;
 	QVBoxLayout *profileLayout;
+	QFrame      *profileFrame;
 	
+	QTabWidget  *optionsTab;
+	
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+//                                Preview                              //
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 	// Preview bounds
 	QImage       *blackPic;
 	
@@ -114,6 +123,7 @@ public:
 	// Phantom selection
 	QImage       *phantPic;
 	EGSPhant	 *phant;
+	QLabel       *phantLabel;
 	
 	QFrame       *phantFrame;
 	QGridLayout  *phantLayout;
@@ -130,6 +140,7 @@ public:
 	// Map selection
 	QImage      *mapPic;
 	Dose		*mapDose;
+	QLabel      *mapLabel;
 	
 	QFrame      *mapFrame;
 	QGridLayout *mapLayout;
@@ -164,8 +175,74 @@ public:
 	QVector <QLineEdit*>   isoColourDose;
 	QVector <QPushButton*> isoColourButton;
 	
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+//                               Histogram                             //
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+	// Phantom selection
+	QLabel      *histPhantLabel;
+	EGSPhant	*histPhant;
+	QComboBox   *histPhantSelect;
+	
+	QFrame      *histPhantFrame;
+	QGridLayout *histPhantLayout;
+	
+	// Filters
+	QLabel      *histFilterLabel;
+	
+	QLabel      *histMaskLabel;
+	QComboBox   *histMaskSelect;
+	EGSPhant	*histMask;
+	
+	QStringList localNameMasks;
+	QStringList localDirMasks;
+	
+	QLabel      *histMediumLabel;
+	QListWidget *histMediumView;
+	
+	QLabel      *histPercMinLabel;
+	QLineEdit   *histPercMinEdit;
+	QLabel      *histPercMaxLabel;
+	QLineEdit   *histPercMaxEdit;
+	
+	QFrame      *histFilterFrame;
+	QGridLayout *histFilterLayout;
+	
+	// Doses
+	QLabel          *histDosesLabel;
+	QPushButton     *histLoadButton;
+	QComboBox   	*histDoseSelect;
+	QPushButton     *histDeleteButton;
+	
+	QVector <Dose*> histDoses;
+	
+	QListWidget     *histLoadedView;
+	
+	QCheckBox       *histLegendBox;
+	QCheckBox       *histDiffBox;
+				    
+	QFrame          *histDosesFrame;
+	QGridLayout     *histDosesLayout;
+	
+	// Added data
+	QLabel      *histOutputLabel;
+	
+	QLabel      *histDxLabel;
+	QLineEdit   *histDxEdit;
+	QLabel      *histVxLabel;
+	QLineEdit   *histVxEdit;
+	
+	QPushButton *histCalcButton;
+	QPushButton *histSaveButton;
+				    
+	QFrame      *histOutputFrame;
+	QGridLayout *histOutputLayout;
+	
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+//                                Profile                              //
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+	
+	
 public slots:
-
 	// GUI functions
 	// All render commands, with a live wrapper function.  All changes (outside of the render buttons)
 	// are connected to the live functions, so they only render the image when live rendering is checked
@@ -191,6 +268,9 @@ public slots:
 	void loadMapDose();
 	void loadIsoDose(int i);
 	
+	void loadFilterEgsphant();
+	void loadMaskEgsphant();
+	
 	// Histogram
     void histoRenderLive();
     void histoRender();
@@ -201,6 +281,7 @@ public slots:
 	
 	// Use this when someone navigates away from the tab to avoid crashing
 	void resetLayout();
+	void resetDoses();
 
 public:
 // LAYOUT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

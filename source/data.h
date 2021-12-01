@@ -80,6 +80,9 @@ public:
 	
 	QString def_volCor, def_volDen;
 	
+	// GUI parameters
+	int isodoseLineThickness = 2;
+	
 	// egs_brachy library data
 	QStringList libNamePhants;
 	QStringList libNameSources;
