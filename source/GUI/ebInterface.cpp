@@ -418,6 +418,18 @@ void ebInterface::runEB() {
 	// Create the egsinp file
 	ebName = fileNameEdit->text();
 	QFile egsinp(parent->data->eb_location + "/" + ebName + ".egsinp");
+	
+	if (egsinp.exists()) {
+		if (QMessageBox::Yes == QMessageBox::question(this, "Name already found",
+			tr("An egsinp file named ") + ebName + tr(" already exists.  Would you like to overwrite it?"))) {
+			// Delete file
+			egsinp.remove();
+		}
+		else { // They did not proceed
+			return;
+		}
+	}
+	
     if (!egsinp.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		QMessageBox::information(0, "egsinp file error",
         tr("Failed to create and open file:\n")

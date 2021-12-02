@@ -855,19 +855,27 @@ int Interface::populateEgsinp() {
 	if (!sourceScaleBox->currentText().compare("Air kerma strength")) {
 		double airKermaSeed = 0;
 		
-		QString fileName = egsinp->sourceGeomFile;
-			fileName = fileName.left(fileName.size()-5);
-		if (fileName.endsWith("_wrapped"))
-			fileName = fileName.left(fileName.size()-8);
-		fileName += ".sk";
-		
-		QFile skFile (fileName); // Pre-set parameter
+		QString fileName = egsinp->sourceGeomFile;		
+		QFile skFile (fileName);
 		if (skFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
 			QTextStream in (&skFile);
-			in >> airKermaSeed;
+			QString line;
+			while (!in.atEnd()) {
+				line = in.readLine();
+				if (line.contains("#") && line.contains("air kerma:")) {
+					line = line.split(":").last().trimmed();
+					break;
+				}
+			}
+			airKermaSeed = line.toDouble();
 			
-			tempScale /= (airKermaSeed*100.0);
+			if (airKermaSeed) // if it worked
+				tempScale /= (airKermaSeed*100.0);
+			else // if none was found
+				QMessageBox::warning(0, "air kerma error",
+				tr("Failed to find air kerma in source geom file, scaling dose by 1 instead."));
 			
+			// Assign half-life based on seed folder
 			double half_life = 0;	
 			if (s.contains("Cs131"))
 				half_life = 9.7; // Pre-set parameter
@@ -875,7 +883,7 @@ int Interface::populateEgsinp() {
 				half_life = 73.83; // Pre-set parameter
 			else if (s.contains("Pd103"))
 				half_life = 16.99; // Pre-set parameter
-			else {
+			else { // Assume I-125 otherwise
 				half_life = 59.49; // Pre-set parameter
 			}
 
@@ -884,6 +892,8 @@ int Interface::populateEgsinp() {
 				tempScale *= tau*(1.0-exp(-(1.0/tau)*sourceTempTimeEdit->text().toDouble()));
 			else if (!sourcePermTime->isChecked())
 				tempScale *= tau;
+			
+			skFile.close();
 		}
 		else {
 			QMessageBox::warning(0, "air kerma error",

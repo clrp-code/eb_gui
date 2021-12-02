@@ -1066,10 +1066,14 @@ int Data::parsePlan(QString* log) {
 				}
 			}
 
-			airKerma = tempS.toDouble();
-			halfLife = tempI.toDouble();
-			isotopeName = tempE.trimmed();
-			seedInfo = tempInf.trimmed();
+			if (airKerma == -1 && tempS != "")
+				airKerma = tempS.toDouble();
+			if (halfLife == -1 && tempI != "")
+				halfLife = tempI.toDouble();
+			if (isotopeName == "UNKNOWN" && tempI != "")
+				isotopeName = tempE.trimmed();
+			if (seedInfo == "UNKNOWN" && tempI != "")
+				seedInfo = tempInf.trimmed();
 
 			for (int l = 0; l < att->size(); l++) {
 				delete att->at(l);
@@ -1078,10 +1082,10 @@ int Data::parsePlan(QString* log) {
 		}
 	}
 	
-	// Check to see if all the fields were found
-	if (isotopeName == "UNKNOWN") {
-		return 201;
-	}
+	// Check to see if all the (needed) fields were found
+	//if (isotopeName == "UNKNOWN") {
+	//	return 201;
+	//}
 	*log = *log + "Isotope: " + isotopeName + "\n";
 	
 	if (airKerma == -1) {
@@ -1089,14 +1093,14 @@ int Data::parsePlan(QString* log) {
 	}
 	*log = *log + "Air kerma: " + QString::number(airKerma) + "\n";
 	
-	if (halfLife == -1) {
-		return 203;
-	}
+	//if (halfLife == -1) {
+	//	return 203;
+	//}
 	*log = *log + "Half-life: " + QString::number(halfLife) + "\n";
 	
-	if (seedInfo == "UNKNOWN") {
-		return 204;
-	}
+	//if (seedInfo == "UNKNOWN") {
+	//	return 204;
+	//}
 	*log = *log + "Seed data: " + seedInfo + "\n";
 	*log = *log + "----------------------------------------------\n";
 	
