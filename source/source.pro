@@ -3,6 +3,7 @@
 ######################################################################
 
 QT += widgets
+QT += charts
 LIBS += -lz
 TEMPLATE = app
 TARGET = ../eb_gui

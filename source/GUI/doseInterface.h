@@ -41,6 +41,7 @@
 #define DOSEINTERFACE_H
 
 #include <QtGui>
+#include <QtCharts>
 #include <iostream>
 #include "../interface.h"
 
@@ -69,6 +70,7 @@ public:
 	// Shared objects
 	QScrollArea *canvasArea;
 	QLabel      *canvas;
+	QChartView  *canvasChart;
 	QImage      *canvasPic;
 	QPushButton *saveDataButton;
 	QPushButton *saveImageButton;
@@ -268,12 +270,15 @@ public slots:
 	void loadMapDose();
 	void loadIsoDose(int i);
 	
-	void loadFilterEgsphant();
-	void loadMaskEgsphant();
-	
 	// Histogram
     void histoRenderLive();
     void histoRender();
+	
+	void loadFilterEgsphant();
+	void loadMaskEgsphant();
+	
+	void loadHistoDose();
+	void deleteHistoDose();
 	
 	// Profile
     void profileRenderLive();
@@ -286,6 +291,7 @@ public slots:
 public:
 // LAYOUT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     QGridLayout *mainLayout;
+    QGridLayout *bufferLayout; // A second layout to hold the unused canvas/chartview
 
     // Generic GUI methods
     void createLayout();
@@ -293,6 +299,7 @@ public:
 	
 public slots:
     void refresh(); // Reset all on screen values properly
+    void tabSwap(); // Reset all on screen values properly
     void previewRefresh();
     void histoRefresh();
     void profileRefresh();

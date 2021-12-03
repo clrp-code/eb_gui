@@ -75,15 +75,18 @@ doseInterface::~doseInterface() {
 	delete isoDoses[2];
 	delete isoDoses[1];
 	delete isoDoses[0];
+	delete bufferLayout;
 }
 
 // Layout Settings
 void doseInterface::createLayout() {
 	mainLayout = new QGridLayout();
+	bufferLayout = new QGridLayout();
 	
 	// Shared objects ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //				    
 	canvasArea      = new QScrollArea();
 	canvas          = new QLabel();
+	canvasChart     = new QChartView();
 	canvasPic       = new QImage();
 	saveDataButton  = new QPushButton("Save data");
 	saveImageButton = new QPushButton("Save image");
@@ -379,6 +382,7 @@ void doseInterface::createLayout() {
 					 
 	histLegendBox    = new QCheckBox("Legend");
 	histDiffBox      = new QCheckBox("Differential");
+	histLegendBox->setChecked(true);
 					 
 	histDosesFrame   = new QFrame();
 	histDosesLayout  = new QGridLayout();
@@ -428,10 +432,13 @@ void doseInterface::createLayout() {
 	// Main layout
 	mainLayout->addWidget(optionsTab     , 0, 0, 2, 1);
 	mainLayout->addWidget(canvasArea     , 0, 1, 4, 4);
+	//mainLayout->addWidget(canvasChart    , 0, 1, 4, 4);
 	mainLayout->addWidget(rendering      , 3, 0, 2, 1);
 	mainLayout->addWidget(canvasInfo     , 4, 1, 1, 1);
 	mainLayout->addWidget(saveDataButton , 4, 3, 1, 1);
 	mainLayout->addWidget(saveImageButton, 4, 4, 1, 1);
+	
+	bufferLayout->addWidget(canvasChart, 0, 1, 4, 4); // Hold it in another layout, and swap as needed
 	
 	mainLayout->setColumnStretch(0, 1);
 	mainLayout->setColumnStretch(1, 5);
@@ -551,8 +558,12 @@ void doseInterface::connectLayout() {
 	connect(histPhantSelect, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(loadFilterEgsphant()));
 	connect(histMaskSelect, SIGNAL(currentIndexChanged(int)),
-			this, SLOT(loadMaskEgsphant()));	
+			this, SLOT(loadMaskEgsphant()));
 	
+	connect(histLoadButton, SIGNAL(pressed()),
+			this, SLOT(loadHistoDose()));
+	connect(histDeleteButton, SIGNAL(pressed()),
+			this, SLOT(deleteHistoDose()));
 	
 	// Profile ~~~~~~~~~~~~~~
 }
@@ -585,7 +596,12 @@ void doseInterface::resetDoses() {
 		delete histDoses[i];
 	histDoses.clear();
 }
-	
+
+// Swap image canvas with 
+void doseInterface::tabSwap() {
+
+}
+
 // Refresh
 void doseInterface::refresh() {
 	if (renderCheckBox->isChecked()) {
@@ -597,12 +613,16 @@ void doseInterface::refresh() {
 	
 	switch(optionsTab->currentIndex()) {
 		case 0 :
+			bufferLayout->addWidget(canvasArea->takeWidget());
+			canvasArea->setWidget(canvas);
 			previewRefresh();
 			resolutionLabel->setDisabled(false);
 			resolutionScale->setDisabled(false);
 			renderCheckBox->setDisabled(false);
 			break;
 		case 1 :
+			bufferLayout->addWidget(canvasArea->takeWidget());
+			canvasArea->setWidget(canvasChart);
 			histoRefresh();
 			resolutionLabel->setDisabled(true);
 			resolutionScale->setDisabled(true);
@@ -610,6 +630,8 @@ void doseInterface::refresh() {
 			renderCheckBox->setChecked(false);
 			break;
 		case 2 :
+			bufferLayout->addWidget(canvasArea->takeWidget());
+			canvasArea->setWidget(canvasChart);
 			profileRefresh();
 			resolutionLabel->setDisabled(true);
 			resolutionScale->setDisabled(true);
@@ -1029,106 +1051,6 @@ void doseInterface::loadIsoDose(int i) {
 	previewCanvasRenderLive();
 }
 
-void doseInterface::loadFilterEgsphant() {	
-	int i = histPhantSelect->currentIndex()-1;
-	if (i < 0) {return;} // Exit if none is selected or box is empty in setup
-	
-	if (i >= parent->data->localDirPhants.size()) {
-		QMessageBox::warning(0, "Index error",
-		tr("Somehow the selected egsphant index is larger than the local phantom count.  Aborting"));		
-		return;
-	}
-	
-	QString file = parent->data->localDirPhants[i]+parent->data->localNamePhants[i]; // Get file location
-	
-	// Connect the progress bar
-	parent->resetProgress("Loading egsphant file");
-	connect(histPhant, SIGNAL(madeProgress(double)),
-			parent, SLOT(updateProgress(double)));
-		
-	if (file.endsWith(".egsphant.gz")) {
-		histPhant->loadgzEGSPhantFilePlus(file);
-		file = file.left(file.size()-12).split("/").last();
-	}
-	else if (file.endsWith(".begsphant")) {
-		histPhant->loadbEGSPhantFilePlus(file);
-		file = file.left(file.size()-10).split("/").last();
-	}
-	else if (file.endsWith(".egsphant")) {
-		histPhant->loadEGSPhantFilePlus(file);
-		file = file.left(file.size()-9).split("/").last();
-	}
-	else {
-		QMessageBox::warning(0, "File error",
-		tr("Selected file is not of type egsphant.gz, begsphant, or egsphant.  Aborting"));
-		parent->finishedProgress();
-		return;		
-	}
-	
-	parent->finishedProgress();
-	
-	// media data	
-	histMediumView->clear();
-	for (int i = 0; i < histPhant->media.size(); i++)
-		histMediumView->addItem(histPhant->media[i]);
-	
-	// local mask data	
-	localNameMasks.clear();
-	localDirMasks.clear();
-	
-	QDirIterator files (parent->data->gui_location+"/database/mask/", {QString(file)+".*.egsphant.gz"},
-						QDir::NoFilter, QDirIterator::Subdirectories);
-	while(files.hasNext()) {
-		files.next();
-		localNameMasks << files.fileName();
-		localDirMasks << files.path();
-	}
-	
-	histMaskSelect->clear();
-	histMaskSelect->addItem("none");
-	for (int i = 0; i < localNameMasks.size(); i++)
-		histMaskSelect->addItem(localNameMasks[i]);
-}
-
-void doseInterface::loadMaskEgsphant() {	
-	int i = histMaskSelect->currentIndex()-1;
-	if (i < 0) {return;} // Exit if none is selected or box is empty in setup
-	
-	if (i >= localDirMasks.size()) {
-		QMessageBox::warning(0, "Index error",
-		tr("Somehow the selected mask index is larger than the local phantom count.  Aborting"));		
-		return;
-	}
-	
-	QString file = localDirMasks[i]+localNameMasks[i]; // Get file location
-	
-	// Connect the progress bar
-	parent->resetProgress("Loading mask file");
-	connect(histMask, SIGNAL(madeProgress(double)),
-			parent, SLOT(updateProgress(double)));
-		
-	if (file.endsWith(".egsphant.gz")) {
-		histMask->loadgzEGSPhantFilePlus(file);
-		file = file.left(file.size()-12).split("/").last();
-	}
-	else if (file.endsWith(".begsphant")) {
-		histMask->loadbEGSPhantFilePlus(file);
-		file = file.left(file.size()-10).split("/").last();
-	}
-	else if (file.endsWith(".egsphant")) {
-		histMask->loadEGSPhantFilePlus(file);
-		file = file.left(file.size()-9).split("/").last();
-	}
-	else {
-		QMessageBox::warning(0, "File error",
-		tr("Selected file is not of type egsphant.gz, begsphant, or egsphant.  Aborting"));
-		parent->finishedProgress();
-		return;		
-	}
-	
-	parent->finishedProgress();
-}
-
 void doseInterface::previewResetBounds() {
 	double xMin = -10, yMin = -10, zMin = -10, xMax = 10, yMax = 10, zMax = 10;
 	
@@ -1209,9 +1131,280 @@ void doseInterface::histoRefresh() {
 
 void doseInterface::histoRenderLive() {if(renderCheckBox->isChecked()) histoRender();}
 void doseInterface::histoRender() {
+	// Return
+	if (histDoses.size() == 0) {
+		return;
+	}
+	
+	// Check what filters we have
+	int filterInfo = 0;
+	if (histMaskSelect->currentIndex())
+		filterInfo += 1;
+	
+	QList <QListWidgetItem*> selectedMedia = histMediumView->selectedItems();
+	QString allowedMedia = "", allMedia = EGSPHANT_CHARS;
+	if (selectedMedia.size()) {
+		filterInfo += 2;
+		for (int i = 0; i < selectedMedia.size(); i++)
+			allowedMedia += allMedia[histMediumView->row(selectedMedia[i])];
+	}
+	
+	// Get sorted dose arrays
+	parent->resetProgress("Creating DVH");
+			
+	QList <DV> data;
+	double volume;
+	int count = histDoses.size();
+	QVector <QLineSeries*> series;
+	QVector <QScatterSeries *> bins;
+	QChart* plot = new QChart();
+	double increment = 50.0/double(count);
+	
+	for (int i = 0; i < count; i++) {
+		connect(histDoses[i], SIGNAL(madeProgress(double)),
+				parent, SLOT(updateProgress(double)));
+				
+		parent->nameProgress("Sorting and filtering data");
+		switch (filterInfo) {
+			case 1: // Mask with no media
+				histDoses[i]->getDV(&data, histMask, &volume, count);
+				break;
+			case 2: // Media with no mask
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, &volume, count);
+				break;
+			case 3: // Media and mask
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, histMask, &volume, count);
+				break;
+			default: // #nofilter #nomakeup
+				histDoses[i]->getDV(&data, &volume, count);
+				break;
+		}
 		
+		
+		if (histDiffBox->isChecked()) {
+			parent->nameProgress("Building bins arrays");
+			bins.append(new QScatterSeries ());
+			bins.last()->setName(histLoadedView->item(i)->text());
+			
+			double sInc = data.last().dose/double(20); // Bin count, maybe make a configuration file option?
+			
+			DV boundary;
+			double prev = 0, cur = 0;
+			for (int i = 0; i < 20-1; i++) {
+				boundary.dose = sInc*i;
+				cur = histDoses[i]->binarySearch(boundary,&data,0,data.size());
+				bins.last()->append(sInc*(0.5+i), cur-prev);
+				prev = cur;
+			}
+			bins.last()->append(sInc*(20-0.5), data.size()-cur);
+			
+			plot->addSeries(bins.last());
+		}
+		else {
+			parent->nameProgress("Building plot line arrays");
+			series.append(new QLineSeries());
+			series.last()->setName(histLoadedView->item(i)->text());
+			
+			int sInc = 1;
+			
+			// Only grab up to 200 points
+			if (data.size() > 200) {
+				sInc = data.size()/200.0;
+			}
+			
+			double cumVolume = 0; // Cumulative volume, obviously
+			double subIncrement = increment/double(data.size()>200?200:data.size());
+			for (int i = 0; i < data.size(); i++) {
+				cumVolume += data[i].vol;
+				if (!(i%sInc)) {// Only add up to 200 points
+					series.last()->append(data[i].dose, (1.0-cumVolume/volume)*100.0);
+					parent->updateProgress(subIncrement);
+				}
+			}
+			
+			plot->addSeries(series.last());
+		}
+	}
+	
+	plot->setTitle("Dose Volume Histogram");
+	plot->createDefaultAxes();
+	plot->axes()[0]->setTitleText("dose / Gy");
+	plot->axes()[1]->setTitleText("% of total volume");
+	
+	if (!histLegendBox->isChecked()) // Hide legend if it's unwanted
+		plot->legend()->hide();
+	
+	canvasChart->setChart(plot);
+	canvasChart->resize(800,600);
+    canvasArea->repaint();
+	parent->finishedProgress();
+}
+
+void doseInterface::loadFilterEgsphant() {
+	localNameMasks.clear();
+	localDirMasks.clear();
+	histMediumView->clear();
+	histMaskSelect->clear();
+	histMaskSelect->addItem("none");
+	
+	int i = histPhantSelect->currentIndex()-1;
+	if (i < 0) {return;} // Exit if none is selected or box is empty in setup
+	
+	if (i >= parent->data->localDirPhants.size()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected egsphant index is larger than the local phantom count.  Aborting"));		
+		return;
+	}
+	
+	QString file = parent->data->localDirPhants[i]+parent->data->localNamePhants[i]; // Get file location
+	
+	// Connect the progress bar
+	parent->resetProgress("Loading egsphant file");
+	connect(histPhant, SIGNAL(madeProgress(double)),
+			parent, SLOT(updateProgress(double)));
+		
+	if (file.endsWith(".egsphant.gz")) {
+		histPhant->loadgzEGSPhantFilePlus(file);
+		file = file.left(file.size()-12).split("/").last();
+	}
+	else if (file.endsWith(".begsphant")) {
+		histPhant->loadbEGSPhantFilePlus(file);
+		file = file.left(file.size()-10).split("/").last();
+	}
+	else if (file.endsWith(".egsphant")) {
+		histPhant->loadEGSPhantFilePlus(file);
+		file = file.left(file.size()-9).split("/").last();
+	}
+	else {
+		QMessageBox::warning(0, "File error",
+		tr("Selected file is not of type egsphant.gz, begsphant, or egsphant.  Aborting"));
+		parent->finishedProgress();
+		return;		
+	}
+	
+	// media data	
+	histMediumView->clear();
+	for (int i = 0; i < histPhant->media.size(); i++)
+		histMediumView->addItem(histPhant->media[i]);
+	
+	// local mask data	
+	localNameMasks.clear();
+	localDirMasks.clear();
+	
+	QDirIterator files (parent->data->gui_location+"/database/mask/", {QString(file)+".*.egsphant.gz"},
+						QDir::NoFilter, QDirIterator::Subdirectories);
+	while(files.hasNext()) {
+		files.next();
+		localNameMasks << files.fileName();
+		localDirMasks << files.path();
+	}
+	
+	histMaskSelect->clear();
+	histMaskSelect->addItem("none");
+	for (int i = 0; i < localNameMasks.size(); i++)
+		histMaskSelect->addItem(localNameMasks[i]);
+	
+	parent->finishedProgress();
+}
+
+void doseInterface::loadMaskEgsphant() {
+	int i = histMaskSelect->currentIndex()-1;
+	if (i < 0) {return;} // Exit if none is selected or box is empty in setup
+	
+	if (i >= localDirMasks.size()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected mask index is larger than the local phantom count.  Aborting"));		
+		return;
+	}
+	
+	QString file = localDirMasks[i]+localNameMasks[i]; // Get file location
+	
+	// Connect the progress bar
+	parent->resetProgress("Loading mask file");
+	connect(histMask, SIGNAL(madeProgress(double)),
+			parent, SLOT(updateProgress(double)));
+		
+	if (file.endsWith(".egsphant.gz")) {
+		histMask->loadgzEGSPhantFilePlus(file);
+		file = file.left(file.size()-12).split("/").last();
+	}
+	else if (file.endsWith(".begsphant")) {
+		histMask->loadbEGSPhantFilePlus(file);
+		file = file.left(file.size()-10).split("/").last();
+	}
+	else if (file.endsWith(".egsphant")) {
+		histMask->loadEGSPhantFilePlus(file);
+		file = file.left(file.size()-9).split("/").last();
+	}
+	else {
+		QMessageBox::warning(0, "File error",
+		tr("Selected file is not of type egsphant.gz, begsphant, or egsphant.  Aborting"));
+		parent->finishedProgress();
+		return;		
+	}
+	
+	parent->finishedProgress();
 }
 	
+void doseInterface::loadHistoDose() {
+	int i = histDoseSelect->currentIndex();	
+	
+	if (i >= histDoseSelect->count()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected dose index is larger than the local dose count.  Aborting"));		
+		return;
+	}
+	
+	QString file = parent->data->localDirDoses[i]+parent->data->localNameDoses[i]; // Get file location
+	histDoses.append(new Dose());
+	
+	// Connect the progress bar
+	parent->resetProgress("Loading dose file");
+	connect(histDoses.last(), SIGNAL(madeProgress(double)),
+			parent, SLOT(updateProgress(double)));
+		
+	if (file.endsWith(".b3ddose")) {
+		histDoses.last()->readBIn(file, 1);
+		file = file.left(file.size()-10).split("/").last();
+	}
+	else if (file.endsWith(".3ddose")) {
+		histDoses.last()->readIn(file, 1);
+		file = file.left(file.size()-9).split("/").last();
+	}
+	else {
+		QMessageBox::warning(0, "File error",
+		tr("Selected file is not of type b3ddose or 3ddose.  Aborting"));
+		parent->finishedProgress();
+		delete histDoses.last();
+		histDoses.removeLast();
+		
+		return;		
+	}
+	
+	parent->finishedProgress();
+	
+	// Add listing to loaded dose view
+	if (file.endsWith(".b3ddose"))
+		histLoadedView->addItem(parent->data->localNameDoses[i].left(parent->data->localNameDoses[i].size()-8));
+	else if (file.endsWith(".3ddose"))
+		histLoadedView->addItem(parent->data->localNameDoses[i].left(parent->data->localNameDoses[i].size()-7));
+	else
+		histLoadedView->addItem(parent->data->localNameDoses[i]);
+}
+
+void doseInterface::deleteHistoDose() {
+	if (histLoadedView->selectedItems().size() != 1) {
+		QMessageBox::warning(0, "Deletion error",
+		tr("No doses selected.  Please select one to delete."));
+		return;
+	}
+	
+	int i = histLoadedView->currentRow();
+	delete histDoses[i];
+	histDoses.remove(i);
+	delete histLoadedView->currentItem();
+}
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 //                                Profile                              //
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
