@@ -168,6 +168,9 @@ int Data::loadDefaults() {
 	delete files;
 	
 	// local GUI data
+	if (!QDir(gui_location+"/database/mask/").exists())
+		QDir().mkdir(gui_location+"/database/mask/");
+	
 	if (!QDir(gui_location+"/database/egsphant/").exists())
 		QDir().mkdir(gui_location+"/database/egsphant/");
 	
