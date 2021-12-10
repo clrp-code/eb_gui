@@ -120,6 +120,9 @@ void EGSPhant::savegzEGSPhantFile(QString path) {
 		for (int i=0; i < media.size(); i++)
 			(*out) << " 0.5";
 		(*out) << "\n";
+		
+		// dimensions
+		(*out) << nx << " " << ny << " " << nz << "\n";
 
 		// Boundaries
 		for (int i=0; i < nx; i++)
@@ -134,11 +137,17 @@ void EGSPhant::savegzEGSPhantFile(QString path) {
 			(*out) << z[i] << " ";
 		(*out) << z.last() << "\n";
 		
+		double increment = 45./double(nz); // 45%
+		
 		// Media
-        for (int k = 0; k < nz; k++)
+        for (int k = 0; k < nz; k++) {
             for (int j = 0; j < ny; j++)
                 for (int i = 0; i < nx; i++)
                     (*out) << m[i][j][k];
+			emit madeProgress(increment);
+		}
+		
+		(*out) << "\n";
 		
         ogout.close();
 	}
@@ -555,13 +564,13 @@ void EGSPhant::loadgzEGSPhantFile(QString path) {
 				
 		/* now we've got all geometry information so construct our geom */
 		// read in region media and set them in the geometry
-		increment = 100.0/double(nz); // 30%
+		increment = 100.0/double(nz); // 100%
 		char cur_med;
         for (int k = 0; k < nz; k++) {
             for (int j = 0; j < ny; j++)
                 for (int i = 0; i < nx; i++) {
 					*data >> cur_med;
-                    m[i][j][k] = cur_med;
+					m[i][j][k] = cur_med;
                 }
             emit madeProgress(increment); // Update progress bar
         }

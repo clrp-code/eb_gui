@@ -1011,7 +1011,7 @@ void Dose::getDV(QList <DV> *data, EGSPhant* mask, double* volume, int n) {
 			yLen = (cy[j+1]-cy[j]);
             for (int i = 0; i < x; i++) {
 				xVal = (cx[i]+cx[i+1])/2.0;
-				if (mask->getMedia(xVal, yVal, zVal) == 'a') {
+				if (mask->getMedia(xVal, yVal, zVal) == 50) {
 					xLen = (cx[i+1]-cx[i]);
 					vol = xLen*yLen*zLen;
 					(*volume) += vol;
@@ -1040,7 +1040,7 @@ void Dose::getDV(QList <DV> *data, EGSPhant* media, QString allowedChars, EGSPha
             for (int i = 0; i < x; i++) {
 				xVal = (cx[i]+cx[i+1])/2.0;
 				if (allowedChars.contains(media->getMedia(xVal, yVal, zVal)) &&
-					mask->getMedia(xVal, yVal, zVal) == 'a') {
+					mask->getMedia(xVal, yVal, zVal) == 50) {
 					xLen = (cx[i+1]-cx[i]);
 					vol = xLen*yLen*zLen;
 					(*volume) += vol;

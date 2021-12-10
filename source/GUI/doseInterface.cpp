@@ -1159,6 +1159,7 @@ void doseInterface::histoRender() {
 	QVector <QScatterSeries *> bins;
 	QChart* plot = new QChart();
 	double increment = 50.0/double(count);
+	double minPercentage = histPercMinEdit->text().toInt(), maxPercentage = histPercMaxEdit->text().toInt();
 	
 	for (int i = 0; i < count; i++) {
 		connect(histDoses[i], SIGNAL(madeProgress(double)),
@@ -1180,23 +1181,29 @@ void doseInterface::histoRender() {
 				break;
 		}
 		
-		
+		std::cout << "We are setting up the data\n"; std::cout.flush();
 		if (histDiffBox->isChecked()) {
 			parent->nameProgress("Building bins arrays");
 			bins.append(new QScatterSeries ());
 			bins.last()->setName(histLoadedView->item(i)->text());
 			
-			double sInc = data.last().dose/double(20); // Bin count, maybe make a configuration file option?
+			// Get start and stop limits
+			int start = data.size()*(minPercentage/100.0), stop = data.size()*(1-maxPercentage/100.0);
+			
+			// Bin count, maybe make a configuration file option?
+			double sInc = (data[stop].dose-data[start].dose)/double(20);
 			
 			DV boundary;
-			double prev = 0, cur = 0;
-			for (int i = 0; i < 20-1; i++) {
+			double prev = start, cur = start;
+			std::cout << "We starting binning process\n"; std::cout.flush();
+			for (int i = 1; i < 20; i++) {
 				boundary.dose = sInc*i;
-				cur = histDoses[i]->binarySearch(boundary,&data,0,data.size());
-				bins.last()->append(sInc*(0.5+i), cur-prev);
+				cur = histDoses[i]->binarySearch(boundary,&data,prev,stop);
+				std::cout << "We are adding bin " << i << "\n"; std::cout.flush();
+				bins.last()->append(sInc*(i-0.5), cur-prev);
 				prev = cur;
 			}
-			bins.last()->append(sInc*(20-0.5), data.size()-cur);
+			bins.last()->append(sInc*(20-0.5), stop-cur);
 			
 			plot->addSeries(bins.last());
 		}
@@ -1205,19 +1212,20 @@ void doseInterface::histoRender() {
 			series.append(new QLineSeries());
 			series.last()->setName(histLoadedView->item(i)->text());
 			
+			// Get start and stop limits
+			int start = data.size()*minPercentage/100.0, stop = data.size()*(100.0-maxPercentage)/100.0;
+			
 			int sInc = 1;
 			
 			// Only grab up to 200 points
-			if (data.size() > 200) {
-				sInc = data.size()/200.0;
+			if ((stop-start) > 200) {
+				sInc = (stop-start)/200.0;
 			}
 			
-			double cumVolume = 0; // Cumulative volume, obviously
 			double subIncrement = increment/double(data.size()>200?200:data.size());
-			for (int i = 0; i < data.size(); i++) {
-				cumVolume += data[i].vol;
-				if (!(i%sInc)) {// Only add up to 200 points
-					series.last()->append(data[i].dose, (1.0-cumVolume/volume)*100.0);
+			for (int i = start; i < stop; i++) {
+				if (!(i%sInc)) {// Only add up to 399 points (start skipping at 400+)
+					series.last()->append(data[i].dose, 100.0*double(stop-i)/double(stop-start));
 					parent->updateProgress(subIncrement);
 				}
 			}
@@ -1225,11 +1233,20 @@ void doseInterface::histoRender() {
 			plot->addSeries(series.last());
 		}
 	}
+	std::cout << "We have added every series\n"; std::cout.flush();
 	
-	plot->setTitle("Dose Volume Histogram");
-	plot->createDefaultAxes();
-	plot->axes()[0]->setTitleText("dose / Gy");
-	plot->axes()[1]->setTitleText("% of total volume");
+	if (histDiffBox->isChecked()) {
+		plot->setTitle("Dose Differential Histogram");
+		plot->createDefaultAxes();
+		plot->axes()[0]->setTitleText("dose / Gy");
+		plot->axes()[1]->setTitleText("voxel count");
+	}
+	else {
+		plot->setTitle("Dose Volume Histogram");
+		plot->createDefaultAxes();
+		plot->axes()[0]->setTitleText("dose / Gy");
+		plot->axes()[1]->setTitleText("% of total volume");
+	}
 	
 	if (!histLegendBox->isChecked()) // Hide legend if it's unwanted
 		plot->legend()->hide();
