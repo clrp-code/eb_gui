@@ -947,7 +947,7 @@ QImage Dose::getColourMap(QString axis, double ai, double af, double bi, double 
 
 void Dose::getDV(QList <DV> *data, double* volume, int n) {
 	DV datum;
-    double increment = 50.0/double(n)/z;
+    double increment = 95.0/double(n)/double(z);
 	double xLen, yLen, zLen;
 	double vol = (*volume) = 0;
 	data->clear();
@@ -969,7 +969,7 @@ void Dose::getDV(QList <DV> *data, double* volume, int n) {
 
 void Dose::getDV(QList <DV> *data, EGSPhant* media, QString allowedChars, double* volume, int n) {
 	DV datum;
-    double increment = 50.0/double(n)/z;
+    double increment = 95.0/double(n)/double(z);
 	double xVal, yVal, zVal;
 	double xLen, yLen, zLen;
 	double vol = (*volume) = 0;
@@ -997,7 +997,7 @@ void Dose::getDV(QList <DV> *data, EGSPhant* media, QString allowedChars, double
 
 void Dose::getDV(QList <DV> *data, EGSPhant* mask, double* volume, int n) {
 	DV datum;
-    double increment = 50.0/double(n)/z;
+    double increment = 95.0/double(n)/double(z);
 	double xVal, yVal, zVal;
 	double xLen, yLen, zLen;
 	double vol = (*volume) = 0;
@@ -1025,7 +1025,7 @@ void Dose::getDV(QList <DV> *data, EGSPhant* mask, double* volume, int n) {
 
 void Dose::getDV(QList <DV> *data, EGSPhant* media, QString allowedChars, EGSPhant* mask, double* volume, int n) {
 	DV datum;
-    double increment = 50.0/double(n)/z;
+    double increment = 95.0/double(n)/double(z);
 	double xVal, yVal, zVal;
 	double xLen, yLen, zLen;
 	double vol = (*volume) = 0;

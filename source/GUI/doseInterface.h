@@ -201,10 +201,10 @@ public:
 	QLabel      *histMediumLabel;
 	QListWidget *histMediumView;
 	
-	QLabel      *histPercMinLabel;
-	QLineEdit   *histPercMinEdit;
-	QLabel      *histPercMaxLabel;
-	QLineEdit   *histPercMaxEdit;
+	QLabel      *histDoseMinLabel;
+	QLineEdit   *histDoseMinEdit;
+	QLabel      *histDoseMaxLabel;
+	QLineEdit   *histDoseMaxEdit;
 	
 	QFrame      *histFilterFrame;
 	QGridLayout *histFilterLayout;

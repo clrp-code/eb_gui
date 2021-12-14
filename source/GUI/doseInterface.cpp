@@ -347,12 +347,12 @@ void doseInterface::createLayout() {
 	histMediumView   = new QListWidget();
 	histMediumView->setSelectionMode(QAbstractItemView::MultiSelection);
 	
-	histPercMinLabel = new QLabel("Ignore lower x%");
-	histPercMinEdit  = new QLineEdit("0");
-	histPercMinEdit->setValidator(&allowedPercents);
-	histPercMaxLabel = new QLabel("Ignore upper x%");
-	histPercMaxEdit  = new QLineEdit("0");
-	histPercMaxEdit->setValidator(&allowedPercents);
+	histDoseMinLabel = new QLabel("Min Dose (Gy)");
+	histDoseMinEdit  = new QLineEdit("0");
+	histDoseMinEdit->setValidator(&allowedPosReals);
+	histDoseMaxLabel = new QLabel("Max Dose (Gy)");
+	histDoseMaxEdit  = new QLineEdit("0");
+	histDoseMaxEdit->setValidator(&allowedPosReals);
 	
 	histFilterFrame  = new QFrame();
 	histFilterLayout = new QGridLayout();
@@ -363,10 +363,10 @@ void doseInterface::createLayout() {
 	histFilterLayout->addWidget(histMediumLabel , 2, 0, 1, 6);
 	histFilterLayout->addWidget(histMediumView  , 3, 0, 1, 6);
 	
-	histFilterLayout->addWidget(histPercMinLabel, 4, 0, 1, 3);
-	histFilterLayout->addWidget(histPercMinEdit , 4, 3, 1, 3);
-	histFilterLayout->addWidget(histPercMaxLabel, 5, 0, 1, 3);
-	histFilterLayout->addWidget(histPercMaxEdit , 5, 3, 1, 3);
+	histFilterLayout->addWidget(histDoseMinLabel, 4, 0, 1, 3);
+	histFilterLayout->addWidget(histDoseMinEdit , 4, 3, 1, 3);
+	histFilterLayout->addWidget(histDoseMaxLabel, 5, 0, 1, 3);
+	histFilterLayout->addWidget(histDoseMaxEdit , 5, 3, 1, 3);
 	
 	histFilterFrame->setLayout(histFilterLayout);
 	histFilterFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
@@ -1159,13 +1159,10 @@ void doseInterface::histoRender() {
 	//QVector <QBarSeries *> bins;
 	//QStringList barLabels;
 	QChart* plot = new QChart();
-	double increment = 50.0/double(count);
-	double minPercentage = histPercMinEdit->text().toInt(), maxPercentage = histPercMaxEdit->text().toInt();
+	double increment = 5.0/double(count); // 5% for making plot data, 95% defined implicitly in getDV
+	double minDose = histDoseMinEdit->text().toDouble(), maxDose = histDoseMaxEdit->text().toDouble();
 	
-	for (int i = 0; i < count; i++) {
-		connect(histDoses[i], SIGNAL(madeProgress(double)),
-				parent, SLOT(updateProgress(double)));
-				
+	for (int i = 0; i < count; i++) {				
 		parent->nameProgress("Sorting and filtering data");
 		switch (filterInfo) {
 			case 1: // Mask with no media
@@ -1182,30 +1179,44 @@ void doseInterface::histoRender() {
 				break;
 		}
 		
+		// Get start and stop limits
+		DV boundary; // Dummy variable for searching sorted data array
+		boundary.dose = minDose;
+		int start = histDoses[i]->binarySearch(boundary,&data,0,data.size());
+		int stop = data.size();
+		
+		if (minDose < maxDose) {
+			boundary.dose = maxDose;
+			stop = histDoses[i]->binarySearch(boundary,&data,0,stop);
+		}
+		
+		if (stop == data.size())
+			stop--;
+		
+		// Generate series data
 		if (histDiffBox->isChecked()) {
 			parent->nameProgress("Building bins arrays");
 			series.append(new QLineSeries());
 			series.last()->setName(histLoadedView->item(i)->text());
 			int binCount = parent->data->histogramBinCount;
 			
-			// Get start and stop limits
-			int start = double(data.size())*(minPercentage/100.0), stop = double(data.size())*(1.0-maxPercentage/100.0);
-			if (stop == data.size()) stop--;
-		
 			// Bin count, maybe make a configuration file option?
 			double sInc = (data[stop].dose-data[start].dose)/double(binCount);
+			double s0 = data[start].dose;
 			
-			DV boundary;
 			int prev = start, cur = start;
 			series.last()->append(data[prev].dose, 0);
+			
+			double subIncrement = increment/double(binCount);
 			for (int i = 1; i <= binCount; i++) {
-				boundary.dose = sInc*i;
+				boundary.dose = s0+sInc*i;
 				cur = histDoses[i]->binarySearch(boundary,&data,prev,stop);
 				series.last()->append(data[prev].dose, cur-prev);
 				series.last()->append(data[cur].dose, cur-prev);
 				prev = cur;
+				parent->updateProgress(subIncrement);
 			}
-			series.last()->append(data[stop].dose, stop-cur);
+			series.last()->append(data[cur].dose, 0);
 			
 			plot->addSeries(series.last());
 		}
@@ -1213,11 +1224,7 @@ void doseInterface::histoRender() {
 			parent->nameProgress("Building plot line arrays");
 			series.append(new QLineSeries());
 			series.last()->setName(histLoadedView->item(i)->text());
-			
-			// Get start and stop limits
-			int start = data.size()*minPercentage/100.0, stop = data.size()*(100.0-maxPercentage)/100.0;
-			if (stop == data.size()) stop--;
-			
+						
 			int sInc = 1;
 			
 			// Only grab up to 200 points
@@ -1225,28 +1232,36 @@ void doseInterface::histoRender() {
 				sInc = (stop-start)/200.0;
 			}
 			
-			double subIncrement = increment/double(data.size()>200?200:data.size());
-			for (int i = start; i < stop; i++) {
+			double subIncrement = increment/double(stop-start);
+			
+			if (!(start%sInc)) // Add start point if it would be skipped
+				series.last()->append(data[start].dose, 100.0);
+				
+			for (int i = start; i <= stop; i++) {
 				if (!(i%sInc)) {// Only add up to 399 points (start skipping at 400+)
 					series.last()->append(data[i].dose, 100.0*double(stop-i)/double(stop-start));
-					parent->updateProgress(subIncrement);
 				}
+				parent->updateProgress(subIncrement);
 			}
+			
+			if (!(stop%sInc)) // Add end point if it would be skipped
+				series.last()->append(data[stop].dose, 0);
 			
 			plot->addSeries(series.last());
 		}
 	}
 	
+	// Fill out plot parameters
+	plot->createDefaultAxes();
+	plot->axes()[0]->setTitleText("dose / Gy");
+	plot->axes()[0]->setRange(minDose,minDose<maxDose?maxDose:data.last().dose);
+	
 	if (histDiffBox->isChecked()) {
 		plot->setTitle("Dose Differential Histogram");
-		plot->createDefaultAxes();
-		plot->axes()[0]->setTitleText("dose / Gy");
 		plot->axes()[1]->setTitleText("voxel count");
 	}
 	else {
 		plot->setTitle("Dose Volume Histogram");
-		plot->createDefaultAxes();
-		plot->axes()[0]->setTitleText("dose / Gy");
 		plot->axes()[1]->setTitleText("% of total volume");
 		plot->axes()[1]->setRange(0,100);
 	}
