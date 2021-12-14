@@ -1186,18 +1186,19 @@ void doseInterface::histoRender() {
 			parent->nameProgress("Building bins arrays");
 			series.append(new QLineSeries());
 			series.last()->setName(histLoadedView->item(i)->text());
+			int binCount = parent->data->histogramBinCount;
 			
 			// Get start and stop limits
 			int start = double(data.size())*(minPercentage/100.0), stop = double(data.size())*(1.0-maxPercentage/100.0);
 			if (stop == data.size()) stop--;
 		
 			// Bin count, maybe make a configuration file option?
-			double sInc = (data[stop].dose-data[start].dose)/double(20);
+			double sInc = (data[stop].dose-data[start].dose)/double(binCount);
 			
 			DV boundary;
 			int prev = start, cur = start;
 			series.last()->append(data[prev].dose, 0);
-			for (int i = 1; i <= 20; i++) {
+			for (int i = 1; i <= binCount; i++) {
 				boundary.dose = sInc*i;
 				cur = histDoses[i]->binarySearch(boundary,&data,prev,stop);
 				series.last()->append(data[prev].dose, cur-prev);

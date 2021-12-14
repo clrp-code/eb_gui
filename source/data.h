@@ -82,6 +82,7 @@ public:
 	
 	// GUI parameters
 	int isodoseLineThickness = 2;
+	int histogramBinCount = 20;
 	
 	// egs_brachy library data
 	QStringList libNamePhants;

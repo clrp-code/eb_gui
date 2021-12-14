@@ -21,3 +21,4 @@ volume correction density = 1e8
 tissue assignment schemes = Muscle_fat_patient Male_tissue_patient Female_tissue_patient Air Water Breast Prostate
 
 isodose line thickness = 2
+histogram bin count = 20
