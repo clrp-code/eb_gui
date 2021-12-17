@@ -5,7 +5,7 @@ checkpoints in series = 1
 checkpoints in parallel = 1
 geometry error limit = 250
 
-minimum electron energy = 0.512
+minimum electron energy = 2.010
 maximum electron energy = 2.011
 minimum photon energy = 0.001
 maximum photon energy = 1.500
