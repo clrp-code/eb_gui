@@ -762,7 +762,7 @@ int Interface::populateEgsinp() {
 	s = sourceListView->currentItem()->text();
 	i = data->libNameSources.indexOf(s);
 	egsinp->sourceGeomFile = data->libDirSources[i] + data->libNameSources[i] + ".geom"; // GUI parameter
-	egsinp->discoverPoints = "1000000"; // Pre-set parameter
+	egsinp->discoverPoints = data->def_seedDisc; // Pre-set parameter
 	
 	// Add additional geometries
 	egsinp->additional_geomNames.clear(); // GUI parameter

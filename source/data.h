@@ -78,7 +78,7 @@ public:
 	QString def_AP;
 	QString def_UP;
 	
-	QString def_volCor, def_volDen;
+	QString def_volCor, def_volDen, def_seedDisc;
 	
 	// GUI parameters
 	int isodoseLineThickness = 2;

@@ -15,6 +15,8 @@ muen location = $EGS_HOMEegs_brachy/lib/muen/brachy_xcom_1.5MeV_egsphant.muendat
 
 HU to egsphant conversion table = /database/HU_conversion/default_CT_calib.hu2rho
 
+seed discovery density = 1e8
+
 volume correction mode = correct
 volume correction density = 1e8
 

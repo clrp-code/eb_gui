@@ -104,8 +104,10 @@ int Data::loadDefaults() {
 				TAS_names = text.right(text.length()-27).trimmed().split(" ", QString::SkipEmptyParts);
 			else if (text.left(24).compare("isodose line thickness =") == 0)
 				isodoseLineThickness = text.right(text.length()-24).trimmed().toInt();
-			else if (text.left(24).compare("histogram bin count =") == 0)
+			else if (text.left(22).compare("histogram bin count =") == 0)
 				histogramBinCount = text.right(text.length()-22).trimmed().toInt();
+			else if (text.left(24).compare("seed discovery density =") == 0)
+				def_seedDisc = text.right(text.length()-24).trimmed();
 	    }
 
         delete input;
