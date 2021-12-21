@@ -1098,8 +1098,11 @@ int Data::parsePlan(QString* log) {
 	if (airKerma == -1) {
 		return 202;
 	}
-	*log = *log + "Air kerma: " + QString::number(airKerma) + "\n";
+	*log = *log + "Air kerma rate (uGy/h): " + QString::number(airKerma) + "\n";
 	
+	airKerma *= 100*100*0.000001; // Convert to rate: convert uGy to Gy and multiply by d^2 (100 cm)
+	
+	*log = *log + "Air kerma strength (Gy*cm^2/h): " + QString::number(airKerma) + "\n";
 	//if (halfLife == -1) {
 	//	return 203;
 	//}

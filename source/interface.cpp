@@ -869,14 +869,15 @@ int Interface::populateEgsinp() {
 			}
 			airKermaSeed = line.toDouble();
 			
-			if (airKermaSeed) // if it worked
-				tempScale /= (airKermaSeed*100.0);
+			if (airKermaSeed) { // if it worked
+				tempScale /= airKermaSeed; // tempScale will now have the ratio of experiment/MC
+			}
 			else // if none was found
 				QMessageBox::warning(0, "air kerma error",
 				tr("Failed to find air kerma in source geom file, scaling dose by 1 instead."));
 			
 			// Assign half-life based on seed folder
-			double half_life = 0;	
+			double half_life = 0;
 			if (s.contains("Cs131"))
 				half_life = 9.7; // Pre-set parameter
 			else if (s.contains("Ir192"))
@@ -887,7 +888,7 @@ int Interface::populateEgsinp() {
 				half_life = 59.49; // Pre-set parameter
 			}
 
-			double tau = (half_life/log(2))*24; // mean lifetime in hours (as air kerma is measured in hours), (half-life is in days)
+			double tau = (half_life/log(2))*24; // go from half-life in days to mean lifetime in hours
 			if (!sourcePermTime->isChecked())
 				tempScale *= tau*(1.0-exp(-(1.0/tau)*sourceTempTimeEdit->text().toDouble()));
 			else if (!sourcePermTime->isChecked())
@@ -897,7 +898,7 @@ int Interface::populateEgsinp() {
 		}
 		else {
 			QMessageBox::warning(0, "air kerma error",
-			tr("Failed to open air kerma file for source, scaling dose by 1 instead."));
+			tr("Failed to open geom file for source, scaling dose by 1 instead."));
 			tempScale = 1;
 		}
 		skFile.close();

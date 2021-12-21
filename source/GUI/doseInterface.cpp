@@ -467,6 +467,11 @@ void doseInterface::connectLayout() {
 	connect(resolutionScale, SIGNAL(textEdited(QString)),
 			this, SLOT(previewCanvasRenderLive()));
 	
+	connect(saveImageButton, SIGNAL(pressed()),
+			this, SLOT(saveImage()));
+	connect(saveDataButton, SIGNAL(pressed()),
+			this, SLOT(saveData()));
+			
 	// Dimensions
 	connect(xAxisButton, SIGNAL(toggled(bool)),
 			this, SLOT(previewChangeAxis()));
@@ -619,6 +624,8 @@ void doseInterface::refresh() {
 			resolutionLabel->setDisabled(false);
 			resolutionScale->setDisabled(false);
 			renderCheckBox->setDisabled(false);
+			saveDataButton->setDisabled(true);
+			saveImageButton->setDisabled(false);
 			break;
 		case 1 :
 			bufferLayout->addWidget(canvasArea->takeWidget());
@@ -628,6 +635,8 @@ void doseInterface::refresh() {
 			resolutionScale->setDisabled(true);
 			renderCheckBox->setDisabled(true);
 			renderCheckBox->setChecked(false);
+			saveDataButton->setDisabled(false);
+			saveImageButton->setDisabled(true);
 			break;
 		case 2 :
 			bufferLayout->addWidget(canvasArea->takeWidget());
@@ -637,6 +646,8 @@ void doseInterface::refresh() {
 			resolutionScale->setDisabled(true);
 			renderCheckBox->setDisabled(true);
 			renderCheckBox->setChecked(false);
+			saveDataButton->setDisabled(false);
+			saveImageButton->setDisabled(true);
 			break;
 		default :
 			// change nothing
@@ -660,6 +671,69 @@ void doseInterface::render() {
 			// change nothing
 			break;
 	}
+}
+
+
+// Preview save functions
+void doseInterface::saveImage() {
+	QString filePath = QFileDialog::getSaveFileName(this, tr("Save File"), ".", tr("Images (*.png)"));
+	
+	if (filePath.length() < 1) // No name selected
+		return;
+	
+	if (!filePath.endsWith(".png")) // Doesn't have the right extension
+		filePath += ".png";
+	
+	canvasPic->save(filePath); // Should know it's png based on fileName suffix
+}
+
+void doseInterface::saveData() {
+	QString filePath = QFileDialog::getSaveFileName(this, tr("Save File"), ".", tr("Plot Data (*.csv)"));
+	
+	if (filePath.length() < 1) // No name selected
+		return;
+	
+	if (!filePath.endsWith(".csv")) // Doesn't have the right extension
+		filePath += ".csv";
+		
+	QFile dataFile(filePath);
+	
+	if (!dataFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		QMessageBox::warning(0, "Data file error",
+		tr("Failed to open the file for data output.  Aborting"));	
+		return;
+	}
+	
+	QTextStream out(&dataFile);
+	
+	// Output data set names
+	for (int i = 0; i < savePlotName.size(); i++)
+		out << savePlotName[i] << ",,";
+	out << "\n";
+	
+	
+	// Output axes labels for each set of names
+	for (int i = 0; i < savePlotName.size(); i++)
+		out << savePlotX << "," << savePlotY << ",";
+	out << "\n";
+	
+	int index = 0, doneOutput = 0;
+	
+	do {
+		doneOutput = 0;
+		for (int i = 0; i < savePlotData.size(); i++) {
+			if (savePlotData[i].size() > index) // Only output plots who still have data
+				out << savePlotData[i][index].x() << "," << savePlotData[i][index].y() << ",";
+			else { // Else output blanks and count the series as done
+				out << ",,";
+				doneOutput++;
+			}
+		}
+		out << "\n";
+		index++;
+	} while (doneOutput < savePlotData.size()); // Break when we don't output anything
+	
+	dataFile.close();
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
@@ -884,9 +958,9 @@ void doseInterface::previewIsoRender() {
 	
 	if (isoDoseBox[0]->currentIndex())
 		isoDoses[0]->getContour(&solid,  doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
-	if (isoDoseBox[1]->currentIndex())                                       
+	if (isoDoseBox[1]->currentIndex())
 		isoDoses[1]->getContour(&dashed, doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
-	if (isoDoseBox[2]->currentIndex())                                       
+	if (isoDoseBox[2]->currentIndex())
 		isoDoses[2]->getContour(&dotted, doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
 	
 	previewRenderLive();
@@ -1053,36 +1127,76 @@ void doseInterface::loadIsoDose(int i) {
 
 void doseInterface::previewResetBounds() {
 	double xMin = -10, yMin = -10, zMin = -10, xMax = 10, yMax = 10, zMax = 10;
+	bool isReset = false;
 	
 	if (0 < phantSelect->currentIndex()) {
-		xMin = xMin>phant->x[0]?phant->x[0]:xMin;
-		yMin = yMin>phant->y[0]?phant->y[0]:yMin;
-		zMin = zMin>phant->z[0]?phant->z[0]:zMin;
-		
-		xMax = xMax<phant->x.last()?phant->x.last():xMax;
-		yMax = yMax<phant->y.last()?phant->y.last():yMax;
-		zMax = zMax<phant->z.last()?phant->z.last():zMax;
+		if (!isReset) {
+			xMin = phant->x[0];
+			yMin = phant->y[0];
+			zMin = phant->z[0];
+			
+			xMax = phant->x.last();
+			yMax = phant->y.last();
+			zMax = phant->z.last();
+			
+			isReset = true;
+		}
+		else {
+			xMin = xMin>phant->x[0]?phant->x[0]:xMin;
+			yMin = yMin>phant->y[0]?phant->y[0]:yMin;
+			zMin = zMin>phant->z[0]?phant->z[0]:zMin;
+			
+			xMax = xMax<phant->x.last()?phant->x.last():xMax;
+			yMax = yMax<phant->y.last()?phant->y.last():yMax;
+			zMax = zMax<phant->z.last()?phant->z.last():zMax;
+		}
 	}
 	
 	if (0 < mapDoseBox->currentIndex()) {
-		xMin = xMin>mapDose->cx[0]?mapDose->cx[0]:xMin;
-		yMin = yMin>mapDose->cy[0]?mapDose->cy[0]:yMin;
-		zMin = zMin>mapDose->cz[0]?mapDose->cz[0]:zMin;
-		
-		xMax = xMax<mapDose->cx.last()?mapDose->cx.last():xMax;
-		yMax = yMax<mapDose->cy.last()?mapDose->cy.last():yMax;
-		zMax = zMax<mapDose->cz.last()?mapDose->cz.last():zMax;
+		if (!isReset) {
+			xMin = mapDose->cx[0];
+			yMin = mapDose->cy[0];
+			zMin = mapDose->cz[0];
+			
+			xMax = mapDose->cx.last();
+			yMax = mapDose->cy.last();
+			zMax = mapDose->cz.last();
+			
+			isReset = true;
+		}
+		else {
+			xMin = xMin>mapDose->cx[0]?mapDose->cx[0]:xMin;
+			yMin = yMin>mapDose->cy[0]?mapDose->cy[0]:yMin;
+			zMin = zMin>mapDose->cz[0]?mapDose->cz[0]:zMin;
+			
+			xMax = xMax<mapDose->cx.last()?mapDose->cx.last():xMax;
+			yMax = yMax<mapDose->cy.last()?mapDose->cy.last():yMax;
+			zMax = zMax<mapDose->cz.last()?mapDose->cz.last():zMax;
+		}
 	}
 
 	for (int i = 0; i < 3; i++)
 		if (0 < isoDoseBox[i]->currentIndex()) {
-			xMin = xMin>isoDoses[i]->cx[0]?isoDoses[i]->cx[0]:xMin;
-			yMin = yMin>isoDoses[i]->cy[0]?isoDoses[i]->cy[0]:yMin;
-			zMin = zMin>isoDoses[i]->cz[0]?isoDoses[i]->cz[0]:zMin;
-			
-			xMax = xMax<isoDoses[i]->cx.last()?isoDoses[i]->cx.last():xMax;
-			yMax = yMax<isoDoses[i]->cy.last()?isoDoses[i]->cy.last():yMax;
-			zMax = zMax<isoDoses[i]->cz.last()?isoDoses[i]->cz.last():zMax;
+			if (!isReset) {
+				xMin = isoDoses[i]->cx[0];
+				yMin = isoDoses[i]->cy[0];
+				zMin = isoDoses[i]->cz[0];
+				
+				xMax = isoDoses[i]->cx.last();
+				yMax = isoDoses[i]->cy.last();
+				zMax = isoDoses[i]->cz.last();
+				
+				isReset = true;
+			}
+			else {
+				xMin = xMin>isoDoses[i]->cx[0]?isoDoses[i]->cx[0]:xMin;
+				yMin = yMin>isoDoses[i]->cy[0]?isoDoses[i]->cy[0]:yMin;
+				zMin = zMin>isoDoses[i]->cz[0]?isoDoses[i]->cz[0]:zMin;
+				
+				xMax = xMax<isoDoses[i]->cx.last()?isoDoses[i]->cx.last():xMax;
+				yMax = yMax<isoDoses[i]->cy.last()?isoDoses[i]->cy.last():yMax;
+				zMax = zMax<isoDoses[i]->cz.last()?isoDoses[i]->cz.last():zMax;
+			}
 		}
 	
 	if (xAxisButton->isChecked()) {
@@ -1091,10 +1205,8 @@ void doseInterface::previewResetBounds() {
 		horBoundaryMin->setText(QString::number(zMin));
 		horBoundaryMax->setText(QString::number(zMax));
 		
-		if (depthMin->text().toDouble() < xMin)
-			depthMin->setText(QString::number(xMin));
-		else if (depthMin->text().toDouble() > xMax)
-			depthMin->setText(QString::number(xMax));		
+		if (depthMin->text().toDouble() < xMin || depthMin->text().toDouble() > xMax)
+			depthMin->setText(QString::number((xMin+xMax)/2.0));		
 	}
 	else if (yAxisButton->isChecked()) {
 		vertBoundaryMin->setText(QString::number(xMin));
@@ -1102,10 +1214,8 @@ void doseInterface::previewResetBounds() {
 		horBoundaryMin->setText(QString::number(zMin));
 		horBoundaryMax->setText(QString::number(zMax));
 		
-		if (depthMin->text().toDouble() < yMin)
-			depthMin->setText(QString::number(yMin));
-		else if (depthMin->text().toDouble() > yMax)
-			depthMin->setText(QString::number(yMax));		
+		if (depthMin->text().toDouble() < yMin || depthMin->text().toDouble() > yMax)
+			depthMin->setText(QString::number((yMin+yMax)/2.0));		
 	}
 	else if (zAxisButton->isChecked()) {
 		vertBoundaryMin->setText(QString::number(xMin));
@@ -1113,10 +1223,8 @@ void doseInterface::previewResetBounds() {
 		horBoundaryMin->setText(QString::number(yMin));
 		horBoundaryMax->setText(QString::number(yMax));
 		
-		if (depthMin->text().toDouble() < zMin)
-			depthMin->setText(QString::number(zMin));
-		else if (depthMin->text().toDouble() > zMax)
-			depthMin->setText(QString::number(zMax));	
+		if (depthMin->text().toDouble() < zMin || depthMin->text().toDouble() > zMax)
+			depthMin->setText(QString::number((zMin+zMax)/2.0));	
 	}
 	
 	previewCanvasRenderLive();
@@ -1162,6 +1270,12 @@ void doseInterface::histoRender() {
 	double increment = 5.0/double(count); // 5% for making plot data, 95% defined implicitly in getDV
 	double minDose = histDoseMinEdit->text().toDouble(), maxDose = histDoseMaxEdit->text().toDouble();
 	
+	// Reset functions holding all the data for later output
+	savePlotName.clear();
+	savePlotX = savePlotY = "";
+	savePlotData.clear();
+	QList<QPointF> tempData;
+	
 	for (int i = 0; i < count; i++) {				
 		parent->nameProgress("Sorting and filtering data");
 		switch (filterInfo) {
@@ -1190,14 +1304,18 @@ void doseInterface::histoRender() {
 			stop = histDoses[i]->binarySearch(boundary,&data,0,stop);
 		}
 		
+		minDose = data[start].dose; // This will be used later for axis bounds
+		
 		if (stop == data.size())
 			stop--;
 		
 		// Generate series data
+		tempData.clear();
 		if (histDiffBox->isChecked()) {
 			parent->nameProgress("Building bins arrays");
 			series.append(new QLineSeries());
 			series.last()->setName(histLoadedView->item(i)->text());
+			savePlotName.append(histLoadedView->item(i)->text());
 			int binCount = parent->data->histogramBinCount;
 			
 			// Bin count, maybe make a configuration file option?
@@ -1213,6 +1331,9 @@ void doseInterface::histoRender() {
 				cur = histDoses[i]->binarySearch(boundary,&data,prev,stop);
 				series.last()->append(data[prev].dose, cur-prev);
 				series.last()->append(data[cur].dose, cur-prev);
+				
+				tempData.append(QPointF((data[cur].dose-data[prev].dose)/2.0,double(cur-prev)));
+				
 				prev = cur;
 				parent->updateProgress(subIncrement);
 			}
@@ -1224,6 +1345,7 @@ void doseInterface::histoRender() {
 			parent->nameProgress("Building plot line arrays");
 			series.append(new QLineSeries());
 			series.last()->setName(histLoadedView->item(i)->text());
+			savePlotName.append(histLoadedView->item(i)->text());
 						
 			int sInc = 1;
 			
@@ -1234,36 +1356,45 @@ void doseInterface::histoRender() {
 			
 			double subIncrement = increment/double(stop-start);
 			
-			if (!(start%sInc)) // Add start point if it would be skipped
+			if ((start%sInc)) { // Add start point if it would be skipped, inclusive
 				series.last()->append(data[start].dose, 100.0);
+				tempData.append(QPointF(data[start].dose, 100.0));
+			}
 				
 			for (int i = start; i <= stop; i++) {
 				if (!(i%sInc)) {// Only add up to 399 points (start skipping at 400+)
 					series.last()->append(data[i].dose, 100.0*double(stop-i)/double(stop-start));
+					tempData.append(QPointF(data[i].dose, 100.0*double(stop-i)/double(stop-start)));
 				}
 				parent->updateProgress(subIncrement);
 			}
 			
-			if (!(stop%sInc)) // Add end point if it would be skipped
+			if ((stop%sInc)) {// Add end point if it would be skipped, exclusive
 				series.last()->append(data[stop].dose, 0);
+				tempData.append(QPointF(data[stop].dose, 0));
+			}
 			
 			plot->addSeries(series.last());
 		}
+		savePlotData.append(tempData);
 	}
 	
 	// Fill out plot parameters
 	plot->createDefaultAxes();
 	plot->axes()[0]->setTitleText("dose / Gy");
+	savePlotX = "dose / Gy";
 	plot->axes()[0]->setRange(minDose,minDose<maxDose?maxDose:data.last().dose);
 	
 	if (histDiffBox->isChecked()) {
 		plot->setTitle("Dose Differential Histogram");
 		plot->axes()[1]->setTitleText("voxel count");
+		savePlotY = "voxel count";
 	}
 	else {
 		plot->setTitle("Dose Volume Histogram");
 		plot->axes()[1]->setTitleText("% of total volume");
 		plot->axes()[1]->setRange(0,100);
+		savePlotY = "% of total volume";
 	}
 	
 	if (!histLegendBox->isChecked()) // Hide legend if it's unwanted

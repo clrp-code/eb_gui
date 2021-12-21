@@ -92,6 +92,12 @@ public:
 	
 	QTabWidget  *optionsTab;
 	
+	// Saving plot data for output later
+	QList <QString>          savePlotName;
+	QString					 savePlotX;
+	QString					 savePlotY;
+	QList <QList <QPointF> > savePlotData; // Used for later output
+	
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 //                                Preview                              //
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
@@ -249,6 +255,8 @@ public slots:
 	// All render commands, with a live wrapper function.  All changes (outside of the render buttons)
 	// are connected to the live functions, so they only render the image when live rendering is checked
 	void render();
+	void saveImage();
+	void saveData();
 	
 	// Preview
     void previewRenderLive();
