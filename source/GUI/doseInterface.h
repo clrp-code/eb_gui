@@ -288,6 +288,9 @@ public slots:
 	void loadHistoDose();
 	void deleteHistoDose();
 	
+	void calcMetrics();
+	void outputMetrics();
+	
 	// Profile
     void profileRenderLive();
     void profileRender();
@@ -311,6 +314,9 @@ public slots:
     void previewRefresh();
     void histoRefresh();
     void profileRefresh();
+
+public:
+	logWindow* log; // log window
 };
 
 #endif

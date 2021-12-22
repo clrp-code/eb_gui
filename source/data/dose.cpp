@@ -945,8 +945,7 @@ QImage Dose::getColourMap(QString axis, double ai, double af, double bi, double 
     return image; // return the image created
 }
 
-void Dose::getDV(QList <DV> *data, double* volume, int n) {
-	DV datum;
+void Dose::getDV(QVector <DV> *data, double* volume, int n) {
     double increment = 95.0/double(n)/double(z);
 	double xLen, yLen, zLen;
 	double vol = (*volume) = 0;
@@ -960,15 +959,16 @@ void Dose::getDV(QList <DV> *data, double* volume, int n) {
 				xLen = (cx[i+1]-cx[i]);
 				vol = xLen*yLen*zLen;
 				(*volume) += vol;
-				datum = {val[i][j][k], vol}; // dose & volume
-				data->insert(binarySearch(datum, data, 0, data->size()),datum);
+				data->append({val[i][j][k], err[i][j][k], vol});
 			}
 		}
 	}
+	
+	emit nameProgress("Sorting (bar does not update)"); // Change progress bar name
+	std::sort(data->begin(), data->end(), DV_sorter);
 }
 
-void Dose::getDV(QList <DV> *data, EGSPhant* media, QString allowedChars, double* volume, int n) {
-	DV datum;
+void Dose::getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, double* volume, int n) {
     double increment = 95.0/double(n)/double(z);
 	double xVal, yVal, zVal;
 	double xLen, yLen, zLen;
@@ -987,16 +987,17 @@ void Dose::getDV(QList <DV> *data, EGSPhant* media, QString allowedChars, double
 					xLen = (cx[i+1]-cx[i]);
 					vol = xLen*yLen*zLen;
 					(*volume) += vol;
-					datum = {val[i][j][k], vol}; // dose & volume
-					data->insert(binarySearch(datum, data, 0, data->size()),datum);
+					data->append({val[i][j][k], err[i][j][k], vol});
 				}
 			}
 		}
 	}
+	
+	emit nameProgress("Sorting (bar does not update)"); // Change progress bar name
+	std::sort(data->begin(), data->end(), DV_sorter);
 }
 
-void Dose::getDV(QList <DV> *data, EGSPhant* mask, double* volume, int n) {
-	DV datum;
+void Dose::getDV(QVector <DV> *data, EGSPhant* mask, double* volume, int n) {
     double increment = 95.0/double(n)/double(z);
 	double xVal, yVal, zVal;
 	double xLen, yLen, zLen;
@@ -1015,16 +1016,17 @@ void Dose::getDV(QList <DV> *data, EGSPhant* mask, double* volume, int n) {
 					xLen = (cx[i+1]-cx[i]);
 					vol = xLen*yLen*zLen;
 					(*volume) += vol;
-					datum = {val[i][j][k], vol}; // dose & volume
-					data->insert(binarySearch(datum, data, 0, data->size()),datum);
+					data->append({val[i][j][k], err[i][j][k], vol});
 				}
 			}
 		}
 	}
+	
+	emit nameProgress("Sorting (bar does not update)"); // Change progress bar name
+	std::sort(data->begin(), data->end(), DV_sorter);
 }
 
-void Dose::getDV(QList <DV> *data, EGSPhant* media, QString allowedChars, EGSPhant* mask, double* volume, int n) {
-	DV datum;
+void Dose::getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSPhant* mask, double* volume, int n) {
     double increment = 95.0/double(n)/double(z);
 	double xVal, yVal, zVal;
 	double xLen, yLen, zLen;
@@ -1044,21 +1046,144 @@ void Dose::getDV(QList <DV> *data, EGSPhant* media, QString allowedChars, EGSPha
 					xLen = (cx[i+1]-cx[i]);
 					vol = xLen*yLen*zLen;
 					(*volume) += vol;
-					datum = {val[i][j][k], vol}; // dose & volume
-					data->insert(binarySearch(datum, data, 0, data->size()), datum);
+					data->append({val[i][j][k], err[i][j][k], vol});
 				}
 			}
 		}
 	}
+	
+	emit nameProgress("Sorting (bar does not update)"); // Change progress bar name
+	std::sort(data->begin(), data->end(), DV_sorter);
 }
 
-int Dose::binarySearch(DV datum, QList <DV> *data, int l, int r)
-{
-	int m;
-    while (l < r) {
-		m = (l + r)/2;
-		if ((*data)[m].dose < datum.dose) l = m + 1;
-		else r = m;
+void Dose::getDV(QVector <DV> *data, double* volume, double minDose, double maxDose, int n) {
+	if (minDose >= maxDose)
+		maxDose = std::numeric_limits<double>::max(); // Set maxDose to max possible dose
+    double increment = 95.0/double(n)/double(z);
+	double xLen, yLen, zLen;
+	double vol = (*volume) = 0;
+	data->clear();
+    for (int k = 0; k < z; k++) {
+		zLen = (cz[k+1]-cz[k]);
+		emit madeProgress(increment); // Update progress bar
+        for (int j = 0; j < y; j++) {
+			yLen = (cy[j+1]-cy[j]);
+            for (int i = 0; i < x; i++) {
+				if (minDose < val[i][j][k] && val[i][j][k] < maxDose) {
+					xLen = (cx[i+1]-cx[i]);
+					vol = xLen*yLen*zLen;
+					(*volume) += vol;
+					data->append({val[i][j][k], err[i][j][k], vol});
+				}
+			}
+		}
 	}
-	return l;
+	
+	emit nameProgress("Sorting (bar does not update)"); // Change progress bar name
+	std::sort(data->begin(), data->end(), DV_sorter);
+}
+
+void Dose::getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, double* volume, double minDose, double maxDose, int n) {
+	if (minDose >= maxDose)
+		maxDose = std::numeric_limits<double>::max(); // Set maxDose to max possible dose
+    double increment = 95.0/double(n)/double(z);
+	double xVal, yVal, zVal;
+	double xLen, yLen, zLen;
+	double vol = (*volume) = 0;
+	data->clear();
+    for (int k = 0; k < z; k++) {
+		zVal = (cz[k]+cz[k+1])/2.0;
+		zLen = (cz[k+1]-cz[k]);
+		emit madeProgress(increment); // Update progress bar
+        for (int j = 0; j < y; j++) {
+			yVal = (cy[j]+cy[j+1])/2.0;
+			yLen = (cy[j+1]-cy[j]);
+            for (int i = 0; i < x; i++) {
+				if (minDose < val[i][j][k] && val[i][j][k] < maxDose) {
+				xVal = (cx[i]+cx[i+1])/2.0;
+					if (allowedChars.contains(media->getMedia(xVal, yVal, zVal))) {
+						xLen = (cx[i+1]-cx[i]);
+						vol = xLen*yLen*zLen;
+						(*volume) += vol;
+						data->append({val[i][j][k], err[i][j][k], vol});
+					}
+				}
+			}
+		}
+	}
+	
+	emit nameProgress("Sorting (bar does not update)"); // Change progress bar name
+	std::sort(data->begin(), data->end(), DV_sorter);
+}
+
+void Dose::getDV(QVector <DV> *data, EGSPhant* mask, double* volume, double minDose, double maxDose, int n) {
+	if (minDose >= maxDose)
+		maxDose = std::numeric_limits<double>::max(); // Set maxDose to max possible dose
+    double increment = 95.0/double(n)/double(z);
+	double xVal, yVal, zVal;
+	double xLen, yLen, zLen;
+	double vol = (*volume) = 0;
+	data->clear();
+    for (int k = 0; k < z; k++) {
+		zVal = (cz[k]+cz[k+1])/2.0;
+		zLen = (cz[k+1]-cz[k]);
+		emit madeProgress(increment); // Update progress bar
+        for (int j = 0; j < y; j++) {
+			yVal = (cy[j]+cy[j+1])/2.0;
+			yLen = (cy[j+1]-cy[j]);
+            for (int i = 0; i < x; i++) {
+				if (minDose < val[i][j][k] && val[i][j][k] < maxDose) {
+					xVal = (cx[i]+cx[i+1])/2.0;
+					if (mask->getMedia(xVal, yVal, zVal) == 50) {
+						xLen = (cx[i+1]-cx[i]);
+						vol = xLen*yLen*zLen;
+						(*volume) += vol;
+						data->append({val[i][j][k], err[i][j][k], vol});
+					}
+				}
+			}
+		}
+	}
+	
+	emit nameProgress("Sorting (bar does not update)"); // Change progress bar name
+	std::sort(data->begin(), data->end(), DV_sorter);
+}
+
+void Dose::getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSPhant* mask, double* volume, double minDose, double maxDose, int n) {
+	if (minDose >= maxDose)
+		maxDose = std::numeric_limits<double>::max(); // Set maxDose to max possible dose
+    double increment = 95.0/double(n)/double(z);
+	double xVal, yVal, zVal;
+	double xLen, yLen, zLen;
+	double vol = (*volume) = 0;
+	data->clear();
+    for (int k = 0; k < z; k++) {
+		zVal = (cz[k]+cz[k+1])/2.0;
+		zLen = (cz[k+1]-cz[k]);
+		emit madeProgress(increment); // Update progress bar
+        for (int j = 0; j < y; j++) {
+			yVal = (cy[j]+cy[j+1])/2.0;
+			yLen = (cy[j+1]-cy[j]);
+            for (int i = 0; i < x; i++) {
+				if (minDose < val[i][j][k] && val[i][j][k] < maxDose) {
+					xVal = (cx[i]+cx[i+1])/2.0;
+					if (allowedChars.contains(media->getMedia(xVal, yVal, zVal)) &&
+						mask->getMedia(xVal, yVal, zVal) == 50) {
+						xLen = (cx[i+1]-cx[i]);
+						vol = xLen*yLen*zLen;
+						(*volume) += vol;
+						data->append({val[i][j][k], err[i][j][k], vol});
+					}
+				}
+			}
+		}
+	}
+	
+	emit nameProgress("Sorting (bar does not update)"); // Change progress bar name
+	std::sort(data->begin(), data->end(), DV_sorter);
+}
+
+// Comparison function for std containers
+bool DV_sorter(const DV& a, const DV& b) {
+	return a.dose < b.dose;
 }

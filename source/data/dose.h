@@ -42,25 +42,21 @@
 
 #include "egsphant.h"
 
-// This structure holds a dose and a volume for basic DVH construction
+// This class holds dose, error, and volume for basic histogram construction
 struct DV {
     double dose;
+    double err;
     double vol;
 };
 
-// This structure holds a dose and a volume, as well as mask & media data
-struct DVplus {
-    double dose;
-    double vol;
-	char   m;      // medium
-	bool   inMask; // returns whether it's in the mask or not
-};
+bool DV_sorter(const DV& a, const DV& b); // Comparison function for std::sort and std::binary_search
 
 class Dose : public QObject {
     Q_OBJECT
 
 signals:
     void madeProgress(double n); // Update the progress bar
+    void nameProgress(QString s); // Rename the progress bar
 
 public:
     // The constructor uses the n to determine how many .3ddose files will be
@@ -115,21 +111,15 @@ public:
 	QImage getColourMap(QString axis, double ai, double af, double bi, double bf, double d, int res,
 						double di, double df, QColor min, QColor mid, QColor max);
 	
-	// Get sorted dose data for making DVH plots and tally volume
-	void getDV(QList <DV> *data, double* volume, int n = 1);
-	void getDV(QList <DV> *data, EGSPhant* media, QString allowedChars, double* volume, int n = 1);
-	void getDV(QList <DV> *data, EGSPhant* mask, double* volume, int n = 1);
-	void getDV(QList <DV> *data, EGSPhant* media, QString allowedChars, EGSPhant* mask, double* volume, int n = 1);
-	
-	int binarySearch(DV datum, QList <DV> *data, int l, int r);
-	
-	// Get sorted dose data for making DVH plots and tally volume
-	//void getDVplus(QList <DVplus> *data, double* volume);
-	//void getDVplus(QList <DVplus> *data, EGSPhant* media, QString allowedChars, double* volume);
-	//void getDVplus(QList <DVplus> *data, EGSPhant* mask, double* volume);
-	//void getDVplus(QList <DVplus> *data, EGSPhant* media, QString allowedChars, EGSPhant* mask, double* volume);
-	
-	//int binarySearch(DVplus datum, QList <DVplus> *data, int l, int r);
+	// Get sorted dose data for making DVH plots and tallying volume, with all possible filter parameters being their own function
+	void getDV(QVector <DV> *data, double* volume, int n = 1);
+	void getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, double* volume, int n = 1);
+	void getDV(QVector <DV> *data, EGSPhant* mask, double* volume, int n = 1);
+	void getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSPhant* mask, double* volume, int n = 1);
+	void getDV(QVector <DV> *data, double* volume, double minDose, double maxDose, int n = 1);
+	void getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, double* volume, double minDose, double maxDose, int n = 1);
+	void getDV(QVector <DV> *data, EGSPhant* mask, double* volume, double minDose, double maxDose, int n = 1);
+	void getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSPhant* mask, double* volume, double minDose, double maxDose, int n = 1);
 };
 
 #endif

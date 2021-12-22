@@ -42,6 +42,8 @@
 sourceInterface::sourceInterface() {
 	parent = (Interface*)parentWidget();
 	
+	log = new logWindow();
+	
 	createLayout();
 	connectLayout();
 }
@@ -57,6 +59,7 @@ sourceInterface::sourceInterface(Interface* p) {
 
 // Destructor
 sourceInterface::~sourceInterface() {
+	delete log;
 }
 
 // Layout Settings
