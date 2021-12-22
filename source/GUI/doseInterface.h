@@ -248,8 +248,6 @@ public:
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 //                                Profile                              //
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
-	
-	
 public slots:
 	// GUI functions
 	// All render commands, with a live wrapper function.  All changes (outside of the render buttons)

@@ -575,6 +575,11 @@ void doseInterface::connectLayout() {
 			this, SLOT(loadHistoDose()));
 	connect(histDeleteButton, SIGNAL(pressed()),
 			this, SLOT(deleteHistoDose()));
+			
+	connect(histCalcButton, SIGNAL(pressed()),
+			this, SLOT(calcMetrics()));
+	connect(histSaveButton, SIGNAL(pressed()),
+			this, SLOT(outputMetrics()));
 	
 	// Profile ~~~~~~~~~~~~~~
 }
@@ -1243,177 +1248,6 @@ void doseInterface::previewResetBounds() {
 void doseInterface::histoRefresh() {
 }
 
-void doseInterface::histoRenderLive() {if(renderCheckBox->isChecked()) histoRender();}
-void doseInterface::histoRender() {
-	// Return
-	if (histDoses.size() == 0) {
-		return;
-	}
-	
-	// Check what filters we have
-	int filterInfo = 0;
-	if (histMaskSelect->currentIndex())
-		filterInfo += 1;
-	
-	QList <QListWidgetItem*> selectedMedia = histMediumView->selectedItems();
-	QString allowedMedia = "", allMedia = EGSPHANT_CHARS;
-	if (selectedMedia.size()) {
-		filterInfo += 2;
-		for (int i = 0; i < selectedMedia.size(); i++)
-			allowedMedia += allMedia[histMediumView->row(selectedMedia[i])];
-	}
-	
-	double minDose = histDoseMinEdit->text().toDouble(), maxDose = histDoseMaxEdit->text().toDouble();
-	if (minDose || maxDose) {
-		filterInfo += 4;
-	}
-	
-	// Get sorted dose arrays
-	parent->resetProgress("Creating DVH");
-			
-	QVector <DV> data;
-	double volume;
-	int count = histDoses.size();
-	QVector <QLineSeries*> series;
-	QChart* plot = new QChart();
-	double increment = 5.0/double(count); // 5% for making plot data, 95% defined implicitly in getDV
-	
-	// Reset functions holding all the data for later output
-	savePlotName.clear();
-	savePlotX = savePlotY = "";
-	savePlotData.clear();
-	QList<QPointF> tempData;
-	
-	for (int i = 0; i < count; i++) {				
-		parent->nameProgress("Filtering data");
-		switch (filterInfo) {
-			case 1: // Mask with no media
-				histDoses[i]->getDV(&data, histMask, &volume, count);
-				break;
-			case 2: // Media with no mask
-				histDoses[i]->getDV(&data, histPhant, allowedMedia, &volume, count);
-				break;
-			case 3: // Media and mask
-				histDoses[i]->getDV(&data, histPhant, allowedMedia, histMask, &volume, count);
-				break;
-			case 4: // Dose ranges
-				histDoses[i]->getDV(&data, &volume, minDose, maxDose, count);
-				break;
-			case 5: // Mask with no media and dose ranges
-				histDoses[i]->getDV(&data, histMask, &volume, minDose, maxDose, count);
-				break;
-			case 6: // Media with no mask and dose ranges
-				histDoses[i]->getDV(&data, histPhant, allowedMedia, &volume, minDose, maxDose, count);
-				break;
-			case 7: // Media and mask and dose ranges
-				histDoses[i]->getDV(&data, histPhant, allowedMedia, histMask, &volume, minDose, maxDose, count);
-				break;
-			default: // #nofilter #nomakeup
-				histDoses[i]->getDV(&data, &volume, count);
-				break;
-		}
-		
-		// Generate series data
-		tempData.clear();
-		if (histDiffBox->isChecked()) {
-			parent->nameProgress("Building bins arrays");
-			series.append(new QLineSeries());
-			series.last()->setName(histLoadedView->item(i)->text());
-			savePlotName.append(histLoadedView->item(i)->text());
-			int binCount = parent->data->histogramBinCount;
-			
-			// Bin count, maybe make a configuration file option?
-			double sInc = (data.last().dose-data[0].dose)/double(binCount);
-			double s0 = data[0].dose;
-			
-			double prev = s0, cur = s0;
-			series.last()->append(data[0].dose, 0);
-			
-			double subIncrement = increment/double(binCount);
-			int dataIndex = 0, dataCount = 0;
-			for (int i = 1; i <= binCount; i++) {
-				cur = s0+sInc*i;
-				
-				dataCount = 0;
-				while (dataIndex < data.size()) {
-					if (data[dataIndex].dose > cur)
-						break;
-					dataCount++;
-					dataIndex++;
-				}
-				
-				series.last()->append(prev, dataCount);
-				series.last()->append(cur, dataCount);
-				
-				tempData.append(QPointF((cur+prev)/2.0,double(dataCount)));
-				
-				prev = cur;
-				parent->updateProgress(subIncrement);
-			}
-			series.last()->append(cur, 0);
-			
-			plot->addSeries(series.last());
-		}
-		else {
-			parent->nameProgress("Building plot line arrays");
-			series.append(new QLineSeries());
-			series.last()->setName(histLoadedView->item(i)->text());
-			savePlotName.append(histLoadedView->item(i)->text());
-						
-			int sInc = 1;
-			
-			// Drop every (n-1)th point, where n is the multiple of full 200s in the data set
-			if (data.size() > 200) {
-				sInc = data.size()/200.0;
-			}
-			
-			double subIncrement = increment/double(data.size());
-				
-			for (int i = 0; i < data.size(); i++) {
-				if (!(i%sInc)) {// Only add up to 399 points (start skipping at 400+)
-					series.last()->append(data[i].dose, 100.0*double(data.size()-i)/double(data.size()));
-					tempData.append(QPointF(data[i].dose, 100.0*double(data.size()-i)/double(data.size())));
-				}
-				parent->updateProgress(subIncrement);
-			}
-			
-			if ((data.size()%sInc)) {// Add end point if it would be skipped
-				series.last()->append(data.last().dose, 100.0/double(data.size()));
-				tempData.append(QPointF(data.last().dose, 100.0/double(data.size())));
-			}
-			
-			plot->addSeries(series.last());
-		}
-		savePlotData.append(tempData);
-	}
-	
-	// Fill out plot parameters
-	plot->createDefaultAxes();
-	plot->axes()[0]->setTitleText("dose / Gy");
-	savePlotX = "dose / Gy";
-	plot->axes()[0]->setRange(minDose,minDose<maxDose?maxDose:data.last().dose);
-	
-	if (histDiffBox->isChecked()) {
-		plot->setTitle("Dose Differential Histogram");
-		plot->axes()[1]->setTitleText("voxel count");
-		savePlotY = "voxel count";
-	}
-	else {
-		plot->setTitle("Dose Volume Histogram");
-		plot->axes()[1]->setTitleText("% of total volume");
-		plot->axes()[1]->setRange(0,100);
-		savePlotY = "% of total volume";
-	}
-	
-	if (!histLegendBox->isChecked()) // Hide legend if it's unwanted
-		plot->legend()->hide();
-	
-	canvasChart->setChart(plot);
-	canvasChart->resize(800,600);
-    canvasArea->repaint();
-	parent->finishedProgress();
-}
-
 void doseInterface::loadFilterEgsphant() {
 	localNameMasks.clear();
 	localDirMasks.clear();
@@ -1581,6 +1415,177 @@ void doseInterface::deleteHistoDose() {
 	delete histLoadedView->currentItem();
 }
 
+void doseInterface::histoRenderLive() {if(renderCheckBox->isChecked()) histoRender();}
+void doseInterface::histoRender() {
+	// Return
+	if (histDoses.size() == 0) {
+		return;
+	}
+	
+	// Check what filters we have
+	int filterInfo = 0;
+	if (histMaskSelect->currentIndex())
+		filterInfo += 1;
+	
+	QList <QListWidgetItem*> selectedMedia = histMediumView->selectedItems();
+	QString allowedMedia = "", allMedia = EGSPHANT_CHARS;
+	if (selectedMedia.size()) {
+		filterInfo += 2;
+		for (int i = 0; i < selectedMedia.size(); i++)
+			allowedMedia += allMedia[histMediumView->row(selectedMedia[i])];
+	}
+	
+	double minDose = histDoseMinEdit->text().toDouble(), maxDose = histDoseMaxEdit->text().toDouble();
+	if (minDose || maxDose) {
+		filterInfo += 4;
+	}
+	
+	// Get sorted dose arrays
+	parent->resetProgress("Creating DVH");
+			
+	QVector <DV> data;
+	double volume;
+	int count = histDoses.size();
+	QVector <QLineSeries*> series;
+	QChart* plot = new QChart();
+	double increment = 5.0/double(count); // 5% for making plot data, 95% defined implicitly in getDV
+	
+	// Reset functions holding all the data for later output
+	savePlotName.clear();
+	savePlotX = savePlotY = "";
+	savePlotData.clear();
+	QList<QPointF> tempData;
+	
+	for (int i = 0; i < count; i++) {				
+		parent->nameProgress("Filtering data");
+		switch (filterInfo) {
+			case 1: // Mask with no media
+				histDoses[i]->getDV(&data, histMask, &volume, count);
+				break;
+			case 2: // Media with no mask
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, &volume, count);
+				break;
+			case 3: // Media and mask
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, histMask, &volume, count);
+				break;
+			case 4: // Dose ranges
+				histDoses[i]->getDV(&data, &volume, minDose, maxDose, count);
+				break;
+			case 5: // Mask with no media and dose ranges
+				histDoses[i]->getDV(&data, histMask, &volume, minDose, maxDose, count);
+				break;
+			case 6: // Media with no mask and dose ranges
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, &volume, minDose, maxDose, count);
+				break;
+			case 7: // Media and mask and dose ranges
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, histMask, &volume, minDose, maxDose, count);
+				break;
+			default: // #nofilter #nomakeup
+				histDoses[i]->getDV(&data, &volume, count);
+				break;
+		}
+		
+		// Generate series data
+		tempData.clear();
+		if (histDiffBox->isChecked()) {
+			parent->nameProgress("Building bins arrays");
+			series.append(new QLineSeries());
+			series.last()->setName(histLoadedView->item(i)->text());
+			savePlotName.append(histLoadedView->item(i)->text());
+			int binCount = parent->data->histogramBinCount;
+			
+			// Bin count, maybe make a configuration file option?
+			double sInc = (data.last().dose-data[0].dose)/double(binCount);
+			double s0 = data[0].dose;
+			
+			double prev = s0, cur = s0;
+			series.last()->append(data[0].dose, 0);
+			
+			double subIncrement = increment/double(binCount);
+			int dataIndex = 0, dataCount = 0;
+			for (int i = 1; i <= binCount; i++) {
+				cur = s0+sInc*i;
+				
+				dataCount = 0;
+				while (dataIndex < data.size()) {
+					if (data[dataIndex].dose > cur)
+						break;
+					dataCount++;
+					dataIndex++;
+				}
+				
+				series.last()->append(prev, dataCount);
+				series.last()->append(cur, dataCount);
+				
+				tempData.append(QPointF((cur+prev)/2.0,double(dataCount)));
+				
+				prev = cur;
+				parent->updateProgress(subIncrement);
+			}
+			series.last()->append(cur, 0);
+			
+			plot->addSeries(series.last());
+		}
+		else {
+			parent->nameProgress("Building plot line arrays");
+			series.append(new QLineSeries());
+			series.last()->setName(histLoadedView->item(i)->text());
+			savePlotName.append(histLoadedView->item(i)->text());
+						
+			int sInc = 1;
+			
+			// Drop every (n-1)th point, where n is the multiple of full 200s in the data set
+			if (data.size() > 200) {
+				sInc = data.size()/200.0;
+			}
+			
+			double subIncrement = increment/double(data.size());
+				
+			for (int i = 0; i < data.size(); i++) {
+				if (!(i%sInc)) {// Only add up to 399 points (start skipping at 400+)
+					series.last()->append(data[i].dose, 100.0*double(data.size()-i)/double(data.size()));
+					tempData.append(QPointF(data[i].dose, 100.0*double(data.size()-i)/double(data.size())));
+				}
+				parent->updateProgress(subIncrement);
+			}
+			
+			if ((data.size()%sInc)) {// Add end point if it would be skipped
+				series.last()->append(data.last().dose, 100.0/double(data.size()));
+				tempData.append(QPointF(data.last().dose, 100.0/double(data.size())));
+			}
+			
+			plot->addSeries(series.last());
+		}
+		savePlotData.append(tempData);
+	}
+	
+	// Fill out plot parameters
+	plot->createDefaultAxes();
+	plot->axes()[0]->setTitleText("dose / Gy");
+	savePlotX = "dose / Gy";
+	plot->axes()[0]->setRange(data[0].dose,data.last().dose);
+	
+	if (histDiffBox->isChecked()) {
+		plot->setTitle("Dose Differential Histogram");
+		plot->axes()[1]->setTitleText("voxel count");
+		savePlotY = "voxel count";
+	}
+	else {
+		plot->setTitle("Dose Volume Histogram");
+		plot->axes()[1]->setTitleText("% of total volume");
+		plot->axes()[1]->setRange(0,100);
+		savePlotY = "% of total volume";
+	}
+	
+	if (!histLegendBox->isChecked()) // Hide legend if it's unwanted
+		plot->legend()->hide();
+	
+	canvasChart->setChart(plot);
+	canvasChart->resize(800,600);
+    canvasArea->repaint();
+	parent->finishedProgress();
+}
+
 void doseInterface::calcMetrics() {
 	// Return
 	if (histDoses.size() == 0) {
@@ -1600,18 +1605,22 @@ void doseInterface::calcMetrics() {
 			allowedMedia += allMedia[histMediumView->row(selectedMedia[i])];
 	}
 	
-	parent->resetProgress("Calculating metrics");
+	double minDose = histDoseMinEdit->text().toDouble(), maxDose = histDoseMaxEdit->text().toDouble();
+	if (minDose || maxDose) {
+		filterInfo += 4;
+	}
+	
 	// Get sorted dose arrays
+	parent->resetProgress("Calculating metrics");
+			
 	QVector <DV> data;
 	double volume;
 	int count = histDoses.size();
-	double minDose = histDoseMinEdit->text().toDouble(), maxDose = histDoseMaxEdit->text().toDouble();
 	
+	// Metrics to extract
 	QString names, units, average, uncertainty, voxels, volumes;
 	QStringList Dx, Vx, temp;
 	QVector <double> xD, xV;
-	
-	// Get dose values
 	temp = histDxEdit->text().replace(' ',',').split(',');
 	for (int i = 0; i < temp.size(); i++) {
 		xD.append(temp[i].toDouble());
@@ -1624,8 +1633,9 @@ void doseInterface::calcMetrics() {
 		Vx.append("");
 	}
 	
+	// Get dose values	
 	for (int i = 0; i < count; i++) {
-		parent->nameProgress("Sorting and filtering data");
+		parent->nameProgress("Filtering data");
 		switch (filterInfo) {
 			case 1: // Mask with no media
 				histDoses[i]->getDV(&data, histMask, &volume, count);
@@ -1635,6 +1645,18 @@ void doseInterface::calcMetrics() {
 				break;
 			case 3: // Media and mask
 				histDoses[i]->getDV(&data, histPhant, allowedMedia, histMask, &volume, count);
+				break;
+			case 4: // Dose ranges
+				histDoses[i]->getDV(&data, &volume, minDose, maxDose, count);
+				break;
+			case 5: // Mask with no media and dose ranges
+				histDoses[i]->getDV(&data, histMask, &volume, minDose, maxDose, count);
+				break;
+			case 6: // Media with no mask and dose ranges
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, &volume, minDose, maxDose, count);
+				break;
+			case 7: // Media and mask and dose ranges
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, histMask, &volume, minDose, maxDose, count);
 				break;
 			default: // #nofilter #nomakeup
 				histDoses[i]->getDV(&data, &volume, count);
@@ -1647,49 +1669,65 @@ void doseInterface::calcMetrics() {
 		double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0;
 		int vIndex = 0, dIndex = 0;
 		for (int j = 0; j < data.size(); j++) {
-			countTally++;
-			volumeTally += data[i].vol/volume;
-			doseTally += data[i].dose;
-			doseTallyErr += data[i].err;
-			doseTallyErr2 += (data[i].err*data[i].err);
+			countTally    += 1.0;
+			volumeTally   += data[j].vol;
+			doseTally     += data[j].dose;
+			doseTallyErr  += data[j].dose*data[j].err;
+			doseTallyErr2 += (data[j].dose*data[j].err)*(data[j].dose*data[j].err);
 			
 			// Append Vx values as we go
-			if (vIndex < xV.size())
-				if (data[i].dose > xV[vIndex] && i) {
-					Vx[vIndex] += QString::number(volumeTally-(data[i].vol/volume))+" %,,";
+			if (vIndex < xV.size()) {
+				if (data[j].dose > xV[vIndex] && j) {
+					Vx[vIndex] += QString::number(volumeTally-data[j].vol).left(11).rightJustified(11,' ')+" "
+							   +  "            |";
 					vIndex++;
 				}
+			}
 			
 			// Append Dx values as we go
-			if (dIndex < xD.size())
-				if (volumeTally > xD[vIndex] && i) {
-					Dx[dIndex] += QString::number(data[i-1].dose)+" Gy,"+QString::number(data[i-1].err)+" Gy,";
+			if (dIndex < xD.size()) {
+				if (volumeTally/volume*100.0 > xD[dIndex] && j) {
+					Dx[dIndex] += QString::number(data[j-1].dose).left(11).rightJustified(11,' ')+" "
+							   +  QString::number(data[j-1].err).left(11).rightJustified(11,' ')+" |";
 					dIndex++;
 				}
+			}
 		}
 		
+		for (int j = vIndex; j < xV.size(); j++) 
+			Vx[j] += "        n/a         n/a |";
+		
+		for (int j = dIndex; j < xD.size(); j++) 
+			Dx[j] += "        n/a         n/a |";
+		
 		// Calculate global metrics
-		names       += histLoadedView->item(i)->text()+",,";
-		units       += "value,uncertainty,";
-		average     += QString::number(doseTally/countTally)+" Gy,"
-					+  QString::number(sqrt((doseTallyErr2/countTally-(doseTallyErr/countTally*doseTallyErr/countTally))/countTally))+" Gy,";
-		uncertainty += QString::number(doseTallyErr/countTally)+" Gy,,";
-		voxels      += QString::number(countTally)+" voxels,,";
-		volumes     += QString::number(volume)+" cm^3,,";
+		doseTally     /= countTally; // Average dose
+		doseTallyErr  /= countTally; // Average uncertainty
+		doseTallyErr2 = sqrt(doseTallyErr2/countTally); // Propagated average dose uncertainty
+		
+		names       += histLoadedView->item(i)->text().left(23).rightJustified(23,' ')+" |";
+		units       += "   value    uncertainty |";
+		average     += QString::number(doseTally).left(11).rightJustified(11,' ')+" "
+		            +QString::number(doseTallyErr2).left(11).rightJustified(11,' ')+" |";
+		uncertainty += QString::number(doseTallyErr).left(11).rightJustified(11,' ')+"             |";
+		voxels      += QString::number(countTally).left(11).rightJustified(11,' ')+"             |";
+		volumes     += QString::number(volume).left(11).rightJustified(11,' ')+"             |";
 	}
 	
-	QString text = QString("Dataset,")+names+"\n";
-	text        += QString(",")+units+"\n";
-	text        += QString("Average dose,")+average+"\n";
-	text        += QString("Average uncertainty,")+uncertainty+"\n";
-	text        += QString("Number of voxels,")+voxels+"\n";
-	text        += QString("Total volume,")+volumes+"\n";
+	QString text = QString("Dataset").left(24).rightJustified(24,' ')+"|"+names+"\n";
+	text        += QString(" ").left(24).rightJustified(24,' ')+" "+units+"\n";
+	text        += QString("Average dose / Gy").left(24).rightJustified(24,' ')+"|"+average+"\n";
+	text        += QString("Average uncertainty / Gy").left(24).rightJustified(24,' ')+"|"+uncertainty+"\n";
+	text        += QString("Number of voxels").left(24).rightJustified(24,' ')+"|"+voxels+"\n";
+	text        += QString("Total volume / cm^3").left(24).rightJustified(24,' ')+"|"+volumes+"\n";
 	
 	for (int i = 0; i < Dx.size(); i++)
-		text += QString("D")+QString::number(xD[i])+","+Dx[i]+"\n";
+		text += (QString("D")+QString::number(xD[i])+" / Gy").left(24).rightJustified(24,' ')+"|"+Dx[i]+"\n";
 	
 	for (int i = 0; i < Vx.size(); i++)
-		text += QString("D")+QString::number(xV[i])+","+Vx[i]+"\n";
+		text += (QString("V")+QString::number(xV[i])+" / cm^3").left(24).rightJustified(24,' ')+"|"+Vx[i]+"\n";
+	
+	parent->finishedProgress();
 	
 	// Show the log
 	log->outputArea->clear();
@@ -1697,10 +1735,179 @@ void doseInterface::calcMetrics() {
 	log->show();
 }
 
-//.left(20).rightJustified(20,' ')
-
 void doseInterface::outputMetrics() {
+	// Return
+	if (histDoses.size() == 0) {
+		return;
+	}
 	
+	
+	QString filePath = QFileDialog::getSaveFileName(this, tr("Save File"), ".", tr("Images (*.csv)"));
+	
+	if (filePath.length() < 1) // No name selected
+		return;
+	
+	if (!filePath.endsWith(".csv")) // Doesn't have the right extension
+		filePath += ".csv";
+	
+	QString text = "";
+	
+	// Check what filters we have
+	int filterInfo = 0;
+	if (histMaskSelect->currentIndex()) {
+		filterInfo += 1;
+		text += QString("Data filtered to only include doses within contour ")+histMaskSelect->currentText()+"\n";
+	}
+	
+	QList <QListWidgetItem*> selectedMedia = histMediumView->selectedItems();
+	QString allowedMedia = "", allMedia = EGSPHANT_CHARS;
+	if (selectedMedia.size()) {
+		filterInfo += 2;
+		text += QString("Data filtered to only include doses within ")+histPhantSelect->currentText()+" phantom voxels containing:,";
+		for (int i = 0; i < selectedMedia.size(); i++) {
+			allowedMedia += allMedia[histMediumView->row(selectedMedia[i])];
+			text += selectedMedia[i]->text()+",";
+		}
+		text += QString("\n");
+	}
+	
+	double minDose = histDoseMinEdit->text().toDouble(), maxDose = histDoseMaxEdit->text().toDouble();
+	if (minDose || maxDose) {
+		text += QString("Data filtered to only include doses within range ")+QString::number(minDose)
+		     +  " and "+((minDose < maxDose)?QString::number(maxDose):QString("infinity"))+"\n";
+		filterInfo += 4;
+	}
+	
+	if (filterInfo)
+		text += QString("\n");
+	
+	// Get sorted dose arrays
+	parent->resetProgress("Calculating metrics");
+			
+	QVector <DV> data;
+	double volume;
+	int count = histDoses.size();
+	
+	// Metrics to extract
+	QString names, units, average, uncertainty, voxels, volumes;
+	QStringList Dx, Vx, temp;
+	QVector <double> xD, xV;
+	temp = histDxEdit->text().replace(' ',',').split(',');
+	for (int i = 0; i < temp.size(); i++) {
+		xD.append(temp[i].toDouble());
+		Dx.append("");
+	}
+	
+	temp = histVxEdit->text().replace(' ',',').split(',');
+	for (int i = 0; i < temp.size(); i++) {
+		xV.append(temp[i].toDouble());
+		Vx.append("");
+	}
+	
+	// Get dose values	
+	for (int i = 0; i < count; i++) {
+		parent->nameProgress("Filtering data");
+		switch (filterInfo) {
+			case 1: // Mask with no media
+				histDoses[i]->getDV(&data, histMask, &volume, count);
+				break;
+			case 2: // Media with no mask
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, &volume, count);
+				break;
+			case 3: // Media and mask
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, histMask, &volume, count);
+				break;
+			case 4: // Dose ranges
+				histDoses[i]->getDV(&data, &volume, minDose, maxDose, count);
+				break;
+			case 5: // Mask with no media and dose ranges
+				histDoses[i]->getDV(&data, histMask, &volume, minDose, maxDose, count);
+				break;
+			case 6: // Media with no mask and dose ranges
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, &volume, minDose, maxDose, count);
+				break;
+			case 7: // Media and mask and dose ranges
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, histMask, &volume, minDose, maxDose, count);
+				break;
+			default: // #nofilter #nomakeup
+				histDoses[i]->getDV(&data, &volume, count);
+				break;
+		}
+		
+		parent->nameProgress("Extracting metrics");
+		
+		// Generate metric data
+		double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0;
+		int vIndex = 0, dIndex = 0;
+		for (int j = 0; j < data.size(); j++) {
+			countTally    += 1.0;
+			volumeTally   += data[j].vol;
+			doseTally     += data[j].dose;
+			doseTallyErr  += data[j].dose*data[j].err;
+			doseTallyErr2 += (data[j].dose*data[j].err)*(data[j].dose*data[j].err);
+			
+			// Append Vx values as we go
+			if (vIndex < xV.size()) {
+				if (data[j].dose > xV[vIndex] && j) {
+					Vx[vIndex] += QString::number(volumeTally-data[j].vol)+",,";
+					vIndex++;
+				}
+			}
+			
+			// Append Dx values as we go
+			if (dIndex < xD.size()) {
+				if (volumeTally/volume*100.0 > xD[dIndex] && j) {
+					Dx[dIndex] += QString::number(data[j-1].dose)+","+QString::number(data[j-1].err)+",";
+					dIndex++;
+				}
+			}
+		}
+		
+		for (int j = vIndex; j < xV.size(); j++) 
+			Vx[j] += "n/a,n/a,";
+		
+		for (int j = dIndex; j < xD.size(); j++) 
+			Dx[j] += "n/a,n/a,";
+		
+		// Calculate global metrics
+		doseTally     /= countTally; // Average dose
+		doseTallyErr  /= countTally; // Average uncertainty
+		doseTallyErr2 = sqrt(doseTallyErr2/countTally); // Propagated average dose uncertainty
+		
+		names       += histLoadedView->item(i)->text()+",,";
+		units       += "value,uncertainty,";
+		average     += QString::number(doseTally)+","+QString::number(doseTallyErr2)+",";
+		uncertainty += QString::number(doseTallyErr)+",,";
+		voxels      += QString::number(countTally)+",,";
+		volumes     += QString::number(volume)+",,";
+	}
+	
+	text        += QString("Dataset,")+names+"\n";
+	text        += QString(",")+units+"\n";
+	text        += QString("Average dose / Gy,")+average+"\n";
+	text        += QString("Average uncertainty / Gy,")+uncertainty+"\n";
+	text        += QString("Number of voxels,")+voxels+"\n";
+	text        += QString("Total volume / cm^3,")+volumes+"\n";
+	
+	for (int i = 0; i < Dx.size(); i++)
+		text += QString("D")+QString::number(xD[i])+" / Gy,"+Dx[i]+"\n";
+	
+	for (int i = 0; i < Vx.size(); i++)
+		text += QString("V")+QString::number(xV[i])+" / cm^3,"+Vx[i]+"\n";
+	
+	QFile metricFile(filePath);
+	
+	if (!metricFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		QMessageBox::warning(0, "Metric file error",
+		tr("Failed to open the file for metric output.  Aborting"));	
+		return;
+	}
+	
+	QTextStream out(&metricFile);
+	out << text;
+	metricFile.close();
+	
+	parent->finishedProgress();
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //

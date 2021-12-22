@@ -1064,6 +1064,7 @@ void Interface::updateProgress(double percent){
 
 void Interface::nameProgress(QString text){
 	progLabel->setText(text);
+	progLabel->repaint();
 }
 
 void Interface::finishedProgress(){

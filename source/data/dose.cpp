@@ -1069,7 +1069,7 @@ void Dose::getDV(QVector <DV> *data, double* volume, double minDose, double maxD
         for (int j = 0; j < y; j++) {
 			yLen = (cy[j+1]-cy[j]);
             for (int i = 0; i < x; i++) {
-				if (minDose < val[i][j][k] && val[i][j][k] < maxDose) {
+				if (minDose <= val[i][j][k] && val[i][j][k] <= maxDose) {
 					xLen = (cx[i+1]-cx[i]);
 					vol = xLen*yLen*zLen;
 					(*volume) += vol;
@@ -1099,7 +1099,7 @@ void Dose::getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, doub
 			yVal = (cy[j]+cy[j+1])/2.0;
 			yLen = (cy[j+1]-cy[j]);
             for (int i = 0; i < x; i++) {
-				if (minDose < val[i][j][k] && val[i][j][k] < maxDose) {
+				if (minDose <= val[i][j][k] && val[i][j][k] <= maxDose) {
 				xVal = (cx[i]+cx[i+1])/2.0;
 					if (allowedChars.contains(media->getMedia(xVal, yVal, zVal))) {
 						xLen = (cx[i+1]-cx[i]);
@@ -1132,7 +1132,7 @@ void Dose::getDV(QVector <DV> *data, EGSPhant* mask, double* volume, double minD
 			yVal = (cy[j]+cy[j+1])/2.0;
 			yLen = (cy[j+1]-cy[j]);
             for (int i = 0; i < x; i++) {
-				if (minDose < val[i][j][k] && val[i][j][k] < maxDose) {
+				if (minDose <= val[i][j][k] && val[i][j][k] <= maxDose) {
 					xVal = (cx[i]+cx[i+1])/2.0;
 					if (mask->getMedia(xVal, yVal, zVal) == 50) {
 						xLen = (cx[i+1]-cx[i]);
@@ -1165,7 +1165,7 @@ void Dose::getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSP
 			yVal = (cy[j]+cy[j+1])/2.0;
 			yLen = (cy[j+1]-cy[j]);
             for (int i = 0; i < x; i++) {
-				if (minDose < val[i][j][k] && val[i][j][k] < maxDose) {
+				if (minDose <= val[i][j][k] && val[i][j][k] <= maxDose) {
 					xVal = (cx[i]+cx[i+1])/2.0;
 					if (allowedChars.contains(media->getMedia(xVal, yVal, zVal)) &&
 						mask->getMedia(xVal, yVal, zVal) == 50) {
