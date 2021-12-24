@@ -584,6 +584,8 @@ void doseInterface::connectLayout() {
 			this, SLOT(calcMetrics()));
 	connect(histSaveButton, SIGNAL(pressed()),
 			this, SLOT(outputMetrics()));
+	connect(histRawButton, SIGNAL(pressed()),
+			this, SLOT(outputRawData()));
 	
 	// Profile ~~~~~~~~~~~~~~
 }
@@ -2003,7 +2005,7 @@ void doseInterface::outputRawData() {// Return
 		parent->nameProgress("Building raw output");
 		
 		// Generate metric data
-		names += histLoadedView->item(i)->text();
+		names += histLoadedView->item(i)->text()+",,,";
 		
 		dataColumns[i].clear();
 		for (int j = 0; j < data.size(); j++) {
