@@ -233,6 +233,7 @@ public:
 	
 	// Added data
 	QLabel      *histOutputLabel;
+	QComboBox   *histOutputBox;
 	
 	QLabel      *histDxLabel;
 	QLineEdit   *histDxEdit;
@@ -241,6 +242,7 @@ public:
 	
 	QPushButton *histCalcButton;
 	QPushButton *histSaveButton;
+	QPushButton *histRawButton;
 				    
 	QFrame      *histOutputFrame;
 	QGridLayout *histOutputLayout;
@@ -288,6 +290,7 @@ public slots:
 	
 	void calcMetrics();
 	void outputMetrics();
+	void outputRawData();
 	
 	// Profile
     void profileRenderLive();

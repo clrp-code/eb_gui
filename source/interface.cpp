@@ -745,6 +745,8 @@ int Interface::populateEgsinp() {
 	
 	// run mode
 	egsinp->RM_normal = ((ebInterface*)ebInt)->runModeBox->currentText(); // GUI parameter
+	if (((ebInterface*)ebInt)->waterBox->isChecked())
+		egsinp->RM_normal = "superposition"; // GUI parameter
 	
 	// media definition
 	egsinp->Med_AE   = data->def_AE; // Configuration parameter
@@ -754,11 +756,112 @@ int Interface::populateEgsinp() {
 	egsinp->Med_file = ((ebInterface*)ebInt)->materialEdit->text(); // Configuration/GUI parameter
 	
 	// geometry definition
-	i = phantomListView->currentRow();	
+	i = phantomListView->currentRow();
+	
 	egsinp->phantomFile = i < data->localDirPhants.size()?
 						  data->localDirPhants[i]:data->libDirPhants[i-data->localDirPhants.size()]; // GUI parameter
 	egsinp->phantomFile = egsinp->phantomFile + (i < data->localDirPhants.size()?
 						  data->localNamePhants[i]:data->libNamePhants[i-data->localDirPhants.size()]); // GUI parameter
+	
+	if (((ebInterface*)ebInt)->waterBox->isChecked()) {
+		// make TG-43 phantom
+		// Parse egsphant file
+		if (egsinp->phantomFile.endsWith(".egsphant.gz") || egsinp->phantomFile.endsWith(".egsphant")) {
+			std::istream* input;
+			igzstream ginp;
+			std::ifstream tinp;
+			
+			if (egsinp->phantomFile.endsWith(".egsphant.gz")) {
+				ginp.open(egsinp->phantomFile.toStdString().c_str());
+				input = &ginp;
+			}
+			else {
+				tinp.open(egsinp->phantomFile.toStdString().c_str());
+				input = &tinp;
+			}
+			
+			// get and ignore media
+			int nmed;
+			(*input) >> nmed;
+			std::string med;
+			for (int i=0; i < nmed; i++) {
+				(*input) >> med;
+			}
+			
+			// estepe is ignored
+			double estepe;
+			for (int i=0; i < nmed; i++) {
+				(*input) >> estepe;
+			}
+			
+			// read in all bounds
+			std::string bound2;
+			
+			int nx, ny, nz;
+			(*input) >> nx >> ny >> nz;
+			QStringList x, y, z;
+			
+			for (int i=0; i < nx+1; i++) {
+				(*input) >> bound2;
+				x.append(QString(bound2.c_str()));
+			}
+			for (int i=0; i < ny+1; i++) {
+				(*input) >> bound2;
+				y.append(QString(bound2.c_str()));
+			}
+			for (int i=0; i < nz+1; i++) {
+				(*input) >> bound2;
+				z.append(QString(bound2.c_str()));
+			}
+			
+			ginp.close();
+			tinp.close();
+			
+			// Generate XYZ geom file
+			QString text = "";
+			
+			text += ":start geometry definition:\n";
+			text += "    :start geometry:\n";
+			text += "        name    = TG43_egsphant\n";
+			text += "        library = egs_ndgeometry\n";
+			text += "        type    = EGS_XYZGeometry\n";
+			text += QString("        x-planes = ")+x.join(" ")+"\n";
+			text += QString("        y-planes = ")+y.join(" ")+"\n";
+			text += QString("        z-planes = ")+z.join(" ")+"\n";
+			text += "        :start media input:\n";
+			text += "            media = WATER_0.998\n";
+			text += "        :stop media input:\n";
+			text += "    :stop geometry:\n";
+			text += "    simulation geometry = TG43_egsphant\n";
+			text += ":stop geometry definition:\n";
+			
+			// Make geom file
+			QString fileName = phantomListView->currentItem()->text();
+			if (fileName.endsWith(".gz")) fileName = fileName.left(fileName.length()-3);
+			if (fileName.endsWith(".egsphant")) fileName = fileName.left(fileName.length()-9);
+			fileName += ".tg43.geom";
+			
+			QFile geomFile (data->gui_location+"/database/egsphant/"+fileName);
+			if (!geomFile.remove()) { // If it exists, delete it and if it doesn't, add the location
+				data->localDirPhants << data->gui_location+"/database/egsphant/";
+				data->localNamePhants << fileName;
+			}
+			
+			if (geomFile.open(QFile::WriteOnly | QFile::Truncate)) {
+				QTextStream out(&geomFile);
+				out << text;
+			}
+			geomFile.close();
+			
+			egsinp->phantomFile = data->gui_location+"/database/egsphant/"+fileName;
+			phantomRepopulate();
+		}
+		else {
+			QMessageBox::warning(0, "TG-43 error",
+			tr("TG-43 option only works with an egsphant, continuing with non-egsphant assuming it is pure water."));			
+		}
+	}
+	
 	s = sourceListView->currentItem()->text();
 	i = data->libNameSources.indexOf(s);
 	egsinp->sourceGeomFile = data->libDirSources[i] + data->libNameSources[i] + ".geom"; // GUI parameter
@@ -964,6 +1067,7 @@ int Interface::populateEgsinp() {
 	}
 	else
 		failFlag++;
+	
 	
 	// Check muen data against muen file
 	QStringList mediaFinal;

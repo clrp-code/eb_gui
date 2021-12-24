@@ -89,6 +89,7 @@ public:
 	QLineEdit*   muenEdit;
 	QPushButton* muenLoad;
 	
+	QCheckBox*   waterBox;
 	QCheckBox*   edepBox;
 	
 	QLabel*      njobLabel;

@@ -595,7 +595,6 @@ void EGSPhant::loadgzEGSPhantFilePlus(QString path) {
             media.append(QString(med.c_str()));
 		}
 		
-		
 		// estepe is ignored!
 		double estepe;
 		for (int i=0; i < nmed; i++) {

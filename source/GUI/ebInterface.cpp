@@ -167,6 +167,13 @@ void ebInterface::createLayout() {
 			 "interaction scoring scheme.");
 	edepBox->setToolTip(ttt);
 	
+	waterBox = new QCheckBox(tr("TG-43"));
+	
+	ttt = tr("Replace phantom geometry with pure nominal density water\n"
+	         "and use superposition mode for seeds to create a TG-43\n"
+			 "equivalent simulation.");
+	waterBox->setToolTip(ttt);
+	
 	runModeLabel      = new QLabel(tr("Run mode"));
 	runModeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 	runModeBox        = new QComboBox;
@@ -228,13 +235,14 @@ void ebInterface::createLayout() {
 	simulationLayout->addWidget(muenLoad       ,  6, 1, 1, 1);
 	simulationLayout->addWidget(muenEdit       ,  6, 2, 1, 1);
 												  
-	simulationLayout->addWidget(runModeLabel   ,  9, 0, 1, 1);
-	simulationLayout->addWidget(runModeBox     ,  9, 1, 1, 1);
-	simulationLayout->addWidget(edepBox        ,  9, 2, 1, 1);
+	simulationLayout->addWidget(waterBox       ,  9, 2, 1, 1);
+	simulationLayout->addWidget(runModeLabel   , 10, 0, 1, 1);
+	simulationLayout->addWidget(runModeBox     , 10, 1, 1, 1);
+	simulationLayout->addWidget(edepBox        , 10, 2, 1, 1);
 	
-	simulationLayout->addWidget(njobLabel      , 10, 0, 1, 1);
-	simulationLayout->addWidget(njobBox        , 10, 1, 1, 1);
-	simulationLayout->addWidget(runButton      , 10, 2, 1, 1);
+	simulationLayout->addWidget(njobLabel      , 11, 0, 1, 1);
+	simulationLayout->addWidget(njobBox        , 11, 1, 1, 1);
+	simulationLayout->addWidget(runButton      , 11, 2, 1, 1);
 	
 	simulationLayout->setRowStretch(7, 5);
 	simulationOptions->setLayout(simulationLayout);
@@ -250,6 +258,8 @@ void ebInterface::createLayout() {
 void ebInterface::connectLayout() {
 	// Volume correction
 	connect(volCorBox, SIGNAL(stateChanged(int)),
+			this, SLOT(refresh()));
+	connect(waterBox, SIGNAL(stateChanged(int)),
 			this, SLOT(refresh()));
 	
 	// Change files
@@ -285,6 +295,15 @@ void ebInterface::refresh() {
 		volCorDen->setEnabled(true);
 	else
 		volCorDen->setEnabled(false);
+	
+	if (waterBox->isChecked()) {
+		runModeLabel->setEnabled(false);
+		runModeBox->setEnabled(false);
+	}
+	else {
+		runModeLabel->setEnabled(true);
+		runModeBox->setEnabled(true);
+	}
 }
 
 // Load files
@@ -404,7 +423,7 @@ void ebInterface::runEB() {
 		return;
 	}
 	
-	// Quit if egs)brachy is running
+	// Quit if egs_brachy is running
 	if (ebProcess->state() != 0) {// ebProcess is already running something
 		QMessageBox::information(0, "egs_brachy error",
         tr("Simulations are already underway, wait for them to finish."));

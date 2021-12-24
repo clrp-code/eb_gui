@@ -407,6 +407,7 @@ void doseInterface::createLayout() {
 	
 	// Added data
 	histOutputLabel  = new QLabel("Metrics");
+	histOutputBox    = new QComboBox();
 	
 	histDxLabel      = new QLabel("Dx");
 	histDxEdit       = new QLineEdit("10,20,80,90");
@@ -416,18 +417,21 @@ void doseInterface::createLayout() {
 	histVxEdit->setValidator(&allowedPosRealArrs);
 	
 	histCalcButton   = new QPushButton("Calculate");
-	histSaveButton   = new QPushButton("Output");
+	histSaveButton   = new QPushButton("Output metrics");
+	histRawButton    = new QPushButton("Output raw data");
 	
 	histOutputFrame  = new QFrame();
 	histOutputLayout = new QGridLayout();
 	
-	histOutputLayout->addWidget(histOutputLabel , 0, 0, 1, 4);
-	histOutputLayout->addWidget(histDxLabel     , 1, 0, 1, 1);
-	histOutputLayout->addWidget(histDxEdit      , 1, 1, 1, 3);
-	histOutputLayout->addWidget(histVxLabel     , 2, 0, 1, 1);
-	histOutputLayout->addWidget(histVxEdit      , 2, 1, 1, 3);
+	histOutputLayout->addWidget(histOutputLabel , 0, 0, 1, 2);
+	histOutputLayout->addWidget(histOutputBox   , 0, 0, 1, 2);
+	histOutputLayout->addWidget(histDxLabel     , 1, 0, 1, 2);
+	histOutputLayout->addWidget(histDxEdit      , 1, 2, 1, 4);
+	histOutputLayout->addWidget(histVxLabel     , 2, 0, 1, 2);
+	histOutputLayout->addWidget(histVxEdit      , 2, 2, 1, 4);
 	histOutputLayout->addWidget(histCalcButton  , 3, 0, 1, 2);
 	histOutputLayout->addWidget(histSaveButton  , 3, 2, 1, 2);
+	histOutputLayout->addWidget(histRawButton   , 3, 4, 1, 2);
 	
 	histOutputFrame->setLayout(histOutputLayout);
 	histOutputFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
@@ -1056,11 +1060,11 @@ void doseInterface::loadEgsphant() {
 			parent, SLOT(updateProgress(double)));
 		
 	if (file.endsWith(".egsphant.gz"))
-		phant->loadgzEGSPhantFilePlus(file);
+		phant->loadgzEGSPhantFile(file);
 	else if (file.endsWith(".begsphant"))
-		phant->loadbEGSPhantFilePlus(file);
+		phant->loadbEGSPhantFile(file);
 	else if (file.endsWith(".egsphant"))
-		phant->loadEGSPhantFilePlus(file);
+		phant->loadEGSPhantFile(file);
 	else {
 		QMessageBox::warning(0, "File error",
 		tr("Selected file is not of type egsphant.gz, begsphant, or egsphant.  Aborting"));
@@ -1636,6 +1640,7 @@ void doseInterface::calcMetrics() {
 	// Get dose values	
 	for (int i = 0; i < count; i++) {
 		parent->nameProgress("Filtering data");
+		data.clear(); volume = 0;
 		switch (filterInfo) {
 			case 1: // Mask with no media
 				histDoses[i]->getDV(&data, histMask, &volume, count);
@@ -1741,7 +1746,6 @@ void doseInterface::outputMetrics() {
 		return;
 	}
 	
-	
 	QString filePath = QFileDialog::getSaveFileName(this, tr("Save File"), ".", tr("Images (*.csv)"));
 	
 	if (filePath.length() < 1) // No name selected
@@ -1807,6 +1811,7 @@ void doseInterface::outputMetrics() {
 	// Get dose values	
 	for (int i = 0; i < count; i++) {
 		parent->nameProgress("Filtering data");
+		data.clear(); volume = 0;
 		switch (filterInfo) {
 			case 1: // Mask with no media
 				histDoses[i]->getDV(&data, histMask, &volume, count);
@@ -1910,6 +1915,141 @@ void doseInterface::outputMetrics() {
 	parent->finishedProgress();
 }
 
+void doseInterface::outputRawData() {// Return
+	if (histDoses.size() == 0) {
+		return;
+	}
+	
+	QString filePath = QFileDialog::getSaveFileName(this, tr("Save File"), ".", tr("Images (*.csv)"));
+	
+	if (filePath.length() < 1) // No name selected
+		return;
+	
+	if (!filePath.endsWith(".csv")) // Doesn't have the right extension
+		filePath += ".csv";
+	
+	QString text = "";
+	
+	// Check what filters we have
+	int filterInfo = 0;
+	if (histMaskSelect->currentIndex()) {
+		filterInfo += 1;
+		text += QString("Data filtered to only include doses within contour ")+histMaskSelect->currentText()+"\n";
+	}
+	
+	QList <QListWidgetItem*> selectedMedia = histMediumView->selectedItems();
+	QString allowedMedia = "", allMedia = EGSPHANT_CHARS;
+	if (selectedMedia.size()) {
+		filterInfo += 2;
+		text += QString("Data filtered to only include doses within ")+histPhantSelect->currentText()+" phantom voxels containing:,";
+		for (int i = 0; i < selectedMedia.size(); i++) {
+			allowedMedia += allMedia[histMediumView->row(selectedMedia[i])];
+			text += selectedMedia[i]->text()+",";
+		}
+		text += QString("\n");
+	}
+	
+	double minDose = histDoseMinEdit->text().toDouble(), maxDose = histDoseMaxEdit->text().toDouble();
+	if (minDose || maxDose) {
+		text += QString("Data filtered to only include doses within range ")+QString::number(minDose)
+		     +  " and "+((minDose < maxDose)?QString::number(maxDose):QString("infinity"))+"\n";
+		filterInfo += 4;
+	}
+	
+	if (filterInfo)
+		text += QString("\n");
+	
+	// Get sorted dose arrays
+	parent->resetProgress("Outputting raw data");
+	
+	QVector <DV> data;
+	QVector <QStringList> dataColumns;
+	int count = histDoses.size();
+	double volume;
+	dataColumns.resize(count);
+	QString names = "";
+	
+	// Get dose values	
+	for (int i = 0; i < count; i++) {
+		parent->nameProgress("Filtering data");
+		data.clear(); volume = 0;
+		switch (filterInfo) {
+			case 1: // Mask with no media
+				histDoses[i]->getDV(&data, histMask, &volume, count);
+				break;
+			case 2: // Media with no mask
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, &volume, count);
+				break;
+			case 3: // Media and mask
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, histMask, &volume, count);
+				break;
+			case 4: // Dose ranges
+				histDoses[i]->getDV(&data, &volume, minDose, maxDose, count);
+				break;
+			case 5: // Mask with no media and dose ranges
+				histDoses[i]->getDV(&data, histMask, &volume, minDose, maxDose, count);
+				break;
+			case 6: // Media with no mask and dose ranges
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, &volume, minDose, maxDose, count);
+				break;
+			case 7: // Media and mask and dose ranges
+				histDoses[i]->getDV(&data, histPhant, allowedMedia, histMask, &volume, minDose, maxDose, count);
+				break;
+			default: // #nofilter #nomakeup
+				histDoses[i]->getDV(&data, &volume, count);
+				break;
+		}
+		
+		parent->nameProgress("Building raw output");
+		
+		// Generate metric data
+		names += histLoadedView->item(i)->text();
+		
+		dataColumns[i].clear();
+		for (int j = 0; j < data.size(); j++) {
+			dataColumns[i]        << QString::number(data[j].dose)+",";
+			dataColumns[i].last() += QString::number(data[j].err)+",";
+			dataColumns[i].last() += QString::number(data[j].vol)+",";		
+		}
+	}
+	
+	text += names + "\n";
+	count = 0;
+	
+	for (int i = 0; i < dataColumns.size(); i++) {
+		text += "Dose / Gy,";
+		text += "Uncertainty / Gy,";
+		text += "Volume / cm^3,";	
+		count = (count<dataColumns[i].size()?dataColumns[i].size():count);
+	}
+	text += "\n";
+	
+	// Build columns (and fill empty indices with nothing in case there are different dose counts
+	for (int i = 0; i < count; i++) {
+		for (int j = 0; j < dataColumns.size(); j++) {
+			if (dataColumns[j].size() > i)
+				text += dataColumns[j][i];
+			else
+				text += ",,,";
+		}
+		text += "\n";
+	}
+	
+	QFile dataFile(filePath);
+	
+	if (!dataFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		QMessageBox::warning(0, "Raw data file error",
+		tr("Failed to open the file for raw data output.  Aborting"));	
+		return;
+	}
+	
+	QTextStream out(&dataFile);
+	out << text;
+	dataFile.close();
+	
+	parent->finishedProgress();	
+}
+	
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 //                                Profile                              //
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
