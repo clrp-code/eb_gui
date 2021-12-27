@@ -121,6 +121,8 @@ public:
 	
 	QLabel       *depthLabel;
 	QLineEdit    *depthMin;
+	QPushButton  *depthPlusButton;
+	QPushButton  *depthMinusButton;
 	
 	QPushButton  *expandToBounds;
 	QLabel       *legendLabel;
@@ -273,6 +275,8 @@ public slots:
 	void previewChangeAxis();
 	void previewChangeColor(int i);
 	void previewResetBounds();
+	void previewSliceUp();
+	void previewSliceDown();
 	
 	void loadEgsphant();
 	void loadMapDose();

@@ -95,6 +95,7 @@ void doseInterface::createLayout() {
 	canvasChart     = new QChartView();
 	canvasPic       = new QImage();
 	saveDataButton  = new QPushButton("Save data");
+	saveDataButton->setDisabled(true);
 	saveImageButton = new QPushButton("Save image");
 	canvasInfo      = new QLabel("");
 	
@@ -149,6 +150,10 @@ void doseInterface::createLayout() {
 	
 	depthLabel        = new QLabel("z depth");
 	depthMin          = new QLineEdit("0");
+	depthPlusButton   = new QPushButton();
+	depthPlusButton->setIcon(this->style()->standardIcon(QStyle::SP_ArrowForward));
+	depthMinusButton  = new QPushButton();
+	depthMinusButton->setIcon(this->style()->standardIcon(QStyle::SP_ArrowBack));
 	depthMin->setValidator(&allowedReals);
 	
 	expandToBounds    = new QPushButton("reset");
@@ -172,22 +177,27 @@ void doseInterface::createLayout() {
 	blackPic = new QImage(width,height,QImage::Format_ARGB32_Premultiplied);
 	blackPic->fill(qRgb(0,0,0));
 	
-	dimLayout->addWidget(xAxisButton      , 0, 0, 1, 2);
-	dimLayout->addWidget(yAxisButton      , 0, 2, 1, 2);
-	dimLayout->addWidget(zAxisButton      , 0, 4, 1, 2);
-	dimLayout->addWidget(vertBoundaryLabel, 1, 0, 1, 4);
-	dimLayout->addWidget(vertBoundaryMin  , 2, 0, 1, 2);
-	dimLayout->addWidget(vertBoundaryMax  , 3, 0, 1, 2);
-	dimLayout->addWidget(horBoundaryLabel , 1, 2, 1, 2);
-	dimLayout->addWidget(horBoundaryMin   , 2, 2, 1, 2);
-	dimLayout->addWidget(horBoundaryMax   , 3, 2, 1, 2);
-	dimLayout->addWidget(depthLabel       , 1, 4, 1, 2);
-	dimLayout->addWidget(depthMin         , 2, 4, 1, 2);
-	dimLayout->addWidget(expandToBounds   , 3, 4, 2, 2);
-	dimLayout->addWidget(legendLabel      , 5, 0, 1, 3);
-	dimLayout->addWidget(legendBox        , 6, 0, 1, 3);
-	dimLayout->addWidget(unitsLabel       , 5, 3, 1, 3);
-	dimLayout->addWidget(unitsEdit        , 6, 3, 1, 3);
+	dimLayout->addWidget(xAxisButton      , 0,  0, 1, 6);
+	dimLayout->addWidget(yAxisButton      , 0,  6, 1, 6);
+	dimLayout->addWidget(zAxisButton      , 0, 12, 1, 6);
+	dimLayout->addWidget(vertBoundaryLabel, 1,  0, 1, 6);
+	dimLayout->addWidget(vertBoundaryMin  , 2,  0, 1, 6);
+	dimLayout->addWidget(vertBoundaryMax  , 3,  0, 1, 6);
+	dimLayout->addWidget(horBoundaryLabel , 1,  6, 1, 6);
+	dimLayout->addWidget(horBoundaryMin   , 2,  6, 1, 6);
+	dimLayout->addWidget(horBoundaryMax   , 3,  6, 1, 6);
+	dimLayout->addWidget(depthLabel       , 1, 12, 1, 6);
+	dimLayout->addWidget(depthMinusButton , 2, 12, 1, 1);
+	dimLayout->addWidget(depthMin         , 2, 13, 1, 4);
+	dimLayout->addWidget(depthPlusButton  , 2, 17, 1, 1);
+	dimLayout->addWidget(expandToBounds   , 3, 12, 2, 6);
+	dimLayout->addWidget(legendLabel      , 5,  0, 1, 9);
+	dimLayout->addWidget(legendBox        , 6,  0, 1, 9);
+	dimLayout->addWidget(unitsLabel       , 5,  9, 1, 9);
+	dimLayout->addWidget(unitsEdit        , 6,  9, 1, 9);
+	
+	for (int i = 0; i < 18; i++)
+		dimLayout->setColumnStretch(i, 5);
 	
 	dimFrame->setLayout(dimLayout);
 	dimFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
@@ -507,6 +517,11 @@ void doseInterface::connectLayout() {
 	
 	connect(expandToBounds, SIGNAL(pressed()),
 			this, SLOT(previewResetBounds()));
+			
+	connect(depthPlusButton, SIGNAL(pressed()),
+			this, SLOT(previewSliceUp()));
+	connect(depthMinusButton, SIGNAL(pressed()),
+			this, SLOT(previewSliceDown()));
 	
 	// Egsphant
 	connect(phantSelect, SIGNAL(currentIndexChanged(int)),
@@ -1062,11 +1077,11 @@ void doseInterface::loadEgsphant() {
 			parent, SLOT(updateProgress(double)));
 		
 	if (file.endsWith(".egsphant.gz"))
-		phant->loadgzEGSPhantFile(file);
+		phant->loadgzEGSPhantFilePlus(file);
 	else if (file.endsWith(".begsphant"))
-		phant->loadbEGSPhantFile(file);
+		phant->loadbEGSPhantFilePlus(file);
 	else if (file.endsWith(".egsphant"))
-		phant->loadEGSPhantFile(file);
+		phant->loadEGSPhantFilePlus(file);
 	else {
 		QMessageBox::warning(0, "File error",
 		tr("Selected file is not of type egsphant.gz, begsphant, or egsphant.  Aborting"));
@@ -1247,6 +1262,222 @@ void doseInterface::previewResetBounds() {
 	previewCanvasRenderLive();
 }
 
+void doseInterface::previewSliceUp() {
+	double depth = depthMin->text().toDouble(), newDepth = depthMin->text().toDouble(), tempDepth = depthMin->text().toDouble();
+	int index;
+	bool isReset = false;
+	
+	QVector <QVector <double> * > depths;
+	QVector <int> sizes;
+	
+	// Add all possible depth indices to depths and sizes
+	if (xAxisButton->isChecked()) {
+		// Phantom
+		if (0 < phantSelect->currentIndex()) {
+			depths.append(&phant->x);
+			sizes.append(phant->nx);
+		}
+		
+		// Colour map
+		if (0 < mapDoseBox->currentIndex()) {
+			depths.append(&mapDose->cx);
+			sizes.append(mapDose->x);
+		}
+		
+		// Isodoses
+		for (int i = 0; i < 3; i++)
+			if (0 < isoDoseBox[i]->currentIndex()) {
+				depths.append(&isoDoses[i]->cx);
+				sizes.append(isoDoses[i]->x);				
+			}
+	}
+	else if (yAxisButton->isChecked()) {
+		// Phantom
+		if (0 < phantSelect->currentIndex()) {
+			depths.append(&phant->y);
+			sizes.append(phant->ny);
+		}
+		
+		// Colour map
+		if (0 < mapDoseBox->currentIndex()) {
+			depths.append(&mapDose->cy);
+			sizes.append(mapDose->y);
+		}
+		
+		// Isodoses
+		for (int i = 0; i < 3; i++)
+			if (0 < isoDoseBox[i]->currentIndex()) {
+				depths.append(&isoDoses[i]->cy);
+				sizes.append(isoDoses[i]->y);				
+			}
+	}
+	else if (zAxisButton->isChecked()) {
+		// Phantom
+		if (0 < phantSelect->currentIndex()) {
+			depths.append(&phant->z);
+			sizes.append(phant->nz);
+		}
+		
+		// Colour map
+		if (0 < mapDoseBox->currentIndex()) {
+			depths.append(&mapDose->cz);
+			sizes.append(mapDose->z);
+		}
+		
+		// Isodoses
+		for (int i = 0; i < 3; i++)
+			if (0 < isoDoseBox[i]->currentIndex()) {
+				depths.append(&isoDoses[i]->cz);
+				sizes.append(isoDoses[i]->z);				
+			}
+	}
+	
+	
+	for (int i = 0; i < depths.size(); i++) {
+		if (depth < depths[i]->at(0)) {// If below, go to first slice
+			tempDepth = (depths[i]->at(0)+depths[i]->at(1))/2.0;
+		} // And if we aren't already at the final slice
+		else if ((depth+0.05) < ((depths[i]->at(sizes[i]-1)+depths[i]->at(sizes[i]))/2.0)) { 
+			// Get index
+			index = 0;
+			for (int j = 0; j < sizes[i]; j++) {
+				if (depth > depths[i]->at(j))
+					index = j;
+				else
+					break;
+			}
+			
+			// Get midpoint of current slice
+			tempDepth = (phant->z[index]+phant->z[index+1])/2.0;
+			
+			// If current depth is only 0.5 mm below slice center or above center, get next center
+			if ((depth+0.05) >= tempDepth)
+				tempDepth = (phant->z[index+1]+phant->z[index+2])/2.0;
+		}
+		
+		// Set newDepth, unless we already have a newDepth closer to the current point
+		if (!isReset) {
+			newDepth = tempDepth;
+			isReset = true;
+		}
+		else if (abs(tempDepth-depth) < abs(newDepth-depth)) {
+			newDepth = tempDepth;
+		}
+	}
+	
+	depthMin->setText(QString::number(newDepth));
+	
+	previewCanvasRenderLive();
+}
+
+void doseInterface::previewSliceDown() {
+	double depth = depthMin->text().toDouble(), newDepth = depthMin->text().toDouble(), tempDepth = depthMin->text().toDouble();
+	int index;
+	bool isReset = false;
+	
+	QVector <QVector <double> * > depths;
+	QVector <int> sizes;
+	
+	// Add all possible depth indices to depths and sizes
+	if (xAxisButton->isChecked()) {
+		// Phantom
+		if (0 < phantSelect->currentIndex()) {
+			depths.append(&phant->x);
+			sizes.append(phant->nx);
+		}
+		
+		// Colour map
+		if (0 < mapDoseBox->currentIndex()) {
+			depths.append(&mapDose->cx);
+			sizes.append(mapDose->x);
+		}
+		
+		// Isodoses
+		for (int i = 0; i < 3; i++)
+			if (0 < isoDoseBox[i]->currentIndex()) {
+				depths.append(&isoDoses[i]->cx);
+				sizes.append(isoDoses[i]->x);				
+			}
+	}
+	else if (yAxisButton->isChecked()) {
+		// Phantom
+		if (0 < phantSelect->currentIndex()) {
+			depths.append(&phant->y);
+			sizes.append(phant->ny);
+		}
+		
+		// Colour map
+		if (0 < mapDoseBox->currentIndex()) {
+			depths.append(&mapDose->cy);
+			sizes.append(mapDose->y);
+		}
+		
+		// Isodoses
+		for (int i = 0; i < 3; i++)
+			if (0 < isoDoseBox[i]->currentIndex()) {
+				depths.append(&isoDoses[i]->cy);
+				sizes.append(isoDoses[i]->y);				
+			}
+	}
+	else if (zAxisButton->isChecked()) {
+		// Phantom
+		if (0 < phantSelect->currentIndex()) {
+			depths.append(&phant->z);
+			sizes.append(phant->nz);
+		}
+		
+		// Colour map
+		if (0 < mapDoseBox->currentIndex()) {
+			depths.append(&mapDose->cz);
+			sizes.append(mapDose->z);
+		}
+		
+		// Isodoses
+		for (int i = 0; i < 3; i++)
+			if (0 < isoDoseBox[i]->currentIndex()) {
+				depths.append(&isoDoses[i]->cz);
+				sizes.append(isoDoses[i]->z);				
+			}
+	}
+	
+	
+	for (int i = 0; i < depths.size(); i++) {
+		if (depth > depths[i]->last()) {// If below, go to first slice
+			tempDepth = (depths[i]->at(sizes[i]-1)+depths[i]->at(sizes[i]))/2.0;
+		} // And if we aren't already at the final slice
+		else if ((depth-0.05) > ((depths[i]->at(0)+depths[i]->at(1))/2.0)) { 
+			// Get index
+			index = 0;
+			for (int j = 0; j < sizes[i]; j++) {
+				if (depth > depths[i]->at(j))
+					index = j;
+				else
+					break;
+			}
+			
+			// Get midpoint of current slice
+			tempDepth = (phant->z[index]+phant->z[index+1])/2.0;
+			
+			// If current depth is only 0.5 mm above slice center or below center, get next center
+			if ((depth-0.05) <= tempDepth)
+				tempDepth = (phant->z[index-1]+phant->z[index])/2.0;
+		}
+		
+		// Set newDepth, unless we already have a newDepth closer to the current point
+		if (!isReset) {
+			newDepth = tempDepth;
+			isReset = true;
+		}
+		else if (abs(tempDepth-depth) < abs(newDepth-depth)) {
+			newDepth = tempDepth;
+		}
+	}
+	
+	depthMin->setText(QString::number(newDepth));
+	
+	previewCanvasRenderLive();
+}
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 //                               Histogram                             //
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
@@ -1278,15 +1509,15 @@ void doseInterface::loadFilterEgsphant() {
 			parent, SLOT(updateProgress(double)));
 		
 	if (file.endsWith(".egsphant.gz")) {
-		histPhant->loadgzEGSPhantFilePlus(file);
+		histPhant->loadgzEGSPhantFile(file);
 		file = file.left(file.size()-12).split("/").last();
 	}
 	else if (file.endsWith(".begsphant")) {
-		histPhant->loadbEGSPhantFilePlus(file);
+		histPhant->loadbEGSPhantFile(file);
 		file = file.left(file.size()-10).split("/").last();
 	}
 	else if (file.endsWith(".egsphant")) {
-		histPhant->loadEGSPhantFilePlus(file);
+		histPhant->loadEGSPhantFile(file);
 		file = file.left(file.size()-9).split("/").last();
 	}
 	else {
@@ -1339,15 +1570,15 @@ void doseInterface::loadMaskEgsphant() {
 			parent, SLOT(updateProgress(double)));
 		
 	if (file.endsWith(".egsphant.gz")) {
-		histMask->loadgzEGSPhantFilePlus(file);
+		histMask->loadgzEGSPhantFile(file);
 		file = file.left(file.size()-12).split("/").last();
 	}
 	else if (file.endsWith(".begsphant")) {
-		histMask->loadbEGSPhantFilePlus(file);
+		histMask->loadbEGSPhantFile(file);
 		file = file.left(file.size()-10).split("/").last();
 	}
 	else if (file.endsWith(".egsphant")) {
-		histMask->loadEGSPhantFilePlus(file);
+		histMask->loadEGSPhantFile(file);
 		file = file.left(file.size()-9).split("/").last();
 	}
 	else {
