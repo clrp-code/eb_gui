@@ -860,6 +860,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 		
 		for (int j = 0; j < phant->ny; j++) { // Y //
 			yMid = (phant->y[j]+phant->y[j+1])/2.0;
+			nj = phant->ny-1-j;
 		
 			// Preprocess step to check which structs to look up on this pixel column\n
 			// yIndex is going to have all indices of structPos that we need to look up

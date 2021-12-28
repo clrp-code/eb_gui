@@ -74,12 +74,23 @@ doseInterface::~doseInterface() {
 	delete canvasPic;
 	delete blackPic;
 	delete phantPic;
+	
 	delete phant;
 	delete mapPic;
 	delete mapDose;
 	delete isoDoses[2];
 	delete isoDoses[1];
 	delete isoDoses[0];
+	
+	delete histPhant;
+	delete histMask;
+	
+	for (int i = 0; i < histDoses.size(); i++)
+		delete histDoses[i];
+	
+	for (int i = 0; i < profDoses.size(); i++)
+		delete profDoses[i];
+	
 	delete bufferLayout;
 	delete log;
 }
@@ -448,8 +459,105 @@ void doseInterface::createLayout() {
 	histoLayout->addWidget(histOutputFrame);
 	
 	// Profile ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+	// Doses
+	profDosesLabel   = new QLabel("Doses");
+	profLoadButton   = new QPushButton("Load");
+	profDoseSelect   = new QComboBox();
+	profDeleteButton = new QPushButton("Delete");
 	
-	// Main layout
+	profLoadedView   = new QListWidget();
+	
+	profLegendBox    = new QCheckBox("Legend");
+	profInterpBox    = new QCheckBox("Interpolate");
+	profLegendBox->setChecked(true);
+	
+	profDosesFrame   = new QFrame();
+	profDosesLayout  = new QGridLayout();
+	
+	profDosesLayout->addWidget(profDosesLabel  , 0, 0, 1, 2);
+	profDosesLayout->addWidget(profLoadButton  , 1, 0, 1, 1);
+	profDosesLayout->addWidget(profDoseSelect  , 1, 1, 1, 3);
+	profDosesLayout->addWidget(profLoadedView  , 2, 0, 1, 4);
+	profDosesLayout->addWidget(profDeleteButton, 3, 0, 1, 4);
+	profDosesLayout->addWidget(profLegendBox   , 0, 2, 1, 2);
+	//profDosesLayout->addWidget(profInterpBox   , 4, 2, 1, 2); // moved
+	
+	profDosesFrame->setLayout(profDosesLayout);
+	profDosesFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+	profileLayout->addWidget(profDosesFrame);
+	
+	// Position
+	profCoordLabel  = new QLabel("Coordinate");
+	
+	p0CoordLabel    = new QLabel("Start");
+	p1CoordLabel    = new QLabel("Stop");
+	xAxisLabel      = new QLabel("x");
+	yAxisLabel      = new QLabel("y");
+	zAxisLabel      = new QLabel("z");
+	
+	profx0Edit      = new QLineEdit("0");
+	profy0Edit      = new QLineEdit("0");
+	profz0Edit      = new QLineEdit("0");
+	profx1Edit      = new QLineEdit("1");
+	profy1Edit      = new QLineEdit("1");
+	profz1Edit      = new QLineEdit("0");
+	
+	profResLabel    = new QLabel("Samples per cm");
+	profResEdit     = new QLineEdit("10");
+	
+	profCoordFrame  = new QFrame();
+	profCoordLayout = new QGridLayout();
+	
+	profCoordLayout->addWidget(profCoordLabel, 0, 0, 1, 2);
+	
+	profCoordLayout->addWidget(p0CoordLabel  , 0, 2, 1, 2);
+	profCoordLayout->addWidget(p1CoordLabel  , 0, 4, 1, 2);
+	profCoordLayout->addWidget(xAxisLabel    , 1, 0, 1, 2);
+	profCoordLayout->addWidget(yAxisLabel    , 2, 0, 1, 2);
+	profCoordLayout->addWidget(zAxisLabel    , 3, 0, 1, 2);
+	
+	profCoordLayout->addWidget(profx0Edit    , 1, 2, 1, 2);
+	profCoordLayout->addWidget(profy0Edit    , 2, 2, 1, 2);
+	profCoordLayout->addWidget(profz0Edit    , 3, 2, 1, 2);
+	profCoordLayout->addWidget(profx1Edit    , 1, 4, 1, 2);
+	profCoordLayout->addWidget(profy1Edit    , 2, 4, 1, 2);
+	profCoordLayout->addWidget(profz1Edit    , 3, 4, 1, 2);
+	
+	profCoordLayout->addWidget(profResLabel  , 4, 0, 1, 2);
+	profCoordLayout->addWidget(profResEdit   , 4, 2, 1, 2);
+	profCoordLayout->addWidget(profInterpBox , 4, 4, 1, 2);
+	
+	profCoordFrame->setLayout(profCoordLayout);
+	profCoordFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+	profileLayout->addWidget(profCoordFrame);
+	
+	// Egsphant visual
+	profPhantLabel   = new QLabel("Phantom preview");
+	profPhant        = new EGSPhant();
+	profPhantSelect  = new QComboBox();
+	profPhantPreview = new QLabel();
+	
+	profPhantProject = new QLabel("Projected on");
+	profPhantAxis    = new QComboBox();
+	profPhantAxis->addItem("x");
+	profPhantAxis->addItem("y");
+	profPhantAxis->addItem("z");
+	profPhantAxis->setCurrentIndex(2);
+	
+	profPhantFrame   = new QFrame();
+	profPhantLayout  = new QGridLayout();
+	
+	profPhantLayout->addWidget(profPhantLabel  , 0, 0, 1, 2);
+	profPhantLayout->addWidget(profPhantSelect , 1, 0, 1, 2);
+	profPhantLayout->addWidget(profPhantPreview, 2, 0, 1, 2);
+	profPhantLayout->addWidget(profPhantProject, 3, 0, 1, 1);
+	profPhantLayout->addWidget(profPhantAxis   , 3, 1, 1, 1);
+	
+	profPhantFrame->setLayout(profPhantLayout);
+	profPhantFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+	profileLayout->addWidget(profPhantFrame);
+	
+	// Main layout ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 	mainLayout->addWidget(optionsTab     , 0, 0, 2, 1);
 	mainLayout->addWidget(canvasArea     , 0, 1, 4, 4);
 	//mainLayout->addWidget(canvasChart    , 0, 1, 4, 4);
@@ -704,7 +812,6 @@ void doseInterface::render() {
 			break;
 	}
 }
-
 
 // Preview save functions
 void doseInterface::saveImage() {
@@ -1348,11 +1455,11 @@ void doseInterface::previewSliceUp() {
 			}
 			
 			// Get midpoint of current slice
-			tempDepth = (phant->z[index]+phant->z[index+1])/2.0;
+			tempDepth = (depths[i]->at(index)+depths[i]->at(index+1))/2.0;
 			
 			// If current depth is only 0.5 mm below slice center or above center, get next center
 			if ((depth+0.05) >= tempDepth)
-				tempDepth = (phant->z[index+1]+phant->z[index+2])/2.0;
+				tempDepth = (depths[i]->at(index+1)+depths[i]->at(index+2))/2.0;
 		}
 		
 		// Set newDepth, unless we already have a newDepth closer to the current point
@@ -1440,10 +1547,10 @@ void doseInterface::previewSliceDown() {
 			}
 	}
 	
-	
 	for (int i = 0; i < depths.size(); i++) {
 		if (depth > depths[i]->last()) {// If below, go to first slice
 			tempDepth = (depths[i]->at(sizes[i]-1)+depths[i]->at(sizes[i]))/2.0;
+			qDebug() << "Setting to top slice center " << tempDepth;
 		} // And if we aren't already at the final slice
 		else if ((depth-0.05) > ((depths[i]->at(0)+depths[i]->at(1))/2.0)) { 
 			// Get index
@@ -1456,11 +1563,11 @@ void doseInterface::previewSliceDown() {
 			}
 			
 			// Get midpoint of current slice
-			tempDepth = (phant->z[index]+phant->z[index+1])/2.0;
+			tempDepth = (depths[i]->at(index)+depths[i]->at(index+1))/2.0;
 			
 			// If current depth is only 0.5 mm above slice center or below center, get next center
 			if ((depth-0.05) <= tempDepth)
-				tempDepth = (phant->z[index-1]+phant->z[index])/2.0;
+				tempDepth = (depths[i]->at(index-1)+depths[i]->at(index))/2.0;
 		}
 		
 		// Set newDepth, unless we already have a newDepth closer to the current point

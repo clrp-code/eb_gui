@@ -251,7 +251,57 @@ public:
 	
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 //                                Profile                              //
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //	
+	// Doses
+	QLabel          *profDosesLabel;
+	QPushButton     *profLoadButton;
+	QComboBox   	*profDoseSelect;
+	QPushButton     *profDeleteButton;
+	
+	QVector <Dose*> profDoses;
+	
+	QListWidget     *profLoadedView;
+	
+	QCheckBox       *profLegendBox;
+	QCheckBox       *profInterpBox;
+				    
+	QFrame          *profDosesFrame;
+	QGridLayout     *profDosesLayout;
+	
+	// Position
+	QLabel      *profCoordLabel;
+			    
+	QLabel      *p0CoordLabel;
+	QLabel      *p1CoordLabel;
+	QLabel      *xAxisLabel;
+	QLabel      *yAxisLabel;
+	QLabel      *zAxisLabel;
+	
+	QLineEdit   *profx0Edit;
+	QLineEdit   *profy0Edit;
+	QLineEdit   *profz0Edit;
+	QLineEdit   *profx1Edit;
+	QLineEdit   *profy1Edit;
+	QLineEdit   *profz1Edit;
+	
+	QLabel      *profResLabel;
+	QLineEdit   *profResEdit;
+	
+	QFrame      *profCoordFrame;
+	QGridLayout *profCoordLayout;
+	
+	// Egsphant visual
+	QLabel      *profPhantLabel;
+	EGSPhant	*profPhant;
+	QComboBox   *profPhantSelect;
+	QLabel      *profPhantPreview;
+	
+	QLabel      *profPhantProject;
+	QComboBox   *profPhantAxis;
+	
+	QFrame      *profPhantFrame;
+	QGridLayout *profPhantLayout;
+	
 public slots:
 	// GUI functions
 	// All render commands, with a live wrapper function.  All changes (outside of the render buttons)

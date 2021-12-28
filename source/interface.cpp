@@ -334,10 +334,14 @@ void Interface::phantomRepopulate() {
 	((doseInterface*)doseInt)->histPhantSelect->clear();
 	((doseInterface*)doseInt)->histPhantSelect->addItem("none");
 	
+	((doseInterface*)doseInt)->profPhantSelect->clear();
+	((doseInterface*)doseInt)->profPhantSelect->addItem("none");
+	
 	for (int i = 0; i < data->localNamePhants.size(); i++) {
 		phantomListView->addItem(data->localNamePhants[i]);
 		((doseInterface*)doseInt)->phantSelect->addItem(data->localNamePhants[i]);
 		((doseInterface*)doseInt)->histPhantSelect->addItem(data->localNamePhants[i]);
+		((doseInterface*)doseInt)->profPhantSelect->addItem(data->localNamePhants[i]);
 	}
 	if (!phantomOnlyLocal->isChecked())
 		for (int i = 0; i < data->libNamePhants.size(); i++) {
@@ -402,6 +406,7 @@ void Interface::doseRepopulate() {
 	((doseInterface*)doseInt)->isoDoseBox[1]->clear();
 	((doseInterface*)doseInt)->isoDoseBox[2]->clear();
 	((doseInterface*)doseInt)->histDoseSelect->clear();
+	((doseInterface*)doseInt)->profDoseSelect->clear();
 	((doseInterface*)doseInt)->resetDoses();
 	
 	((doseInterface*)doseInt)->mapDoseBox->addItem("none");
@@ -416,6 +421,7 @@ void Interface::doseRepopulate() {
 		((doseInterface*)doseInt)->isoDoseBox[1]->addItem(data->localNameDoses[i]);
 		((doseInterface*)doseInt)->isoDoseBox[2]->addItem(data->localNameDoses[i]);
 		((doseInterface*)doseInt)->histDoseSelect->addItem(data->localNameDoses[i]);
+		((doseInterface*)doseInt)->profDoseSelect->addItem(data->localNameDoses[i]);
 	}
 }
 
