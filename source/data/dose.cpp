@@ -93,14 +93,18 @@ Dose::~Dose() {
 
 double Dose::triInterpol(double xp, double yp, double zp, double *val,
                          double *err) {
+    // Convert real numbers to indices to see if we are in the phantom
+    int xi = getIndex("X", xp);
+    int yi = getIndex("Y", yp);
+    int zi = getIndex("Z", zp);
+    if (zi == -1 || yi == -1 || xi == -1) {
+        return -1; // If outside of bounds, return -1
+    }
+							 
     // All the positions needed (in addition to the ones passed in)
     double x0, y0, z0, x1, y1, z1;
 
-    // Indices
-    int xi, yi, zi;
-
     // Define X
-    xi = getIndex("X", xp);
     if (xp < (cx[xi] + cx[xi-1])/2.0) {
         x0 = (cx[xi] + cx[xi-1])/2.0;
         x1 = (cx[xi] + cx[xi+1])/2.0;
@@ -111,7 +115,6 @@ double Dose::triInterpol(double xp, double yp, double zp, double *val,
     }
 
     // Define Y
-    yi = getIndex("Y", yp);
     if (yp < (cy[yi] + cy[yi-1])/2.0) {
         y0 = (cy[yi] + cy[yi-1])/2.0;
         y1 = (cy[yi] + cy[yi+1])/2.0;
@@ -122,7 +125,6 @@ double Dose::triInterpol(double xp, double yp, double zp, double *val,
     }
 
     // Define Z
-    zi = getIndex("Z", zp);
     if (zp < (cz[zi] + cz[zi-1])/2.0) {
         z0 = (cz[zi] + cz[zi-1])/2.0;
         z1 = (cz[zi] + cz[zi+1])/2.0;

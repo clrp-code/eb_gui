@@ -646,11 +646,15 @@ void EGSPhant::loadgzEGSPhantFilePlus(QString path) {
 		// read in region rhos and set the relative rho value if required
 		increment = 70.0/double(nz); // 70%
 		double cur_rho;
+		maxDensity = 0;
         for (int k = 0; k < nz; k++) {
             for (int j = 0; j < ny; j++)
                 for (int i = 0; i < nx; i++) {
 					*data >> cur_rho;
                     d[i][j][k] = cur_rho;
+                    if (d[i][j][k] > maxDensity) {
+                        maxDensity = d[i][j][k];
+                    }
                 }
             emit madeProgress(increment); // Update progress bar
         }

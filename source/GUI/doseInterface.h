@@ -291,16 +291,22 @@ public:
 	QGridLayout *profCoordLayout;
 	
 	// Egsphant visual
-	QLabel      *profPhantLabel;
-	EGSPhant	*profPhant;
-	QComboBox   *profPhantSelect;
-	QLabel      *profPhantPreview;
+	QLabel       *profPhantLabel;
+	EGSPhant	 *profPhant;
+	QComboBox    *profPhantSelect;
+	QLabel       *profPhantPreview;
+				 
+	QLabel       *profPhantProject;
+	QComboBox    *profPhantAxis;
 	
-	QLabel      *profPhantProject;
-	QComboBox   *profPhantAxis;
+	QRadioButton *profMediaButton;
+	QRadioButton *profDensityButton;
 	
-	QFrame      *profPhantFrame;
-	QGridLayout *profPhantLayout;
+	QPushButton  *renderProfPreview;
+	QPushButton  *saveProfPreview;
+				 
+	QFrame       *profPhantFrame;
+	QGridLayout  *profPhantLayout;
 	
 public slots:
 	// GUI functions
@@ -349,6 +355,13 @@ public slots:
 	// Profile
     void profileRenderLive();
     void profileRender();
+	
+	void loadPreviewEgsphant();
+	void showPreviewEgsphant();
+	void savePreviewEgsphant();
+	
+	void loadProfDose();
+	void deleteProfDose();
 	
 	// Use this when someone navigates away from the tab to avoid crashing
 	void resetLayout();

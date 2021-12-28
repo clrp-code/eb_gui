@@ -532,26 +532,38 @@ void doseInterface::createLayout() {
 	profileLayout->addWidget(profCoordFrame);
 	
 	// Egsphant visual
-	profPhantLabel   = new QLabel("Phantom preview");
-	profPhant        = new EGSPhant();
-	profPhantSelect  = new QComboBox();
-	profPhantPreview = new QLabel();
-	
-	profPhantProject = new QLabel("Projected on");
-	profPhantAxis    = new QComboBox();
-	profPhantAxis->addItem("x");
-	profPhantAxis->addItem("y");
-	profPhantAxis->addItem("z");
+	profPhantLabel    = new QLabel("Phantom preview");
+	profPhant         = new EGSPhant();
+	profPhantSelect   = new QComboBox();
+	profPhantPreview  = new QLabel();
+					  
+	profPhantProject  = new QLabel("Projected on");
+	profPhantAxis     = new QComboBox();
+	profPhantAxis->addItem("x axis");
+	profPhantAxis->addItem("y axis");
+	profPhantAxis->addItem("z axis");
 	profPhantAxis->setCurrentIndex(2);
 	
-	profPhantFrame   = new QFrame();
-	profPhantLayout  = new QGridLayout();
+	renderProfPreview = new QPushButton("Generate");
+	saveProfPreview   = new QPushButton("Save");
+	saveProfPreview->setEnabled(false);
 	
-	profPhantLayout->addWidget(profPhantLabel  , 0, 0, 1, 2);
-	profPhantLayout->addWidget(profPhantSelect , 1, 0, 1, 2);
-	profPhantLayout->addWidget(profPhantPreview, 2, 0, 1, 2);
-	profPhantLayout->addWidget(profPhantProject, 3, 0, 1, 1);
-	profPhantLayout->addWidget(profPhantAxis   , 3, 1, 1, 1);
+	profMediaButton   = new QRadioButton("Media");
+	profDensityButton = new QRadioButton("Density");
+	profMediaButton->setChecked(true);
+	
+	profPhantFrame    = new QFrame();
+	profPhantLayout   = new QGridLayout();
+	
+	profPhantLayout->addWidget(profPhantLabel   , 0, 0, 1, 2);
+	profPhantLayout->addWidget(profPhantSelect  , 1, 0, 1, 2);
+	profPhantLayout->addWidget(profPhantProject , 2, 0, 1, 1);
+	profPhantLayout->addWidget(profPhantAxis    , 2, 1, 1, 1);
+	profPhantLayout->addWidget(profMediaButton  , 3, 0, 1, 1);
+	profPhantLayout->addWidget(profDensityButton, 3, 1, 1, 1);
+	profPhantLayout->addWidget(profPhantPreview , 4, 0, 1, 2);
+	profPhantLayout->addWidget(renderProfPreview, 5, 0, 1, 1);
+	profPhantLayout->addWidget(saveProfPreview  , 5, 1, 1, 1);
 	
 	profPhantFrame->setLayout(profPhantLayout);
 	profPhantFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
@@ -711,6 +723,17 @@ void doseInterface::connectLayout() {
 			this, SLOT(outputRawData()));
 	
 	// Profile ~~~~~~~~~~~~~~
+	connect(profPhantSelect, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(loadPreviewEgsphant()));
+	connect(renderProfPreview, SIGNAL(pressed()),
+			this, SLOT(showPreviewEgsphant()));
+	connect(saveProfPreview, SIGNAL(pressed()),
+			this, SLOT(savePreviewEgsphant()));
+			
+	connect(profLoadButton, SIGNAL(pressed()),
+			this, SLOT(loadProfDose()));
+	connect(profDeleteButton, SIGNAL(pressed()),
+			this, SLOT(deleteProfDose()));
 }
 
 // Swap panels
@@ -1847,8 +1870,8 @@ void doseInterface::histoRender() {
 			
 			double subIncrement = increment/double(binCount);
 			int dataIndex = 0, dataCount = 0;
-			for (int i = 1; i <= binCount; i++) {
-				cur = s0+sInc*i;
+			for (int j = 1; j <= binCount; j++) {
+				cur = s0+sInc*j;
 				
 				dataCount = 0;
 				while (dataIndex < data.size()) {
@@ -1885,10 +1908,10 @@ void doseInterface::histoRender() {
 			
 			double subIncrement = increment/double(data.size());
 				
-			for (int i = 0; i < data.size(); i++) {
-				if (!(i%sInc)) {// Only add up to 399 points (start skipping at 400+)
-					series.last()->append(data[i].dose, 100.0*double(data.size()-i)/double(data.size()));
-					tempData.append(QPointF(data[i].dose, 100.0*double(data.size()-i)/double(data.size())));
+			for (int j = 0; j < data.size(); j++) {
+				if (!(j%sInc)) {// Only add up to 399 points (start skipping at 400+)
+					series.last()->append(data[j].dose, 100.0*double(data.size()-j)/double(data.size()));
+					tempData.append(QPointF(data[j].dose, 100.0*double(data.size()-j)/double(data.size())));
 				}
 				parent->updateProgress(subIncrement);
 			}
@@ -2399,5 +2422,305 @@ void doseInterface::profileRefresh() {
 
 void doseInterface::profileRenderLive() {if(renderCheckBox->isChecked()) profileRender();}
 void doseInterface::profileRender() {
+	// Return
+	if (profDoses.size() == 0) {
+		return;
+	}
+	
+	// Get sorted dose arrays
+	QVector <QLineSeries*> series;
+	QChart* plot = new QChart();
+	int count = profDoses.size();
+	
+	// Reset functions holding all the data for later output
+	savePlotName.clear();
+	savePlotX = savePlotY = "";
+	savePlotData.clear();
+	QList<QPointF> tempData;
+	
+	// Get increments and total count
+	double x0 = profx0Edit->text().toDouble(), y0 = profy0Edit->text().toDouble(),
+		   z0 = profz0Edit->text().toDouble(), x1 = profx1Edit->text().toDouble(),
+		   y1 = profy1Edit->text().toDouble(), z1 = profz1Edit->text().toDouble();
+	
+	double rInc = sqrt((x1-x0)*(x1-x0)+(y1-y0)*(y1-y0)+(z1-z0)*(z1-z0));
+	
+	int points = rInc*profResEdit->text().toDouble()+1;
+	
+	double xInc = (x1-x0)/double(points), yInc = (y1-y0)/double(points), zInc = (z1-z0)/double(points);
+	rInc /= double(points-1);
+	double xi, yi, zi, ri;
+	
+	double value, error;
+	
+	for (int i = 0; i < count; i++) {
+		// Generate series data
+		tempData.clear();
+		series.append(new QLineSeries());
+		series.last()->setName(profLoadedView->item(i)->text());
+		savePlotName.append(profLoadedView->item(i)->text());
+		
+		if (profInterpBox->isChecked()) {
+			for (int j = 0; j < points; j++) {
+				xi = x0+xInc*j;
+				yi = y0+yInc*j;
+				zi = z0+zInc*j;
+				ri = rInc*j;
+				
+				profDoses[i]->triInterpol(xi,yi,zi,&value,&error);
+				
+				series.last()->append(ri,value);			
+				tempData.append(QPointF(ri,value));
+			}
+		}
+		else {
+			for (int j = 0; j < points; j++) {
+				xi = x0+xInc*j;
+				yi = y0+yInc*j;
+				zi = z0+zInc*j;
+				ri = rInc*j;
+				
+				value = profDoses[i]->getDose(xi,yi,zi);
+				
+				series.last()->append(ri,value);			
+				tempData.append(QPointF(ri,value));
+			}
+		}
+			
+		plot->addSeries(series.last());
+		savePlotData.append(tempData);
+	}
+		
+	// Fill out plot parameters
+	QString xString = QString("(")+QString::number(x0)+" "+QString::number(y0)+" "+QString::number(z0)+") to ";
+	xString += QString("(")+QString::number(x1)+" "+QString::number(y1)+" "+QString::number(z1)+")";
+	plot->createDefaultAxes();
+	plot->axes()[0]->setTitleText(QString("distance from ")+xString+" / cm");
+	savePlotX = QString("distance from ")+xString+" / cm";
+	plot->axes()[0]->setRange(0,rInc*double(points-1));
+	
+	plot->setTitle("Dose profile");
+	plot->axes()[1]->setTitleText("dose / Gy");
+	savePlotY = "dose / Gy";
+		
+	if (!profLegendBox->isChecked()) // Hide legend if it's unwanted
+		plot->legend()->hide();
+	
+	canvasChart->setChart(plot);
+	canvasChart->resize(800,600);
+    canvasArea->repaint();
+	parent->finishedProgress();	
+}
+	
+void doseInterface::loadPreviewEgsphant() {	
+	int i = profPhantSelect->currentIndex()-1;
+	if (i < 0) {return;} // Exit if none is selected or box is empty in setup
+	
+	if (i >= parent->data->localDirPhants.size()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected egsphant index is larger than the local phantom count.  Aborting"));		
+		return;
+	}
+	
+	QString file = parent->data->localDirPhants[i]+parent->data->localNamePhants[i]; // Get file location
+	
+	// Connect the progress bar
+	parent->resetProgress("Loading egsphant file");
+	connect(profPhant, SIGNAL(madeProgress(double)),
+			parent, SLOT(updateProgress(double)));
+	
+	if (file.endsWith(".egsphant.gz")) {
+		profPhant->loadgzEGSPhantFilePlus(file);
+		file = file.left(file.size()-12).split("/").last();
+	}
+	else if (file.endsWith(".begsphant")) {
+		profPhant->loadbEGSPhantFilePlus(file);
+		file = file.left(file.size()-10).split("/").last();
+	}
+	else if (file.endsWith(".egsphant")) {
+		profPhant->loadEGSPhantFilePlus(file);
+		file = file.left(file.size()-9).split("/").last();
+	}
+	else {
+		QMessageBox::warning(0, "File error",
+		tr("Selected file is not of type egsphant.gz, begsphant, or egsphant.  Aborting"));
+		parent->finishedProgress();
+		return;
+	}
+	
+	parent->finishedProgress();
+}
+
+void doseInterface::loadProfDose() {
+	int i = profDoseSelect->currentIndex();	
+	
+	if (i >= profDoseSelect->count()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected dose index is larger than the local dose count.  Aborting"));		
+		return;
+	}
+	
+	QString file = parent->data->localDirDoses[i]+parent->data->localNameDoses[i]; // Get file location
+	profDoses.append(new Dose());
+	
+	// Connect the progress bar
+	parent->resetProgress("Loading dose file");
+	connect(profDoses.last(), SIGNAL(madeProgress(double)),
+			parent, SLOT(updateProgress(double)));
+	connect(profDoses.last(), SIGNAL(nameProgress(QString)),
+			parent, SLOT(nameProgress(QString)));
+		
+	if (file.endsWith(".b3ddose")) {
+		profDoses.last()->readBIn(file, 1);
+		file = file.left(file.size()-10).split("/").last();
+	}
+	else if (file.endsWith(".3ddose")) {
+		profDoses.last()->readIn(file, 1);
+		file = file.left(file.size()-9).split("/").last();
+	}
+	else {
+		QMessageBox::warning(0, "File error",
+		tr("Selected file is not of type b3ddose or 3ddose.  Aborting"));
+		parent->finishedProgress();
+		delete profDoses.last();
+		profDoses.removeLast();
+		
+		return;		
+	}
+	
+	parent->finishedProgress();
+	
+	// Add listing to loaded dose view
+	if (file.endsWith(".b3ddose"))
+		profLoadedView->addItem(parent->data->localNameDoses[i].left(parent->data->localNameDoses[i].size()-8));
+	else if (file.endsWith(".3ddose"))
+		profLoadedView->addItem(parent->data->localNameDoses[i].left(parent->data->localNameDoses[i].size()-7));
+	else
+		profLoadedView->addItem(parent->data->localNameDoses[i]);
+}
+
+void doseInterface::deleteProfDose() {
+	if (profLoadedView->selectedItems().size() != 1) {
+		QMessageBox::warning(0, "Deletion error",
+		tr("No doses selected.  Please select one to delete."));
+		return;
+	}
+	
+	int i = profLoadedView->currentRow();
+	delete profDoses[i];
+	profDoses.remove(i);
+	delete profLoadedView->currentItem();
+}
+
+void doseInterface::showPreviewEgsphant() {
+	// Get positions
+	double x0 = profx0Edit->text().toDouble(), y0 = profy0Edit->text().toDouble(),
+		   z0 = profz0Edit->text().toDouble(), x1 = profx1Edit->text().toDouble(),
+		   y1 = profy1Edit->text().toDouble(), z1 = profz1Edit->text().toDouble();
+	
+	QString axis = profPhantAxis->currentText();
+	
+	double horLeft, horRight, verBot, verTop, depth;
+	
+	// Assign the right points to start with in cm
+	switch (profPhantAxis->currentIndex()) {
+		case 0 :
+		horLeft  = y0;
+		horRight = y1;
+		verBot   = z0;
+		verTop   = z1;
+		depth    = (x0+x1)/2.0;
+		break;
+		case 1 :
+		horLeft  = x0;
+		horRight = x1;
+		verBot   = z0;
+		verTop   = z1;
+		depth    = (y0+y1)/2.0;
+		break;
+		default:
+		horLeft  = x0;
+		horRight = x1;
+		verBot   = y0;
+		verTop   = y1;
+		depth    = (z0+z1)/2.0;
+		break;
+	}
+	
+	double density = abs(horRight-horLeft);
+	if (abs(verTop-verBot) > density)
+		density = abs(verTop-verBot);
+	
+	double horStart = (horRight+horLeft)/2.0-density/2.0*1.1; // Get the bottom length corner coord
+	double verStart = (verTop+verBot)/2.0-density/2.0*1.1; // Get the bottom length corner coord
+	
+	density /= 180.0; // Use this to break the longer length into 180 pixels to get conversion
+	
+	// Get line coords in terms of pixels
+	QPoint lineStart((horLeft-horStart)*density,(verBot-verStart)*density);
+	QPoint lineStop((horRight-horStart)*density,(verTop-verStart)*density);
+	
+	// Draw mini-image
+	QImage* pic = new QImage(200,200,QImage::Format_ARGB32_Premultiplied);
+	if (profMediaButton->isChecked()) {
+		int cInc = 255.0/double(profPhant->media.size()+1), c;
+		double h, w;
+		char med;
+		QString indeces("123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+		for (int i = 0; i < 200; i++)
+			for (int j = 0; j < 200; j++) {
+				w = horStart+double(i)/density;
+				h = verStart+double(j)/density;
+				
+				if (!axis.compare("x axis"))
+					med = profPhant->getMedia(depth, h, w);
+				else if (!axis.compare("y axis"))
+					med = profPhant->getMedia(h, depth, w);
+				else if (!axis.compare("z axis"))
+					med = profPhant->getMedia(h, w, depth);
+				
+				c = (indeces.indexOf(med)+1)*cInc;
+
+				pic->setPixel(i, 199-j, qRgb(c, c, c));
+			}
+	}
+	else {
+		int cInc = 255.0/double(profPhant->maxDensity), c;
+		double h, w;
+		for (int i = 0; i < 200; i++)
+			for (int j = 0; j < 200; j++) {
+				w = horStart+double(i)/density;
+				h = verStart+double(j)/density;
+				
+				if (!axis.compare("x axis"))
+					c = profPhant->getDensity(depth, h, w);
+				else if (!axis.compare("y axis"))
+					c = profPhant->getDensity(h, depth, w);
+				else if (!axis.compare("z axis"))
+					c = profPhant->getDensity(h, w, depth);
+				else
+					c = 0;
+				c *= cInc;
+
+				pic->setPixel(i, 199-j, qRgb(c, c, c));
+			}
+	}
+	
+	// Draw line
+	QPainter paint(pic);
+    paint.setPen(Qt::red);
+
+    paint.drawLine(lineStart.x(), 199-lineStart.y(), lineStop.x(), 199-lineStop.y());
+    paint.end();
+
+	// Output to GUI	
+	profPhantPreview->setPixmap(QPixmap::fromImage((*pic)));
+    profPhantPreview->setFixedSize(canvasPic->width(), canvasPic->height());
+    profPhantPreview->repaint();
+	delete pic;
+	saveProfPreview->setEnabled(true);
+}
+
+void doseInterface::savePreviewEgsphant() {
 	
 }
