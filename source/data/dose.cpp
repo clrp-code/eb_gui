@@ -98,7 +98,7 @@ double Dose::triInterpol(double xp, double yp, double zp, double *val,
     int yi = getIndex("Y", yp);
     int zi = getIndex("Z", zp);
     if (zi == -1 || yi == -1 || xi == -1) {
-        return -1; // If outside of bounds, return -1
+        return *val = *err = -1; // If outside of bounds, return -1
     }
 							 
     // All the positions needed (in addition to the ones passed in)

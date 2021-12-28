@@ -374,10 +374,10 @@ void doseInterface::createLayout() {
 	histMediumView   = new QListWidget();
 	histMediumView->setSelectionMode(QAbstractItemView::MultiSelection);
 	
-	histDoseMinLabel = new QLabel("Min Dose (Gy)");
+	histDoseMinLabel = new QLabel("Min dose (Gy)");
 	histDoseMinEdit  = new QLineEdit("0");
 	histDoseMinEdit->setValidator(&allowedPosReals);
-	histDoseMaxLabel = new QLabel("Max Dose (Gy)");
+	histDoseMaxLabel = new QLabel("Max dose (Gy)");
 	histDoseMaxEdit  = new QLineEdit("0");
 	histDoseMaxEdit->setValidator(&allowedPosReals);
 	
@@ -501,6 +501,12 @@ void doseInterface::createLayout() {
 	profx1Edit      = new QLineEdit("1");
 	profy1Edit      = new QLineEdit("1");
 	profz1Edit      = new QLineEdit("0");
+	profx0Edit->setValidator(&allowedReals);
+	profy0Edit->setValidator(&allowedReals);
+	profz0Edit->setValidator(&allowedReals);
+	profx1Edit->setValidator(&allowedReals);
+	profy1Edit->setValidator(&allowedReals);
+	profz1Edit->setValidator(&allowedReals);
 	
 	profResLabel    = new QLabel("Samples per cm");
 	profResEdit     = new QLineEdit("10");
@@ -532,7 +538,7 @@ void doseInterface::createLayout() {
 	profileLayout->addWidget(profCoordFrame);
 	
 	// Egsphant visual
-	profPhantLabel    = new QLabel("Phantom preview");
+	profPhantLabel    = new QLabel("Cross-section image");
 	profPhant         = new EGSPhant();
 	profPhantSelect   = new QComboBox();
 	profPhantPreview  = new QLabel();
@@ -568,6 +574,7 @@ void doseInterface::createLayout() {
 	profPhantFrame->setLayout(profPhantLayout);
 	profPhantFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
 	profileLayout->addWidget(profPhantFrame);
+	profPhantFrame->setDisabled(true); // To be implemented
 	
 	// Main layout ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 	mainLayout->addWidget(optionsTab     , 0, 0, 2, 1);
@@ -2469,8 +2476,10 @@ void doseInterface::profileRender() {
 				
 				profDoses[i]->triInterpol(xi,yi,zi,&value,&error);
 				
-				series.last()->append(ri,value);			
-				tempData.append(QPointF(ri,value));
+				if (value != -1) {
+					series.last()->append(ri,value);			
+					tempData.append(QPointF(ri,value));
+				}
 			}
 		}
 		else {
@@ -2482,8 +2491,10 @@ void doseInterface::profileRender() {
 				
 				value = profDoses[i]->getDose(xi,yi,zi);
 				
-				series.last()->append(ri,value);			
-				tempData.append(QPointF(ri,value));
+				if (value != -1) {
+					series.last()->append(ri,value);			
+					tempData.append(QPointF(ri,value));
+				}
 			}
 		}
 			
