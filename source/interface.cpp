@@ -960,7 +960,7 @@ int Interface::populateEgsinp() {
 	egsinp->SO_edep     = "no"; // GUI parameter
 	egsinp->SO_muenFile = ((ebInterface*)ebInt)->muenEdit->text(); // Configuration/GUI parameter
 	
-	double tempScale = sourceScaleEdit->text().toDouble();
+	double tempScale = sourceScaleEdit->text().toDouble(); // Flat scaling or Gy*cm^2/h
 	if (!sourceScaleBox->currentText().compare("Air kerma strength")) {
 		double airKermaSeed = 0;
 		
@@ -976,10 +976,10 @@ int Interface::populateEgsinp() {
 					break;
 				}
 			}
-			airKermaSeed = line.toDouble();
+			airKermaSeed = line.toDouble(); // 
 			
 			if (airKermaSeed) { // if it worked
-				tempScale /= airKermaSeed; // tempScale will now have the ratio of experiment/MC
+				tempScale /= airKermaSeed; // tempScale will now have the ratio of experiment/MC per hour
 			}
 			else // if none was found
 				QMessageBox::warning(0, "air kerma error",

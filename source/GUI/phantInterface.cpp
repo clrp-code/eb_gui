@@ -824,6 +824,14 @@ void phantInterface::loadStruct() {
 		}
 		tempS = tempS.trimmed().replace(" ", "_");
 		
+		if (globalStructName.contains(tempS.trimmed())) {
+			char letter = 'a';
+			tempS = tempS + " (" + letter + ")";
+			while (globalStructName.contains(tempS.trimmed())) {
+				letter++;
+				tempS = tempS.left(tempS.size()-4) + " (" + letter + ")";
+			}
+		}
 		globalStructName.append(tempS.trimmed());
 		globalStructReference.append(tempI.toInt());
 		globalStructLookup[tempI.toInt()] = globalStructName.size()-1;
