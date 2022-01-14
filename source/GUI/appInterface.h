@@ -58,7 +58,12 @@ public:
     ~appInterface();
 
     Interface *parent; // Pointer to the parent to access data with
+	
+	// Output RT Dose
+	QPushButton *outputRT;
 
+public slots:
+	void outputRTdose();
 public:
 // LAYOUT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     QGridLayout *mainLayout;

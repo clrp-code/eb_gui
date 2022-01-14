@@ -161,6 +161,9 @@ public:
 	// Parse plan file
 	int parsePlan(QString* log);
 	
+	// Output RT dose
+	int outputRTDose(QString path, Dose* output);
+	
 	// signal used for the progress bar
 signals:
 	void newProgress(QString title);

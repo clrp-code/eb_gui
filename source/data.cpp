@@ -1257,3 +1257,496 @@ int Data::parsePlan(QString* log) {
 	
 	return 0;
 }
+
+int Data::outputRTDose(QString path, Dose* output) {	
+	// Open the DICOM file
+    QFile file(path);
+    if (file.open(QIODevice::WriteOnly)) {
+        unsigned char *dat;
+        QDataStream out(&file);
+        out.setByteOrder(QDataStream::LittleEndian);
+		
+		emit newProgressName("Outputting DICOM tag data");
+		
+		// Output the header, can be anything, needs to be 128 characters long
+		dat = new unsigned char[128];
+		memcpy((void*)dat,(void*)"          This file is written by the eb_gui application intended for use with egs_brachy, written by Martin Martinov.          ",128);
+		out.writeRawData((char*)dat, 128);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		
+		// Output the DICM header
+		dat = new unsigned char[4];
+		memcpy((void*)dat,(void*)"DICM",4);
+		out.writeRawData((char*)dat, 4);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		int size;
+		// Below are data elements taken from an example, some of which are used for output
+		size = 8 + 4;
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x2; dat[3] = 0x0; dat[2] = 0x0;
+		memcpy((void*)(&dat[4]),(void*)"UL",2); dat[6] = size-8; dat[7] = 0;
+		//dat[8] = 192; dat[9] = 0; dat[10] = 0; dat[11] = 0;
+		dat[8] = 72; dat[9] = 0; dat[10] = 0; dat[11] = 0;
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8 + 6;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x2; dat[3] = 0x0; dat[2] = 0x1;
+		memcpy((void*)(&dat[4]),(void*)"OB",2); dat[6] = 0; dat[7] = 0;
+		dat[8] = 2; dat[9] = 0; dat[10] = 0; dat[11] = 0;
+		dat[12] = 0; dat[13] = 1;
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8 + 30;
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x2; dat[3] = 0x0; dat[2] = 0x2;
+		memcpy((void*)(&dat[4]),(void*)"UI",2); dat[6] = size-8; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"1.2.840.10008.5.1.4.1.1.481.2",size-8); // RT Dose Storage
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8 + 18;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x2; dat[3] = 0x0; dat[2] = 0x10;
+		memcpy((void*)(&dat[4]),(void*)"UI",2); dat[6] = size-8; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"1.2.840.10008.1.2",size-8); // Implicit VR Endian: Default Transfer Syntax for DICOM
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8 + 10;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x8; dat[3] = 0x0; dat[2] = 0x5;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"ISO_IR 100",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		auto now = std::chrono::system_clock::now();
+		std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+		struct tm *parts = std::localtime(&now_c);
+		
+		std::string date = std::to_string(1900+parts->tm_year);
+		std::string temp = std::to_string(1+parts->tm_mon);
+		if (temp.size() == 1) temp = "0"+temp;
+		date = date + temp;
+		temp=std::to_string(parts->tm_mday);
+		if (temp.size() == 1) temp = "0"+temp;
+		date = date + temp;
+		
+		size = 8 + date.size();  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x8; dat[3] = 0x0; dat[2] = 0x12;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)date.data(),size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		std::string time = std::to_string(parts->tm_hour);
+		if (time.size() == 1) time = "0"+time;
+		temp = std::to_string(parts->tm_min);
+		if (temp.size() == 1) temp = "0"+temp;
+		time = time + temp;
+		temp = std::to_string(parts->tm_sec);
+		if (temp.size() == 1) temp = "0"+temp;
+		time = time + temp;
+		
+		size = 8 + time.size();  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x8; dat[3] = 0x0; dat[2] = 0x13;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)time.data(),size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8 + 30;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x8; dat[3] = 0x0; dat[2] = 0x16;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"1.2.840.10008.5.1.4.1.1.481.2",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x8; dat[3] = 0x0; dat[2] = 0x50;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+6;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x8; dat[3] = 0x0; dat[2] = 0x60;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"RTDOSE",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+22;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x8; dat[3] = 0x10; dat[2] = 0x30;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"EGS BRACHY CALCULATION",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8 + 24;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x8; dat[3] = 0x11; dat[2] = 0x50;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"1.2.840.10008.3.1.2.3.2",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		std::string thick = std::to_string((output->cz[1]-output->cz[0])*10);
+		if (!(thick.size()%2)) thick = thick+" ";
+		size = 8 + thick.size();  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x18; dat[3] = 0x0; dat[2] = 0x50;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)thick.data(),size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+22;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x20; dat[3] = 0x0; dat[2] = 0x10;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"EGS BRACHY CALCULATION",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+2;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x20; dat[3] = 0x0; dat[2] = 0x11;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"1 ",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+2;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x20; dat[3] = 0x0; dat[2] = 0x13;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"1 ",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		std::string position = std::to_string((output->cx[1]+output->cx[0])/2*10)+"\\"+
+							   std::to_string((output->cy[1]+output->cy[0])/2*10)+"\\"+
+							   std::to_string((output->cz[1]+output->cz[0])/2*10);
+		if (!(position.size()%2)) position = position+" ";
+		size = 8 + position.size();  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x20; dat[3] = 0x0; dat[2] = 0x32;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)position.data(),size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8 + 12;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x20; dat[3] = 0x0; dat[2] = 0x37;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"1\\0\\0\\0\\1\\0 ",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8 + 0;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x20; dat[3] = 0x10; dat[2] = 0x40;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8 + 2;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x0; dat[2] = 0x2;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		dat[8] = 1; dat[9] = 0;
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+12;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x0; dat[2] = 0x4;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"MONOCHROME2 ",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		std::string zCount = std::to_string(output->z);
+		if (!(zCount.size()%2)) zCount = zCount+" ";
+		size = 8+zCount.size();  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x0; dat[2] = 0x08;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)zCount.data(),size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+4;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x0; dat[2] = 0x9;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		dat[9] = 0x30; dat[8] = 0x4; dat[11] = 0x0; dat[10] = 0xc;
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+2;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x0; dat[2] = 0x10;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		dat[8] = output->x%(1<<8); dat[9] = int(output->x/(1<<8));
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+2;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x0; dat[2] = 0x11;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		dat[8] = output->y%(1<<8); dat[9] = int(output->y/(1<<8));
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		std::string xyThick = std::to_string((output->cx[1]-output->cx[0])*10)+"\\"+
+							  std::to_string((output->cy[1]-output->cy[0])*10)+" ";
+		if (!(xyThick.size()%2)) xyThick = xyThick+" ";
+		size = 8+xyThick.size();
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x0; dat[2] = 0x30;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)xyThick.data(),size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+2;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x1; dat[2] = 0x0;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		dat[8] = 16; dat[9] = 0;
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+2;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x1; dat[2] = 0x1;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		dat[8] = 16; dat[9] = 0;
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+2;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x1; dat[2] = 0x2;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		dat[8] = 15; dat[9] = 0;
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+2;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x1; dat[2] = 0x3;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		dat[8] = 0; dat[9] = 0;
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+2;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x30; dat[0] = 0x4; dat[3] = 0x0; dat[2] = 0x2;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"GY",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+8;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x30; dat[0] = 0x4; dat[3] = 0x0; dat[2] = 0x4;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"PHYSICAL",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+6;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x30; dat[0] = 0x4; dat[3] = 0x0; dat[2] = 0xA;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"RECORD",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		std::string zPlanes = "";
+		for (int i = 0; i < output->z-1; i++)
+			zPlanes += std::to_string((output->cz[i+1]+output->cz[i])/2*10)+"\\";
+		zPlanes += std::to_string((output->cz[output->z+1]+output->cz[output->z])/2*10);
+		if (!(zPlanes.size()%2)) zPlanes = zPlanes+" ";
+		size = 8 + zPlanes.size();
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x30; dat[0] = 0x4; dat[3] = 0x0; dat[2] = 0xC;
+		dat[4] = (size-8)%(1<<8); dat[5] = int((size-8)/(1<<8)); dat[6] = int((size-8)/(1<<16))%(1<<8); dat[7] = int((size-8)/(1<<24))%(1<<8);
+		memcpy((void*)(&dat[8]),(void*)zPlanes.data(),size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		double scaling = (0xEFFF)/output->getMax();
+		output->scale(scaling);
+		
+		std::string scalingString = std::to_string(1/scaling);
+		if (!(scalingString.size()%2)) scalingString = scalingString+" ";
+		size = 8 + scalingString.size();
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x30; dat[0] = 0x4; dat[3] = 0x0; dat[2] = 0xE;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)scalingString.data(),size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		size = 8+6;  
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x30; dat[0] = 0x4; dat[3] = 0x0; dat[2] = 0x14;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"IMAGE ",size-8);
+		
+		out.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		dat = new unsigned char[8];
+		unsigned long int bSize = output->x*output->y*output->z*2;
+		
+		dat[1] = 0x7F; dat[0] = 0xE0; dat[3] = 0x0; dat[2] = 0x10;
+		dat[4] = bSize%(1<<8); dat[5] = int(bSize/(1<<8))%(1<<8); dat[6] = int(bSize/(1<<16))%(1<<8); dat[7] = int(bSize/(1<<24));
+		
+		out.writeRawData((char*)dat, 8);
+		delete[] dat;
+		emit madeProgress(0.5); // 30.5% left at this point
+		
+		emit newProgressName("Outputting DICOM dose data");
+		double increment = 30.5/output->z;
+		
+		unsigned short int bDat;
+		for (int k = 0; k < output->z; k++) {
+			for (int j = output->y-1; j >= 0; j--) {
+				for (int i = 0; i < output->x; i++) {
+					bDat = output->val[i][j][k];
+					out << bDat;
+				}
+			}
+			emit madeProgress(increment);
+		}
+	}
+	
+    return 1;
+}

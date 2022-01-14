@@ -59,15 +59,68 @@ appInterface::~appInterface() {
 // Layout Settings
 void appInterface::createLayout() {
 	mainLayout = new QGridLayout();
+	QString ttt = "";
 	
+	outputRT = new QPushButton("Output RT Dose");
+	ttt = tr("Convert selected 3ddose file to RT dose file.");
+	outputRT->setToolTip(ttt);
+	
+	mainLayout->addWidget(outputRT, 1, 0, 1, 1);	
 	setLayout(mainLayout);
 }
 
 void appInterface::connectLayout() {
+	connect(outputRT, SIGNAL(pressed()),
+			this, SLOT(outputRTdose()));
+}
+
+void appInterface::outputRTdose() {
+	int i = parent->doseListView->currentRow()-1;
+	if (i < 0) {return;} // Exit if none is selected or box is empty in setup
 	
+	Dose toBeRT;
+	
+	if (i >= parent->data->localDirDoses.size()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected dose index is larger than the local dose count.  Aborting"));		
+		return;
+	}
+	
+	// Get RT file save location
+	QString rtFile = QFileDialog::getSaveFileName(this, tr("Save RT Dose File"), ".", tr("DICOM (*.dcm)"));
+	
+	if (rtFile.length() < 1) // No name selected
+		return;
+		
+	if (!rtFile.endsWith(".dcm"))
+		rtFile += ".dcm";
+	
+	QString doseFile = parent->data->localDirDoses[i]+parent->data->localNameDoses[i]; // Get file location
+	
+	// Connect the progress bar and load dose
+	parent->resetProgress("Loading 3ddose file");
+	connect(&toBeRT, SIGNAL(madeProgress(double)),
+			parent, SLOT(updateProgress(double)));
+		
+	if (doseFile.endsWith(".b3ddose"))
+		toBeRT.readBIn(doseFile, 2);
+	else if (doseFile.endsWith(".3ddose"))
+		toBeRT.readIn(doseFile, 2);
+	else {
+		QMessageBox::warning(0, "File error",
+		tr("Selected dose file is not of type 3ddose or b3ddose.  Aborting"));
+		parent->finishedProgress();
+		return;		
+	}
+	
+	// Now save RT Dose
+	parent->data->outputRTDose(rtFile, &toBeRT);
+	
+	// Finish with progress bar
+	parent->finishedProgress();
 }
 
 // Refresh
 void appInterface::refresh() {
-	mainLayout->addWidget(parent->doseFrame, 1, 2, 1, 1);
+	mainLayout->addWidget(parent->doseFrame, 0, 0, 1, 1);
 }

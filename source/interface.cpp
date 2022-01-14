@@ -230,11 +230,12 @@ void Interface::createGlobalWidgets() {
 	geometryFrame->setLineWidth(LINE_WIDTH);
 	geometryFrame->setLayout(geometryGrid);
 	
-	// Phantom list
+	// Dose list
 	doseLabel     = new QLabel(tr("<b>Dose distributions</b>"));
 	doseListView  = new QListWidget();
-	//doseListView->setSelectionMode(QAbstractItemView::SingleSelection);
+	doseListView->setSelectionMode(QAbstractItemView::SingleSelection);
 	doseImport    = new QPushButton(tr("Import"));
+	doseImport->setDisabled(true); // To be implemented
 	doseDelete    = new QPushButton(tr("Delete"));
 	
 	doseGrid  = new QGridLayout();
@@ -262,7 +263,7 @@ void Interface::createLayout() {
 	tabWidget->addTab(sourceInt,tr("Import DICOM plan"));
 	tabWidget->addTab(phantInt ,tr("Import DICOM phantom"));
 	tabWidget->addTab(doseInt  ,tr("Analyze results"));
-	tabWidget->addTab(appInt   ,tr("Other applications"));
+	tabWidget->addTab(appInt   ,tr("Output DICOM dose"));
 	
 	mainLayout->addWidget(tabWidget  ,0,0,1,2);
 	mainLayout->addWidget(closeButton,1,1,1,1);
@@ -583,6 +584,9 @@ void Interface::refresh() {
 			((phantInterface*)phantInt)->refresh();		
 		break;
 		case 3 : 
+			((doseInterface*)doseInt)->refresh();		
+		break;
+		case 4 : 
 			((appInterface*)appInt)->refresh();		
 		break;
 		default :

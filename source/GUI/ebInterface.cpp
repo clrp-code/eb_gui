@@ -206,6 +206,10 @@ void ebInterface::createLayout() {
 	ttt = tr("Start egs_brachy simulation and create 3ddose files.");
 	runButton->setToolTip(ttt);
 	
+	// Other options
+	saveButton = new QPushButton("Save egsinp");
+	egsViewButton = new QPushButton("Run egs_view");
+	
 	// Only allow ints
 	ncaseEdit->setValidator(&allowedNums);
 	volCorDen->setValidator(&allowedNums);
@@ -235,14 +239,17 @@ void ebInterface::createLayout() {
 	simulationLayout->addWidget(muenLoad       ,  6, 1, 1, 1);
 	simulationLayout->addWidget(muenEdit       ,  6, 2, 1, 1);
 												  
-	simulationLayout->addWidget(waterBox       ,  9, 2, 1, 1);
 	simulationLayout->addWidget(runModeLabel   , 10, 0, 1, 1);
 	simulationLayout->addWidget(runModeBox     , 10, 1, 1, 1);
-	simulationLayout->addWidget(edepBox        , 10, 2, 1, 1);
+	simulationLayout->addWidget(waterBox       , 10, 2, 1, 1);
 	
 	simulationLayout->addWidget(njobLabel      , 11, 0, 1, 1);
 	simulationLayout->addWidget(njobBox        , 11, 1, 1, 1);
-	simulationLayout->addWidget(runButton      , 11, 2, 1, 1);
+	simulationLayout->addWidget(edepBox        , 11, 2, 1, 1);
+	
+	simulationLayout->addWidget(runButton      , 12, 0, 1, 1);
+	simulationLayout->addWidget(saveButton     , 12, 1, 1, 1);
+	simulationLayout->addWidget(egsViewButton  , 12, 2, 1, 1);
 	
 	simulationLayout->setRowStretch(7, 5);
 	simulationOptions->setLayout(simulationLayout);

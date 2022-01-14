@@ -99,6 +99,8 @@ public:
 	QComboBox*   runModeBox;
 	
 	QPushButton* runButton;
+	QPushButton* saveButton;
+	QPushButton* egsViewButton;
 
     // Generic GUI methods
     void createLayout();

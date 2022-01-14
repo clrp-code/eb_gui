@@ -656,6 +656,21 @@ double Dose::getMax() {
     return max;
 }
 
+int Dose::scale(double factor) {
+    if (factor <= 0) { // Scale by positive non-zero number only
+        return 0;
+    }
+
+    for (int k = 0; k < z; k++)
+        for (int j = 0; j < y; j++)
+            for (int i = 0; i < x; i++) {
+                val[i][j][k] *= factor;    // Multiply each value by factor
+            }
+
+    // Since error is fractional, it does not change
+    return 1;
+}
+
 // Run through all 3ddose values and create lines for each pixel
 void Dose::getContour(QVector <QVector <QLineF> > *con,
                       QVector <double> doses, QString axis, double depth,

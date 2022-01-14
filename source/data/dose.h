@@ -100,6 +100,9 @@ public:
 
     // Returns the max dose of this
     double getMax();
+	
+    // Scale this by factor
+    int scale(double factor);
 
     // Get isodose points
     void getContour(QVector <QVector <QLineF> > *con, QVector <double> doses,
