@@ -38,7 +38,7 @@
 */
 #include "data.h"
 
-#define DEBUG_BUILDEGSPHANT // Comment out
+//#define DEBUG_BUILDEGSPHANT // Comment out
 
 int Data::loadDefaults() {
 	QProcessEnvironment envVars = QProcessEnvironment::systemEnvironment();

@@ -114,9 +114,8 @@ void phantInterface::createLayout() {
 	calibLabel     = new QLabel     (tr("HU to density table"));
 	calibLoad      = new QPushButton(tr("Load"));
 	calibEdit      = new QLineEdit  (parent->data->hu_location);
+	calibEdit->setToolTip(parent->data->hu_location);
 	calibEdit->setDisabled(true);
-	
-	calibLoad->setDisabled(true); // To be implemented
 	
 	ttt = tr("Select the CT HU to density conversion table.");
 	calibLabel->setToolTip(ttt);
@@ -152,7 +151,7 @@ void phantInterface::createLayout() {
 	dcmGrid->addWidget(calibLoad     , 6, 2, 1, 2);
 	dcmGrid->addWidget(calibEdit     , 6, 4, 1, 2);
 	
-	dcmGrid->addWidget(create        , 7, 0, 1, 6);
+	//dcmGrid->addWidget(create        , 7, 0, 1, 6); // Moved to elsewhere
 	
 	dcmFrame->setLayout(dcmGrid);
 	dcmFrame->setFrameStyle(QFrame::Box | QFrame::Sunken);
@@ -341,6 +340,7 @@ void phantInterface::createLayout() {
 	mainLayout->addWidget(prioFrame   , 2, 0, 2, 1);
 	mainLayout->addWidget(contourFrame, 0, 1, 4, 1);
 	mainLayout->addWidget(marFrame    , 0, 2, 1, 1);
+	mainLayout->addWidget(create      , 3, 2, 1, 1);
 	
 	mainLayout->setColumnStretch(0, 5);
 	mainLayout->setColumnStretch(1, 5);
@@ -359,6 +359,8 @@ void phantInterface::connectLayout() {
 			
 	connect(structLoad, SIGNAL(pressed()),
 			this, SLOT(loadStruct()));
+	connect(calibLoad, SIGNAL(pressed()),
+			this, SLOT(loadHU2rho()));
 			
 	connect(ctImportFiles, SIGNAL(pressed()),
 			this, SLOT(loadCTFiles()));
@@ -1003,7 +1005,7 @@ int phantInterface::parseError(int err) {
 
 // Refresh
 void phantInterface::refresh() {
-	mainLayout->addWidget(parent->phantomFrame, 1, 2, 3, 1);
+	mainLayout->addWidget(parent->phantomFrame, 1, 2, 2, 1);
 	
 	if (marEnable->isChecked()) {
 		marLTLabel->setDisabled(false);
@@ -1054,6 +1056,23 @@ void phantInterface::refresh() {
 		marContour->setDisabled(true);
 		marContourBox->setDisabled(true);
 	}
+}
+
+void phantInterface::loadHU2rho() {
+	QString path = QFileDialog::getOpenFileName(this, tr("Load HU to density conversion table"), parent->data->gui_location+"/database/HU_conversion", tr("HU2RHO file (*.HU2RHO)"));
+	
+	// Check if it opens as a text file (at the very least)
+	QFile file(path);
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+		QMessageBox::warning(0, "file error",
+        tr("Could not open selected file."));
+        return;
+	}
+	
+	// No other checks, leave it for actual egsphant creation time
+	
+	calibEdit->setText(path);
+	calibEdit->setToolTip(path);	
 }
 
 // DICOM CT array sorting functions

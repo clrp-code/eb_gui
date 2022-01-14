@@ -157,6 +157,7 @@ public slots:
 	
 	// DICOM functions
 	void loadStruct(); // Read in DICOM struct file
+	void loadHU2rho(); // Change material file
 	
 	void loadCTFiles(); // Load CT files into memory
 	void loadCTDir(); // Load CT file directory into memory
