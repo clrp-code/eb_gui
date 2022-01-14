@@ -99,6 +99,7 @@ doseInterface::~doseInterface() {
 void doseInterface::createLayout() {
 	mainLayout = new QGridLayout();
 	bufferLayout = new QGridLayout();
+	QString ttt = ""; // tool tip text
 	
 	// Shared objects ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //				    
 	canvasArea      = new QScrollArea();
@@ -107,17 +108,28 @@ void doseInterface::createLayout() {
 	canvasPic       = new QImage();
 	saveDataButton  = new QPushButton("Save data");
 	saveDataButton->setDisabled(true);
+	ttt = tr("Save plot data into csv file.");
+	saveDataButton->setToolTip(ttt);
 	saveImageButton = new QPushButton("Save image");
 	canvasInfo      = new QLabel("");
+	ttt = tr("Save image data into png file.");
+	saveImageButton->setToolTip(ttt);
 	
 	canvasArea->setWidget(canvas);
 				    
 	rendering       = new QFrame();
 	renderingLayout = new QGridLayout();
 	renderButton    = new QPushButton("Render");
+	ttt = tr("Generate image or plot using the above parameters.");
+	rendering->setToolTip(ttt);
 	renderCheckBox  = new QCheckBox("Live render");
+	ttt = tr("Regenerate image automatically when changing any image parameters\n(can be intensive at high resolutions).");
+	renderCheckBox->setToolTip(ttt);
 	resolutionLabel = new QLabel("Pixels per cm");
 	resolutionScale = new QLineEdit("20");
+	ttt = tr("Change image resolution, lower renders faster, higher produces more high quality images.");
+	resolutionLabel->setToolTip(ttt);
+	resolutionScale->setToolTip(ttt);
 	
 	resolutionScale->setValidator(&allowedNats);
 	renderingLayout->addWidget(renderButton   , 0, 0, 1, 1);
@@ -146,6 +158,10 @@ void doseInterface::createLayout() {
 	yAxisButton       = new QRadioButton("y axis");
 	zAxisButton       = new QRadioButton("z axis");
 	zAxisButton->setChecked(true);
+	ttt = tr("The axis along which to slice to generate the images.");
+	xAxisButton->setToolTip(ttt);
+	yAxisButton->setToolTip(ttt);
+	zAxisButton->setToolTip(ttt);
 	
 	vertBoundaryLabel = new QLabel("x range");
 	vertBoundaryMin   = new QLineEdit("-10");
@@ -158,6 +174,13 @@ void doseInterface::createLayout() {
 	horBoundaryMax    = new QLineEdit("10");
 	horBoundaryMin->setValidator(&allowedReals);
 	horBoundaryMax->setValidator(&allowedReals);
+	ttt = tr("The vertical and horizontal bounds used to generate the image.\nAreas outside of egsphant/3ddose bounds are black/not rendered.");
+	vertBoundaryLabel->setToolTip(ttt);
+	vertBoundaryMin->setToolTip(ttt);
+	vertBoundaryMax->setToolTip(ttt);
+	horBoundaryLabel->setToolTip(ttt);
+	horBoundaryMin->setToolTip(ttt);
+	horBoundaryMax->setToolTip(ttt);
 	
 	depthLabel        = new QLabel("z depth");
 	depthMin          = new QLineEdit("0");
@@ -166,17 +189,32 @@ void doseInterface::createLayout() {
 	depthMinusButton  = new QPushButton();
 	depthMinusButton->setIcon(this->style()->standardIcon(QStyle::SP_ArrowBack));
 	depthMin->setValidator(&allowedReals);
+	ttt = tr("The depth at which to slice selected egsphant and 3ddoses.");
+	depthLabel->setToolTip(ttt);
+	depthMin->setToolTip(ttt);
+	depthPlusButton->setToolTip(ttt);
+	depthMinusButton->setToolTip(ttt);
 	
 	expandToBounds    = new QPushButton("reset");
+	ttt = tr("Find the nearest depth at which any egsphant or 3ddose data is found, then scale vertical\n"
+			 "and horizontal bounds to maximum size for all 3D arrays.");
+	expandToBounds->setToolTip(ttt);
+	
 	legendLabel       = new QLabel("legend");
 	legendBox         = new QComboBox();
 	legendBox->addItem("none");
 	legendBox->addItem("phantom");
 	legendBox->addItem("colour map");
 	legendBox->addItem("isodose");
+	ttt = tr("Add legend to image, and select whether it displays phantom, colour map, or isodose data.");
+	legendLabel->setToolTip(ttt);
+	legendBox->setToolTip(ttt);
 	
 	unitsLabel        = new QLabel("Units");
 	unitsEdit         = new QLineEdit("Gy");
+	ttt = tr("Units to display on legend.");
+	unitsLabel->setToolTip(ttt);
+	unitsEdit->setToolTip(ttt);
 	
 	legendLabel->setDisabled(true); // To be implemented
 	legendBox->setDisabled(true); // To be implemented
@@ -224,15 +262,25 @@ void doseInterface::createLayout() {
 	
 	mediaButton   = new QRadioButton("media");
 	densityButton = new QRadioButton("density");
+	ttt = tr("Generate image based on egsphant media assignment or density.");
+	mediaButton->setToolTip(ttt);
+	densityButton->setToolTip(ttt);
+	
 	phantSelect   = new QComboBox();
 	phantSelect->addItem("none");
 	phantSelect->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+	ttt = tr("Egsphant to use to generate images.");
+	phantSelect->setToolTip(ttt);
 	
 	densityLabel  = new QLabel("Density range");
 	densityMin    = new QLineEdit("0");
 	densityMax    = new QLineEdit("3");
 	densityMin->setValidator(&allowedPosReals);
 	densityMax->setValidator(&allowedPosReals);
+	ttt = tr("The minimum (black below) and maximum (white above) thresholds used\nto generate density images.");
+	densityLabel->setToolTip(ttt);
+	densityMin->setToolTip(ttt);
+	densityMax->setToolTip(ttt);
 	
 	mediaButton->setChecked(true);
 	densityLabel->setDisabled(true);
@@ -262,6 +310,8 @@ void doseInterface::createLayout() {
 	mapDoseBox    = new QComboBox();
 	mapDoseBox->addItem("none");
 	mapDoseBox->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+	ttt = tr("The 3ddose file used to generate the colour map.");
+	mapDoseBox->setToolTip(ttt);
 	
 	mapMinLabel   = new QLabel("min");
 	mapMaxLabel   = new QLabel("max");
@@ -270,6 +320,11 @@ void doseInterface::createLayout() {
 	mapMaxDose    = new QLineEdit("100");
 	mapMinDose->setValidator(&allowedPosReals);
 	mapMaxDose->setValidator(&allowedPosReals);
+	ttt = tr("The minimum and maximum values used to generate the linear colour map.");
+	mapMinLabel->setToolTip(ttt);
+	mapMaxLabel->setToolTip(ttt);
+	mapMinDose->setToolTip(ttt);
+	mapMaxDose->setToolTip(ttt);
 	
 	mapMinButton  = new QPushButton();
 	mapMidButton  = new QPushButton();
@@ -277,6 +332,11 @@ void doseInterface::createLayout() {
 	mapMinButton->setStyleSheet("QPushButton {background-color: rgb(0,0,255)}");
 	mapMidButton->setStyleSheet("QPushButton {background-color: rgb(0,255,0)}");
 	mapMaxButton->setStyleSheet("QPushButton {background-color: rgb(255,0,0)}");
+	ttt = tr("The minimum and maximum colours used for the colour map, as well as a midpoint colour\n"
+			 "for a richer colour spectrum and potentially closer comparisons to isodose contours.");
+	mapMinButton->setToolTip(ttt);
+	mapMidButton->setToolTip(ttt);
+	mapMaxButton->setToolTip(ttt);
 	
 	mapOpacLabel = new QLabel("Opacity");
 	mapOpacSlider = new QSlider(Qt::Horizontal);
@@ -306,26 +366,36 @@ void doseInterface::createLayout() {
 	isoColourLabel = new QLabel("Colours");
 	
 	// Lines 1 - 3
+	ttt = tr("The 3ddose files used to generate the solid, dashed, or dotted lines.");
 	isoDoseLabel.append(new QLabel("solid line")); isoDoseBox.append(new QComboBox());
+	isoDoseLabel.last()->setToolTip(ttt); isoDoseBox.last()->setToolTip(ttt);
 	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose());
 	isoDoseBox.last()->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 	isoDoseLabel.append(new QLabel("dashed line")); isoDoseBox.append(new QComboBox());
+	isoDoseLabel.last()->setToolTip(ttt); isoDoseBox.last()->setToolTip(ttt);
 	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose());
 	isoDoseBox.last()->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 	isoDoseLabel.append(new QLabel("dotted line")); isoDoseBox.append(new QComboBox());
+	isoDoseLabel.last()->setToolTip(ttt); isoDoseBox.last()->setToolTip(ttt);
 	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose());
 	isoDoseBox.last()->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 	
 	// Colors 1 - 5
+	ttt = tr("The dose value and associated colour used to generate the contours.");
 	isoColourDose.append(new QLineEdit("20")); isoColourButton.append(new QPushButton()); isoColourButton.last()->setStyleSheet("QPushButton {background-color: rgb(0,0,255)}");
+	isoColourDose.last()->setToolTip(ttt);isoColourButton.last()->setToolTip(ttt);
 	isoColourDose.last()->setValidator(&allowedPosReals);
 	isoColourDose.append(new QLineEdit("40")); isoColourButton.append(new QPushButton()); isoColourButton.last()->setStyleSheet("QPushButton {background-color: rgb(0,255,255)}");
+	isoColourDose.last()->setToolTip(ttt);isoColourButton.last()->setToolTip(ttt);
 	isoColourDose.last()->setValidator(&allowedPosReals);
 	isoColourDose.append(new QLineEdit("60")); isoColourButton.append(new QPushButton()); isoColourButton.last()->setStyleSheet("QPushButton {background-color: rgb(0,255,0)}");
+	isoColourDose.last()->setToolTip(ttt);isoColourButton.last()->setToolTip(ttt);
 	isoColourDose.last()->setValidator(&allowedPosReals);
 	isoColourDose.append(new QLineEdit("80")); isoColourButton.append(new QPushButton()); isoColourButton.last()->setStyleSheet("QPushButton {background-color: rgb(255,255,0)}");
+	isoColourDose.last()->setToolTip(ttt);isoColourButton.last()->setToolTip(ttt);
 	isoColourDose.last()->setValidator(&allowedPosReals);
 	isoColourDose.append(new QLineEdit("100")); isoColourButton.append(new QPushButton()); isoColourButton.last()->setStyleSheet("QPushButton {background-color: rgb(255,0,0)}");
+	isoColourDose.last()->setToolTip(ttt);isoColourButton.last()->setToolTip(ttt);
 	isoColourDose.last()->setValidator(&allowedPosReals);
 	
 	for (int i = 0; i < 3; i++) {
@@ -351,6 +421,9 @@ void doseInterface::createLayout() {
 	histPhant       = new EGSPhant();
 	histPhantSelect = new QComboBox();
 	histPhantSelect->addItem("none");
+	ttt = tr("The phantom used to select masks and media for filtering dose data.");
+	histPhantLabel->setToolTip(ttt);
+	histPhantSelect->setToolTip(ttt);
 	
 	histPhantFrame  = new QFrame();
 	histPhantLayout = new QGridLayout();
@@ -369,10 +442,16 @@ void doseInterface::createLayout() {
 	histMaskSelect   = new QComboBox();
 	histMaskSelect->addItem("none");
 	histMask         = new EGSPhant();
+	ttt = tr("Ignore all dose data not within the selected contour mask.");
+	histMaskLabel->setToolTip(ttt);
+	histMaskSelect->setToolTip(ttt);
 	
 	histMediumLabel  = new QLabel("Media");
 	histMediumView   = new QListWidget();
 	histMediumView->setSelectionMode(QAbstractItemView::MultiSelection);
+	ttt = tr("Ignore all dose data not within the selected media.");
+	histMediumLabel->setToolTip(ttt);
+	histMediumView->setToolTip(ttt);
 	
 	histDoseMinLabel = new QLabel("Min dose (Gy)");
 	histDoseMinEdit  = new QLineEdit("0");
@@ -380,6 +459,12 @@ void doseInterface::createLayout() {
 	histDoseMaxLabel = new QLabel("Max dose (Gy)");
 	histDoseMaxEdit  = new QLineEdit("0");
 	histDoseMaxEdit->setValidator(&allowedPosReals);
+	ttt = tr("Ignore all dose data not within the selected dose thresholds.\n"
+			 "If max dose is less than or equal to min dose, it is ignored.");
+	histDoseMinLabel->setToolTip(ttt);
+	histDoseMaxLabel->setToolTip(ttt);
+	histDoseMinEdit->setToolTip(ttt);
+	histDoseMaxEdit->setToolTip(ttt);
 	
 	histFilterFrame  = new QFrame();
 	histFilterLayout = new QGridLayout();
@@ -403,13 +488,26 @@ void doseInterface::createLayout() {
 	histDosesLabel   = new QLabel("Doses");
 	histLoadButton   = new QPushButton("Load");
 	histDoseSelect   = new QComboBox();
+	ttt = tr("Load doses to use to generate histograms.");
+	histDosesLabel->setToolTip(ttt);
+	histLoadButton->setToolTip(ttt);
+	histDoseSelect->setToolTip(ttt);
+	
 	histDeleteButton = new QPushButton("Delete");
+	ttt = tr("Delete loaded dose.");
+	histDeleteButton->setToolTip(ttt);
 	
 	histLoadedView   = new QListWidget();
+	ttt = tr("List of loaded doses.");
+	histDeleteButton->setToolTip(ttt);
 					 
 	histLegendBox    = new QCheckBox("Legend");
 	histDiffBox      = new QCheckBox("Differential");
 	histLegendBox->setChecked(true);
+	ttt = tr("Add legend to plot.");
+	histLegendBox->setToolTip(ttt);
+	ttt = tr("Generate a non-cumulative histogram of doses.  Bin count is adjustable in the configuration file.");
+	histDiffBox->setToolTip(ttt);
 					 
 	histDosesFrame   = new QFrame();
 	histDosesLayout  = new QGridLayout();
@@ -428,7 +526,7 @@ void doseInterface::createLayout() {
 	
 	// Added data
 	histOutputLabel  = new QLabel("Metrics");
-	histOutputBox    = new QComboBox();
+	//histOutputBox    = new QComboBox(); // to be implemented
 	
 	histDxLabel      = new QLabel("Dx");
 	histDxEdit       = new QLineEdit("10,20,80,90");
@@ -436,23 +534,35 @@ void doseInterface::createLayout() {
 	histVxEdit       = new QLineEdit("20,40,60,80,100");
 	histDxEdit->setValidator(&allowedPercentArrs);
 	histVxEdit->setValidator(&allowedPosRealArrs);
+	ttt = tr("Calculate Dx and Vx values, the dose deposited within at least x percent of the volume\n"
+			 "and total volume with at least x dose, respectively.");
+	histDxLabel->setToolTip(ttt);
+	histDxEdit->setToolTip(ttt);
+	histVxLabel->setToolTip(ttt);
+	histVxEdit->setToolTip(ttt);
 	
 	histCalcButton   = new QPushButton("Calculate");
+	ttt = tr("Calculate and display data metrics.");
+	histCalcButton->setToolTip(ttt);
 	histSaveButton   = new QPushButton("Output metrics");
+	ttt = tr("Calculate and save data metrics in csv file.");
+	histSaveButton->setToolTip(ttt);
 	histRawButton    = new QPushButton("Output raw data");
+	ttt = tr("Save the sorted data of all voxels that were not filtered out in csv format.\nFile sizes may become very large.");
+	histRawButton->setToolTip(ttt);
 	
 	histOutputFrame  = new QFrame();
 	histOutputLayout = new QGridLayout();
 	
-	histOutputLayout->addWidget(histOutputLabel , 0, 0, 1, 2);
-	histOutputLayout->addWidget(histOutputBox   , 0, 0, 1, 2);
-	histOutputLayout->addWidget(histDxLabel     , 1, 0, 1, 2);
-	histOutputLayout->addWidget(histDxEdit      , 1, 2, 1, 4);
-	histOutputLayout->addWidget(histVxLabel     , 2, 0, 1, 2);
-	histOutputLayout->addWidget(histVxEdit      , 2, 2, 1, 4);
-	histOutputLayout->addWidget(histCalcButton  , 3, 0, 1, 2);
-	histOutputLayout->addWidget(histSaveButton  , 3, 2, 1, 2);
-	histOutputLayout->addWidget(histRawButton   , 3, 4, 1, 2);
+	histOutputLayout->addWidget(histOutputLabel, 0, 0, 1, 2);
+	//histOutputLayout->addWidget(histOutputBox  , 0, 0, 1, 2);  // to be implemented
+	histOutputLayout->addWidget(histDxLabel    , 1, 0, 1, 2);
+	histOutputLayout->addWidget(histDxEdit     , 1, 2, 1, 4);
+	histOutputLayout->addWidget(histVxLabel    , 2, 0, 1, 2);
+	histOutputLayout->addWidget(histVxEdit     , 2, 2, 1, 4);
+	histOutputLayout->addWidget(histCalcButton , 3, 0, 1, 2);
+	histOutputLayout->addWidget(histSaveButton , 3, 2, 1, 2);
+	histOutputLayout->addWidget(histRawButton  , 3, 4, 1, 2);
 	
 	histOutputFrame->setLayout(histOutputLayout);
 	histOutputFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
@@ -463,13 +573,25 @@ void doseInterface::createLayout() {
 	profDosesLabel   = new QLabel("Doses");
 	profLoadButton   = new QPushButton("Load");
 	profDoseSelect   = new QComboBox();
+	ttt = tr("Load doses to use to generate profiles.");
+	profDosesLabel->setToolTip(ttt);
+	profLoadButton->setToolTip(ttt);
+	profDoseSelect->setToolTip(ttt);
+	
 	profDeleteButton = new QPushButton("Delete");
+	ttt = tr("Delete loaded dose.");
+	profDeleteButton->setToolTip(ttt);
 	
 	profLoadedView   = new QListWidget();
 	
 	profLegendBox    = new QCheckBox("Legend");
-	profInterpBox    = new QCheckBox("Interpolate");
 	profLegendBox->setChecked(true);
+	ttt = tr("Add legend to plot.");
+	profLegendBox->setToolTip(ttt);
+	
+	profInterpBox    = new QCheckBox("Interpolate");
+	ttt = tr("Interpolate doses using the eight neighbour voxel data.");
+	profInterpBox->setToolTip(ttt);
 	
 	profDosesFrame   = new QFrame();
 	profDosesLayout  = new QGridLayout();
@@ -507,9 +629,24 @@ void doseInterface::createLayout() {
 	profx1Edit->setValidator(&allowedReals);
 	profy1Edit->setValidator(&allowedReals);
 	profz1Edit->setValidator(&allowedReals);
+	ttt = tr("Generate a plot by sampling doses from start's (x,y,z) to stop's (x,y,z).");
+	p0CoordLabel->setToolTip(ttt);
+	p1CoordLabel->setToolTip(ttt);
+	xAxisLabel->setToolTip(ttt);
+	yAxisLabel->setToolTip(ttt);
+	zAxisLabel->setToolTip(ttt);
+	profx0Edit->setToolTip(ttt);
+	profy0Edit->setToolTip(ttt);
+	profz0Edit->setToolTip(ttt);
+	profx1Edit->setToolTip(ttt);
+	profy1Edit->setToolTip(ttt);
+	profz1Edit->setToolTip(ttt);
 	
 	profResLabel    = new QLabel("Samples per cm");
 	profResEdit     = new QLineEdit("10");
+	ttt = tr("The number of sample doses to take for each cm of the profile.");
+	profResLabel->setToolTip(ttt);
+	profResEdit->setToolTip(ttt);
 	
 	profCoordFrame  = new QFrame();
 	profCoordLayout = new QGridLayout();
@@ -542,6 +679,10 @@ void doseInterface::createLayout() {
 	profPhant         = new EGSPhant();
 	profPhantSelect   = new QComboBox();
 	profPhantPreview  = new QLabel();
+	ttt = tr("Load an egsphant file to create an image showing the profile within the phantom.");
+	profPhantLabel->setToolTip(ttt);
+	profPhantSelect->setToolTip(ttt);
+	profPhantPreview->setToolTip(ttt);
 					  
 	profPhantProject  = new QLabel("Projected on");
 	profPhantAxis     = new QComboBox();
@@ -549,14 +690,25 @@ void doseInterface::createLayout() {
 	profPhantAxis->addItem("y axis");
 	profPhantAxis->addItem("z axis");
 	profPhantAxis->setCurrentIndex(2);
+	ttt = tr("Choose axis along which to project the line.");
+	profPhantProject->setToolTip(ttt);
+	profPhantAxis->setToolTip(ttt);
 	
 	renderProfPreview = new QPushButton("Generate");
+	ttt = tr("Generate image.");
+	renderProfPreview->setToolTip(ttt);
+	
 	saveProfPreview   = new QPushButton("Save");
+	ttt = tr("Save image.");
+	saveProfPreview->setToolTip(ttt);
 	saveProfPreview->setEnabled(false);
 	
 	profMediaButton   = new QRadioButton("Media");
 	profDensityButton = new QRadioButton("Density");
 	profMediaButton->setChecked(true);
+	ttt = tr("Select phantom media or density to generate image.");
+	profMediaButton->setToolTip(ttt);
+	profDensityButton->setToolTip(ttt);
 	
 	profPhantFrame    = new QFrame();
 	profPhantLayout   = new QGridLayout();

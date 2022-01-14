@@ -962,7 +962,7 @@ int Interface::populateEgsinp() {
 	
 	double tempScale = sourceScaleEdit->text().toDouble(); // Flat scaling or Gy*cm^2/h
 	if (!sourceScaleBox->currentText().compare("Air kerma strength")) {
-		double airKermaSeed = 0;
+		double airKermaSeed = 0; // Gy*cm^2/h
 		
 		QString fileName = egsinp->sourceGeomFile;		
 		QFile skFile (fileName);
@@ -976,10 +976,10 @@ int Interface::populateEgsinp() {
 					break;
 				}
 			}
-			airKermaSeed = line.toDouble(); // 
+			airKermaSeed = line.toDouble();
 			
 			if (airKermaSeed) { // if it worked
-				tempScale /= airKermaSeed; // tempScale will now have the ratio of experiment/MC per hour
+				tempScale /= airKermaSeed; // tempScale will now have the ratio of experiment/MC per hour with units of history/hour
 			}
 			else // if none was found
 				QMessageBox::warning(0, "air kerma error",
@@ -999,7 +999,7 @@ int Interface::populateEgsinp() {
 
 			double tau = (half_life/log(2))*24; // go from half-life in days to mean lifetime in hours
 			if (!sourcePermTime->isChecked())
-				tempScale *= tau*(1.0-exp(-(1.0/tau)*sourceTempTimeEdit->text().toDouble()));
+				tempScale *= tau*(1.0-exp(-(1.0/tau)*sourceTempTimeEdit->text().toDouble())); // Copied whole-cloth from Shannon
 			else if (!sourcePermTime->isChecked())
 				tempScale *= tau;
 			
