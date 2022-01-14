@@ -49,6 +49,7 @@ ebInterface::ebInterface()
 	
 	console = new consoleWindow;
 	ebProcess = new QProcess; // runs egs_brachy
+	evProcess = new QProcess; // runs egs_view
 	ebProcess->setProcessChannelMode(QProcess::MergedChannels); // Merge output and errors
 	
 	createLayout();                      
@@ -65,6 +66,7 @@ ebInterface::ebInterface(Interface* p)
 	
 	console = new consoleWindow();
 	ebProcess = new QProcess; // runs egs_brachy
+	evProcess = new QProcess; // runs egs_view
 	ebProcess->setProcessChannelMode(QProcess::MergedChannels); // Merge output and errors
 	
 	createLayout();
@@ -75,6 +77,7 @@ ebInterface::ebInterface(Interface* p)
 ebInterface::~ebInterface() {
 	delete console;
 	delete ebProcess;
+	delete evProcess;
 }
 
 // Layout Settings
@@ -208,7 +211,12 @@ void ebInterface::createLayout() {
 	
 	// Other options
 	saveButton = new QPushButton("Save egsinp");
+	ttt = tr("Save egsinp file for use outside of eb_gui.");
+	runButton->setToolTip(ttt);
+	
 	egsViewButton = new QPushButton("Run egs_view");
+	ttt = tr("Launch egs_view with current egsinp geometry.  Loading large egsphants may take a while.");
+	runButton->setToolTip(ttt);
 	
 	// Only allow ints
 	ncaseEdit->setValidator(&allowedNums);
@@ -286,6 +294,12 @@ void ebInterface::connectLayout() {
 			this, SLOT(finishEB(int)));
 	connect(ebProcess, SIGNAL(readyReadStandardOutput()),
 			this, SLOT(writeOutputToConsole()));
+			
+	// Other signals
+	connect(saveButton, SIGNAL(pressed()),
+			this, SLOT(saveEB()));
+	connect(egsViewButton, SIGNAL(pressed()),
+			this, SLOT(runEV()));
 }
 
 // Refresh
@@ -477,6 +491,111 @@ void ebInterface::runEB() {
 		ebProcess->start(QString("egs_brachy -i ") + ebName);
 	else                              // Parallel
 		ebProcess->start(parent->data->ep_location + " -n" + njobBox->currentText() + " -d5 -v -c \"egs_brachy -i " + ebName + "\"");
+}
+
+void ebInterface::saveEB() {
+	// Is there currently a selected phantom, source, and transformation file
+	if (parent->phantomListView->selectedItems().size() != 1) {
+		QMessageBox::information(0, "phantom error",
+        tr("No phantom selected."));
+		return;
+	}
+	if (parent->sourceListView->selectedItems().size() != 1) {
+		QMessageBox::information(0, "source error",
+        tr("No source selected."));
+		return;
+	}
+	if (parent->transformationListView->selectedItems().size() != 1) {
+		QMessageBox::information(0, "transformation error",
+        tr("No transformation file selected."));
+		return;
+	}
+	
+	// Create the egsinp file
+	QString egsinpPath = QFileDialog::getSaveFileName(this, tr("Save egs_brachy Input File"), ".", tr("egs input (*.egsinp)"));
+	
+	if (egsinpPath.length() < 1) // No selection
+		return;
+		
+	if (!egsinpPath.endsWith(".egsinp"))
+		egsinpPath += ".egsinp";
+	
+	QFile egsinpFile(egsinpPath);
+	if (egsinpFile.exists()) {
+		if (QMessageBox::Yes == QMessageBox::question(this, "Name already found",
+			tr("An egsinp file named ") + ebName + tr(" already exists.  Would you like to overwrite it?"))) {
+			// Delete file
+			egsinpFile.remove();
+		}
+		else { // They did not proceed
+			return;
+		}
+	}
+	
+    if (!egsinpFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		QMessageBox::information(0, "egsinp file error",
+        tr("Failed to create file:\n")
+		+ egsinpPath + "\n" +
+		tr("for simulations."));
+        return;
+	}
+	
+	if (parent->populateEgsinp()) // Build egsinp
+		return; // Quit if error was encountered
+	
+	QTextStream output(&egsinpFile);
+	output << parent->egsinp->buildInput();
+}
+
+void ebInterface::runEV() {
+	// Is there currently a selected phantom, source, and transformation file
+	if (parent->phantomListView->selectedItems().size() != 1) {
+		QMessageBox::information(0, "phantom error",
+        tr("No phantom selected."));
+		return;
+	}
+	if (parent->sourceListView->selectedItems().size() != 1) {
+		QMessageBox::information(0, "source error",
+        tr("No source selected."));
+		return;
+	}
+	if (parent->transformationListView->selectedItems().size() != 1) {
+		QMessageBox::information(0, "transformation error",
+        tr("No transformation file selected."));
+		return;
+	}
+	
+	// Quit if egs_view is running
+	if (evProcess->state() != 0) {// evProcess is already running something
+		QMessageBox::information(0, "egs_view error",
+        tr("Program egs_view is already running, please close before starting new instance."));
+		return;
+	}
+	
+	// Create the egsinp file
+	QString egsinpPath = parent->data->eb_location + "/" + ebName + ".preview.egsinp";
+	
+	QFile egsinpFile(egsinpPath);
+	egsinpFile.remove();
+	
+    if (!egsinpFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		QMessageBox::information(0, "egsinp file error",
+        tr("Failed to create file:\n")
+		+ egsinpPath + "\n" +
+		tr("for simulations."));
+        return;
+	}
+	
+	if (parent->populateEgsinp()) // Build egsinp
+		return; // Quit if error was encountered
+	
+	QTextStream output(&egsinpFile);
+	output << parent->egsinp->buildInput();
+	
+	evProcess->setWorkingDirectory(parent->data->eb_location); // Go to eb directory
+	
+	if (njobBox->currentIndex() == 0) // Interactive
+		evProcess->start(QString("egs_view ") + ebName + ".preview.egsinp");
 }
 
 void ebInterface::finishEB(int code) {

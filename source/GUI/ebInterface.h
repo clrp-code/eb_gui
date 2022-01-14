@@ -117,14 +117,19 @@ public:
 	consoleWindow* console; // console window
 	QProcess* ebProcess; // runs egs_brachy
 	QVector <QProcess*> ebBatchProcess; // runs egs_brachy batches
-	bool ebKillFlag; // track is user kills egs_brachy
+	bool ebKillFlag; // track if user kills egs_brachy
 	QString ebName; // holds name of current egs_brachy run
-	
+
+// Running egs_view
+	QProcess* evProcess; // runs egs_view
+
 public slots:
+	void saveEB(); // Save egsinp file
     void runEB(); // Run egs_brachy
     void finishEB(int code); // Call egs_brachy clean-up
     void killEB(); // End interactive and parallel jobs;
 	void writeOutputToConsole();
+    void runEV(); // Run egs_view
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
