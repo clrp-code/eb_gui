@@ -143,7 +143,7 @@ public:
 
 	QString seedInfo; // Found seed info
 
-	double airKerma, halfLife; // Air kerma from dicom, half_life
+	double airKerma, halfLife, decayTime; // Air kerma from dicom, half_life
 	QString isotopeName; // Corresponds
 
 	double treatmentTime; // Total treatment time

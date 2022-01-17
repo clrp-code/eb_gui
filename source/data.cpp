@@ -987,6 +987,8 @@ int Data::parsePlan(QString* log) {
 	QVector <Attribute *> *att, *att2, *att3;
 	QByteArray tempData, tempData2, tempData3;
 	QStringList pointData2;
+	QString treatDate = "", kermaDate = "";
+	double treatTime = -1, kermaTime = -1;
 	
 	// Reset plan data variables to default to know what worked
 	treatmentType = "UNKNOWN";
@@ -996,6 +998,8 @@ int Data::parsePlan(QString* log) {
 	seedTime.clear();
 	seedInfo = "UNKNOWN";
 	airKerma = halfLife = -1;
+	
+	*log = *log + "----------------------------------------------\n";
 	
 	// Treatment Type
 	Attribute* tempAtt = plan_data->getEntry(0x300A, 0x0202); // Get att closest to (300A,0202)
@@ -1009,8 +1013,7 @@ int Data::parsePlan(QString* log) {
 	else {
 		return 101;
 	}
-	*log = *log + "----------------------------------------------\n";
-	*log = *log + "Treatment type in plan file: " + treatmentType + "\n";
+	*log = *log + "Treatment type: " + treatmentType + "\n";
 	
 	// Treatment technique
 	tempAtt = plan_data->getEntry(0x300A, 0x0200); // Get att closest to (300A,0200)
@@ -1024,7 +1027,29 @@ int Data::parsePlan(QString* log) {
 	else {
 		return 102;
 	}
-	*log = *log + "Treatment type in plan file: " + treatmentTechnique + "\n";
+	*log = *log + "Treatment technique: " + treatmentTechnique + "\n";
+	
+	// Treatment time
+	tempAtt = plan_data->getEntry(0x300A, 0x0006); // Get att closest to (300A,0006)
+	if (tempAtt->tag[0] == 0x300A && tempAtt->tag[1] == 0x0006) {
+		QString temp = "";
+		for (unsigned int s = 0; s < tempAtt->vl; s++) {
+			temp.append(tempAtt->vf[s]);
+		}
+		treatDate = temp.trimmed();
+	}
+	tempAtt = plan_data->getEntry(0x300A, 0x0007); // Get att closest to (300A,0007)
+	if (tempAtt->tag[0] == 0x300A && tempAtt->tag[1] == 0x0007) {
+		QString temp = "";
+		for (unsigned int s = 0; s < tempAtt->vl; s++) {
+			temp.append(tempAtt->vf[s]);
+		}
+		treatTime = temp.trimmed().toDouble();
+	}
+	*log = *log + "Treatment time: " + treatDate.left(4) + "-" + 
+		   treatDate.left(6).right(2) + "-" + treatDate.left(8).right(2) + " " +
+		   QString::number(int(treatTime/3600)) + ":" + QString::number(int(treatTime/60)) + "\n";
+		
 	*log = *log + "----------------------------------------------\n";
 		
 	// Source sequence
@@ -1043,6 +1068,8 @@ int Data::parsePlan(QString* log) {
 			QString tempI   = ""; // Get the half life
 			QString tempE   = ""; // Get the isotope name
 			QString tempInf = ""; // Get seed data
+			QString tempD   = ""; // Get date data
+			QString tempT   = ""; // Get time data
 			for (int l = 0; l < att->size(); l++) {
 				if (att->at(l)->tag[0] == 0x300A && att->at(l)->tag[1] == 0x022A)
 					for (unsigned int s = 0; s < att->at(l)->vl; s++)
@@ -1072,6 +1099,12 @@ int Data::parsePlan(QString* log) {
 				else if (att->at(l)->tag[0] == 0x300A && att->at(l)->tag[1] == 0x021C) {
 					*log = *log + "Additional seed description:\n" + tempInf + "\n";
 				}
+				else if (att->at(l)->tag[0] == 0x300A && att->at(l)->tag[1] == 0x022C)
+					for (unsigned int s = 0; s < att->at(l)->vl; s++)
+						tempD.append(att->at(l)->vf[s]);
+				else if (att->at(l)->tag[0] == 0x300A && att->at(l)->tag[1] == 0x022E)
+					for (unsigned int s = 0; s < att->at(l)->vl; s++)
+						tempT.append(att->at(l)->vf[s]);
 			}
 
 			if (airKerma == -1 && tempS != "")
@@ -1082,6 +1115,10 @@ int Data::parsePlan(QString* log) {
 				isotopeName = tempE.trimmed();
 			if (seedInfo == "UNKNOWN" && tempI != "")
 				seedInfo = tempInf.trimmed();
+			if (kermaDate == "" && tempD != "")
+				kermaDate = tempD.trimmed();
+			if (kermaTime == -1 && tempD != "")
+				kermaTime = tempT.trimmed().toDouble();
 
 			for (int l = 0; l < att->size(); l++) {
 				delete att->at(l);
@@ -1107,12 +1144,40 @@ int Data::parsePlan(QString* log) {
 	//if (halfLife == -1) {
 	//	return 203;
 	//}
-	*log = *log + "Half-life: " + QString::number(halfLife) + "\n";
+	*log = *log + "Half-life (h): " + QString::number(halfLife*24) + "\n";
 	
 	//if (seedInfo == "UNKNOWN") {
 	//	return 204;
 	//}
-	*log = *log + "Seed data: " + seedInfo + "\n";
+	
+	*log = *log + "Measurement time: " + kermaDate.left(4) + "-" + 
+		   kermaDate.left(6).right(2) + "-" + kermaDate.left(8).right(2) + " " +
+		   QString::number(int(kermaTime/3600)) + ":" + QString::number(int(kermaTime/60)) + "\n";
+		   
+	if (kermaDate != "" && treatDate != "" && kermaTime != -1 && treatTime != -1) {
+		tm treat, kerma;
+		treat.tm_year = treatDate.left(4).toInt()-1900;
+		kerma.tm_year = kermaDate.left(4).toInt()-1900;
+		treat.tm_mon = treatDate.left(6).right(2).toInt()-1;
+		kerma.tm_mon = kermaDate.left(6).right(2).toInt()-1;
+		treat.tm_mday = treatDate.left(8).right(2).toInt();
+		kerma.tm_mday = kermaDate.left(8).right(2).toInt();
+		treat.tm_hour = int(treatTime)/3600;
+		kerma.tm_hour = int(kermaTime)/3600;
+		treat.tm_min = (int(treatTime)%3600)/60;
+		kerma.tm_min = (int(kermaTime)%3600)/60;
+		treat.tm_sec = int(treatTime)%60;
+		kerma.tm_sec = int(kermaTime)%60;
+		
+		double timeDiff = double(mktime(&treat)-mktime(&kerma))/3600.0; // Time difference in hours
+		*log = *log + "Time difference (h): " + QString::number(timeDiff) + "\n";
+		
+		airKerma *= pow(2,-timeDiff/(halfLife*24.0));
+		
+		*log = *log + "Adjusted air kerma strength (Gy*cm^2/h): " + QString::number(airKerma) + "\n";		
+	}
+	
+	*log = *log + "Additional seed data: " + seedInfo + "\n";
 	*log = *log + "----------------------------------------------\n";
 	
 	QVector<double> dwellTime;
@@ -1239,8 +1304,9 @@ int Data::parsePlan(QString* log) {
 	
 	// Check to see if seed data was found	
 	*log = *log + "Found " + QString::number(seedPos.size()) + " seeds\n";
+	treatmentTime /= 3600; // Go from seconds to hours
 	if (treatmentTime > 0) {
-		*log = *log + "  with " + QString::number(seedTime.size()) + " associated dwell times\n";
+		*log = *log + "  with " + QString::number(seedTime.size()) + " associated dwell times over " + treatmentTime + "\n";
 	}
 	
 	*log = *log + "----------------------------------------------\n";
@@ -1254,7 +1320,7 @@ int Data::parsePlan(QString* log) {
 		*log = *log + QString("\n");
 	}
 	*log = *log + "----------------------------------------------\n";
-	
+		
 	return 0;
 }
 
