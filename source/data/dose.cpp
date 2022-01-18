@@ -914,7 +914,7 @@ QImage Dose::getColourMap(QString axis, double ai, double af, double bi, double 
 	c = (df+di)/2.0;
 
     for (int i = 0; i < height; i++)
-        for (int j = 1; j <= width; j++) {
+        for (int j = 0; j < width; j++) {
             // determine the location of the current pixel in the phantom
             h = (double(bi)) + hInc * double(i);
             w = (double(ai)) + wInc * double(j);
@@ -956,7 +956,7 @@ QImage Dose::getColourMap(QString axis, double ai, double af, double bi, double 
 			weight = 255.0/weight;
 			
 			// finally, paint the pixel
-			image.setPixel(i, width-j, qRgb(red*weight,green*weight,blue*weight));
+			image.setPixel(i, j, qRgb(red*weight,green*weight,blue*weight));
         }
 
     return image; // return the image created

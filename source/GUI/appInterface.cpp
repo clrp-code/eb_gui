@@ -75,7 +75,7 @@ void appInterface::connectLayout() {
 }
 
 void appInterface::outputRTdose() {
-	int i = parent->doseListView->currentRow()-1;
+	int i = parent->doseListView->currentRow();
 	if (i < 0) {return;} // Exit if none is selected or box is empty in setup
 	
 	Dose toBeRT;
@@ -96,7 +96,7 @@ void appInterface::outputRTdose() {
 		rtFile += ".dcm";
 	
 	QString doseFile = parent->data->localDirDoses[i]+parent->data->localNameDoses[i]; // Get file location
-	
+		
 	// Connect the progress bar and load dose
 	parent->resetProgress("Loading 3ddose file");
 	connect(&toBeRT, SIGNAL(madeProgress(double)),

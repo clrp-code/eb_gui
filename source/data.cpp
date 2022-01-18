@@ -755,7 +755,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 						for (int m = 0; m < structZ[structIndex->at(marContourInd)].size(); m++) {
 							// If slice j of struct i on the same plane as slice k of the phantom
 							if (abs(structZ[structIndex->at(marContourInd)][m] - zP) < 0.1) { // 1 mm threshold
-								if (structPos[marContourInd][m].containsPoint(QPointF(xP,yP), Qt::OddEvenFill))
+								if (structPos[structIndex->at(marContourInd)][m].containsPoint(QPointF(xP,yP), Qt::OddEvenFill))
 									inStruct = true;
 							}
 						}
@@ -844,7 +844,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 			for (int l = 0; l < contourNum; l++) {
 					for (int m = 0; m < structZ[structIndex->at(l)].size(); m++) {
 						// If slice j of struct i on the same plane as slice k of the phantom
-						if (abs(structZ[structIndex->at(l)][m] - zMid) < (phant->z[k+1]-phant->z[k])/2.0) {
+						if (abs(structZ[structIndex->at(l)][m] - zMid) < (phant->z[k+1]-phant->z[k])/2.0 && tasIndex->at(l) != -1) {
 							zIndex << QPoint(structIndex->at(l),m); // Add it to lookup
 						}
 					}
@@ -928,26 +928,25 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 		*log = *log + QString::number(zMid) + " ";
 	}
 	
-	// Reverse y-axis - this really should be done on the fly above, but the logical_and
-	// proved difficult in the short-term, so here's a temporary fix
-	emit newProgressName("Inverting y-axis");
-	increment = 2.5/phant->nz; // 2.5%
-	char tempMed;
-	double tempDen;
-	for (int k = 0; k < phant->nz; k++) {
-		for (int j = 0; j < int(phant->ny/2); j++) {
-			nj = phant->ny-1-j;
-			for (int i = 0; i < phant->nx; i++) {
-				tempMed = phant->m[i][j][k];
-				tempDen = phant->d[i][j][k];
-				phant->m[i][j][k] = phant->m[i][nj][k];
-				phant->d[i][j][k] = phant->d[i][nj][k];
-				phant->m[i][nj][k] = tempMed;
-				phant->d[i][nj][k] = tempDen;
-			}
-		}
-		emit madeProgress(increment);
-	}	
+	// Reverse y-axis - keep image "flipped" and just change the preview images to match to invert y
+	//emit newProgressName("Inverting y-axis");
+	//increment = 2.5/phant->nz; // 2.5%
+	//char tempMed;
+	//double tempDen;
+	//for (int k = 0; k < phant->nz; k++) {
+	//	for (int j = 0; j < int(phant->ny/2); j++) {
+	//		nj = phant->ny-1-j;
+	//		for (int i = 0; i < phant->nx; i++) {
+	//			tempMed = phant->m[i][j][k];
+	//			tempDen = phant->d[i][j][k];
+	//			phant->m[i][j][k] = phant->m[i][nj][k];
+	//			phant->d[i][j][k] = phant->d[i][nj][k];
+	//			phant->m[i][nj][k] = tempMed;
+	//			phant->d[i][nj][k] = tempDen;
+	//		}
+	//	}
+	//	emit madeProgress(increment);
+	//}	
 	
 	*log = *log + "\n\nEGSPhant building is complete\n";
 	
@@ -1804,7 +1803,7 @@ int Data::outputRTDose(QString path, Dose* output) {
 		
 		unsigned short int bDat;
 		for (int k = 0; k < output->z; k++) {
-			for (int j = output->y-1; j >= 0; j--) {
+			for (int j = 0; j < output->y; j++) {
 				for (int i = 0; i < output->x; i++) {
 					bDat = output->val[i][j][k];
 					out << bDat;

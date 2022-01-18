@@ -2066,7 +2066,9 @@ void doseInterface::histoRender() {
 			}
 			
 			double subIncrement = increment/double(data.size());
-				
+			series.last()->append(0, 100.0);
+			tempData.append(QPointF(0, 100.0));
+			
 			for (int j = 0; j < data.size(); j++) {
 				if (!(j%sInc)) {// Only add up to 399 points (start skipping at 400+)
 					series.last()->append(data[j].dose, 100.0*double(data.size()-j)/double(data.size()));
@@ -2213,7 +2215,7 @@ void doseInterface::calcMetrics() {
 			
 			// Append Dx values as we go
 			if (dIndex < xD.size()) {
-				if (volumeTally/volume*100.0 > xD[dIndex] && j) {
+				if ((volume-volumeTally)/volume*100.0 < xD[dIndex] && j) {
 					Dx[dIndex] += QString::number(data[j-1].dose).left(11).rightJustified(11,' ')+" "
 							   +  QString::number(data[j-1].err).left(11).rightJustified(11,' ')+" |";
 					dIndex++;
@@ -2383,7 +2385,7 @@ void doseInterface::outputMetrics() {
 			
 			// Append Dx values as we go
 			if (dIndex < xD.size()) {
-				if (volumeTally/volume*100.0 > xD[dIndex] && j) {
+				if ((volume-volumeTally)/volume*100.0 < xD[dIndex] && j) {
 					Dx[dIndex] += QString::number(data[j-1].dose)+","+QString::number(data[j-1].err)+",";
 					dIndex++;
 				}

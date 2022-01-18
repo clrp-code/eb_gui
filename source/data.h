@@ -143,10 +143,10 @@ public:
 
 	QString seedInfo; // Found seed info
 
-	double airKerma, halfLife, decayTime; // Air kerma from dicom, half_life
+	double airKerma, halfLife; // Air kerma from dicom, half_life
 	QString isotopeName; // Corresponds
 
-	double treatmentTime; // Total treatment time
+	double treatmentTime, longestTime; // Total treatment time, longest seed time
 	QVector <QVector3D> seedPos; // Transformation file
 	QVector <double> seedTime; // All dwell times
 	

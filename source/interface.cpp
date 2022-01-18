@@ -1003,7 +1003,7 @@ int Interface::populateEgsinp() {
 
 			double tau = (half_life/log(2))*24.0; // go from half-life in days to mean lifetime in hours
 			if (!sourcePermTime->isChecked())
-				tempScale *= tau*(1.0-exp(-(1.0/tau)*sourceTempTimeEdit->text().toDouble())); // Copied whole-cloth from Shannon
+				tempScale *= tau*(1.0-exp(-(sourceTempTimeEdit->text().toDouble()/tau))); // Copied whole-cloth from Shannon
 			else if (sourcePermTime->isChecked())
 				tempScale *= tau;
 			

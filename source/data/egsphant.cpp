@@ -812,7 +812,7 @@ QImage EGSPhant::getEGSPhantPicMed(QString axis, double ai, double af,
     cInc = 255.0/double(media.size()+1);
 
     for (int i = 0; i < height; i++)
-        for (int j = 1; j <= width; j++) {
+        for (int j = 0; j < width; j++) {
             // determine the location of the current pixel in the phantom
             h = (double(bi)) + hInc * double(i);
             w = (double(ai)) + wInc * double(j);
@@ -832,7 +832,7 @@ QImage EGSPhant::getEGSPhantPicMed(QString axis, double ai, double af,
 			c = (indeces.indexOf(med)+1)*cInc;
 
             // finally, paint the pixel
-            image.setPixel(i, width-j, qRgb(c, c, c));
+            image.setPixel(i, j, qRgb(c, c, c));
         }
 
     return image; // return the image created
@@ -855,7 +855,7 @@ QImage EGSPhant::getEGSPhantPicDen(QString axis, double ai, double af,
     cInc = 255.0/(df-di);
 
     for (int i = 0; i < height; i++)
-        for (int j = 1; j <= width; j++) {
+        for (int j = 0; j < width; j++) {
             // determine the location of the current pixel in the phantom
             h = (double(bi)) + hInc * double(i);
             w = (double(ai)) + wInc * double(j);
@@ -878,7 +878,7 @@ QImage EGSPhant::getEGSPhantPicDen(QString axis, double ai, double af,
 			c = ((den==-1)?0:(den<di?di:(den>df?df:den)))*cInc;
 
             // finally, paint the pixel
-            image.setPixel(i, width-j, qRgb(c, c, c));
+            image.setPixel(i, j, qRgb(c, c, c));
         }
 
     return image; // return the image created
