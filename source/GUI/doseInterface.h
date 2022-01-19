@@ -352,6 +352,8 @@ public slots:
 	void loadHistoDose();
 	void deleteHistoDose();
 	
+	void loadMetrics();
+	
 	void calcMetrics();
 	void outputMetrics();
 	void outputRawData();

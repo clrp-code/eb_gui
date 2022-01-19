@@ -59,6 +59,7 @@ int Data::loadDefaults() {
 	material_location = eb_location+"/lib/media/material.dat";
 	transport_location = eb_location+"/lib/transport/low_energy_default";
 	mar_location = gui_location+"/database/MAR_defaults.txt";
+	metric_location = gui_location+"/database/metric_defaults.txt";
 	def_ncase = "1e8";
 
     file = new QFile(gui_location+"/configuration.txt");
@@ -261,6 +262,32 @@ int Data::loadDefaults() {
 				break;
 			}
 		}
+	
+	// Load metrics
+    file = new QFile(metric_location);
+	
+	if(!file->open(QIODevice::ReadOnly)) {
+		QMessageBox::warning(0, "Loading metrics error",
+		tr("Could not find ")+metric_location+tr(", no default settings added."));
+		metricNames.append("Custom");
+	}
+	else {
+		qDebug() << "Loaded" << metric_location;
+		QTextStream in(file);
+		QStringList fields;	
+		while(!in.atEnd()) {
+			fields = in.readLine().split(" ");
+			if (fields.size() == 5) {
+				metricNames.append(fields[0]);
+				metricDp.append(fields[1].split("=")[1]);
+				metricDx.append(fields[2].split("=")[1]);
+				metricDcc.append(fields[3].split("=")[1]);
+				metricVx.append(fields[4].split("=")[1]);
+			}
+		}
+		metricNames.append("Custom");
+	}
+	delete file;
 	
 	return 0;
 }

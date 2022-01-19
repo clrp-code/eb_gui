@@ -66,6 +66,7 @@ public:
 	QString transport_location;
 	
 	QString mar_location;
+	QString metric_location;
 	
 	// egs_brachy parameters from configuration file
 	QString def_ncase;
@@ -112,6 +113,9 @@ public:
 	double lowerThresh, upperThresh, marDen, marRad;
 	int marContourInd;
 	QString marContour, transformFile;
+	
+	// metric extraction
+	QStringList metricNames, metricDp, metricDx, metricDcc, metricVx;
 	
 	// functions
 	int loadDefaults();

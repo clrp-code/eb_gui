@@ -526,16 +526,34 @@ void doseInterface::createLayout() {
 	
 	// Added data
 	histOutputLabel  = new QLabel("Metrics");
-	//histOutputBox    = new QComboBox(); // to be implemented
-	
+	histOutputBox    = new QComboBox(); // to be implemented
+	for (int i = 0; i < parent->data->metricNames.size(); i++)
+		histOutputBox->addItem(parent->data->metricNames[i]);
+				
 	histDxLabel      = new QLabel("Dx (%)");
-	histDxEdit       = new QLineEdit("10,20,80,90");
+	histDxEdit       = new QLineEdit();
 	histDccLabel     = new QLabel("Dx (cc)");
-	histDccEdit      = new QLineEdit("1,5,10");
+	histDccEdit      = new QLineEdit();
 	histVxLabel      = new QLabel("Vx");
-	histVxEdit       = new QLineEdit("20,40,60,80,100");
+	histVxEdit       = new QLineEdit();
 	histDpLabel      = new QLabel("Prescription (Gy)");
-	histDpEdit       = new QLineEdit("145");
+	histDpEdit       = new QLineEdit();
+	
+	if (parent->data->metricNames.size() > 1) {
+		histDxEdit->setText(parent->data->metricDx[0]);
+		histDccEdit->setText(parent->data->metricDcc[0]);
+		histVxEdit->setText(parent->data->metricVx[0]);
+		histDpEdit->setText(parent->data->metricDp[0]);
+		histDxLabel->setDisabled(true);
+		histDxEdit->setDisabled(true);
+		histDccLabel->setDisabled(true);
+		histDccEdit->setDisabled(true);
+		histVxLabel->setDisabled(true);
+		histVxEdit->setDisabled(true);
+		histDpLabel->setDisabled(true);
+		histDpEdit->setDisabled(true);
+	}
+	
 	histDxEdit->setValidator(&allowedPercentArrs);
 	histDccEdit->setValidator(&allowedPosRealArrs);
 	histVxEdit->setValidator(&allowedPosRealArrs);
@@ -567,7 +585,7 @@ void doseInterface::createLayout() {
 	histOutputLayout = new QGridLayout();
 	
 	histOutputLayout->addWidget(histOutputLabel, 0, 0, 1, 2);
-	//histOutputLayout->addWidget(histOutputBox  , 0, 0, 1, 2);  // to be implemented
+	histOutputLayout->addWidget(histOutputBox  , 0, 2, 1, 4);
 	histOutputLayout->addWidget(histDxLabel    , 1, 0, 1, 1);
 	histOutputLayout->addWidget(histDxEdit     , 1, 1, 1, 2);
 	histOutputLayout->addWidget(histDccLabel   , 1, 3, 1, 1);
@@ -893,6 +911,8 @@ void doseInterface::connectLayout() {
 	connect(histDeleteButton, SIGNAL(pressed()),
 			this, SLOT(deleteHistoDose()));
 			
+	connect(histOutputBox, SIGNAL(currentIndexChanged(int)),
+			this, SLOT(loadMetrics()));
 	connect(histCalcButton, SIGNAL(pressed()),
 			this, SLOT(calcMetrics()));
 	connect(histSaveButton, SIGNAL(pressed()),
@@ -1791,6 +1811,27 @@ void doseInterface::previewSliceDown() {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 
 void doseInterface::histoRefresh() {
+	// Enable the metrics boxes is Custom is selected
+	if (histOutputBox->currentText().compare("Custom")) {
+		histDxLabel->setDisabled(true);
+		histDxEdit->setDisabled(true);
+		histDccLabel->setDisabled(true);
+		histDccEdit->setDisabled(true);
+		histVxLabel->setDisabled(true);
+		histVxEdit->setDisabled(true);
+		histDpLabel->setDisabled(true);
+		histDpEdit->setDisabled(true);
+	}
+	else {
+		histDxLabel->setDisabled(false);
+		histDxEdit->setDisabled(false);
+		histDccLabel->setDisabled(false);
+		histDccEdit->setDisabled(false);
+		histVxLabel->setDisabled(false);
+		histVxEdit->setDisabled(false);
+		histDpLabel->setDisabled(false);
+		histDpEdit->setDisabled(false);
+	}
 }
 
 void doseInterface::loadFilterEgsphant() {
@@ -2133,6 +2174,17 @@ void doseInterface::histoRender() {
 	parent->finishedProgress();
 }
 
+void doseInterface::loadMetrics() {
+	int i = histOutputBox->currentIndex();
+	if (i >= 0 && i < parent->data->metricDp.size()) {
+		histDxEdit->setText(parent->data->metricDx[i]);
+		histDccEdit->setText(parent->data->metricDcc[i]);
+		histVxEdit->setText(parent->data->metricVx[i]);
+		histDpEdit->setText(parent->data->metricDp[i]);
+	}
+	histoRefresh();
+}
+	
 void doseInterface::calcMetrics() {
 	// Return
 	if (histDoses.size() == 0) {

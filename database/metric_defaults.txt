@@ -1,0 +1,13 @@
+Prostate_CTV Dp=145 %Dx=90,99,99.9 ccDx= Vx=100,150,200
+Prostate_PTV Dp=145 %Dx=90,99 ccDx= Vx=100,150,200
+Prostate_Rectum Dp=145 %Dx= ccDx=0.1,1,2 Vx=50,80,100
+Prostate_Urethra Dp=145 %Dx=10,30 ccDx=0.1 Vx=50,80,100,150
+Prostate_Bladder Dp=145 %Dx= ccDx=1,2 Vx=50,80,100
+Breast_PTV Dp=90 %Dx=90 ccDx= Vx=100,150,200
+Breast_ETV Dp=90 %Dx=90 ccDx= Vx=100,150,200
+Breast_Skin Dp=90 %Dx= ccDx=1 Vx=5
+Breast_Ribs Dp=90 %Dx= ccDx= Vx=
+Breast_Chest Dp=90 %Dx= ccDx= Vx=
+Breast_Breast Dp=90 %Dx= ccDx=1 Vx=150
+Breast_Heart Dp=90 %Dx= ccDx=1 Vx=
+Breast_Lung Dp=90 %Dx= ccDx= Vx=5
