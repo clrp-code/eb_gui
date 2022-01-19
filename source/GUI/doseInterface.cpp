@@ -2222,26 +2222,32 @@ void doseInterface::calcMetrics() {
 	QVector <double> xD, xV, ccD;
 	double pD, minD = 1000000000, maxD = 0, minE = 0, maxE = 0;
 	
-	temp = histDxEdit->text().replace(' ',',').split(',');
-	for (int i = 0; i < temp.size(); i++) {
-		xD.append(temp[i].toDouble());
-		Dx.append("");
+	if (histDxEdit->text().length()) {
+		temp = histDxEdit->text().replace(' ',',').split(',');
+		for (int i = 0; i < temp.size(); i++) {
+			xD.append(temp[i].toDouble());
+			Dx.append("");
+		}
+		std::sort(xD.begin(), xD.end());
 	}
-	std::sort(xD.begin(), xD.end());
 	
-	temp = histVxEdit->text().replace(' ',',').split(',');
-	for (int i = 0; i < temp.size(); i++) {
-		xV.append(temp[i].toDouble());
-		Vx.append("");
+	if (histVxEdit->text().length()) {
+		temp = histVxEdit->text().replace(' ',',').split(',');
+		for (int i = 0; i < temp.size(); i++) {
+			xV.append(temp[i].toDouble());
+			Vx.append("");
+		}
+		std::sort(xV.begin(), xV.end());
 	}
-	std::sort(xV.begin(), xV.end());
 	
-	temp = histDccEdit->text().replace(' ',',').split(',');
-	for (int i = 0; i < temp.size(); i++) {
-		ccD.append(temp[i].toDouble());
-		Dcc.append("");
+	if (histDccEdit->text().length()) {
+		temp = histDccEdit->text().replace(' ',',').split(',');
+		for (int i = 0; i < temp.size(); i++) {
+			ccD.append(temp[i].toDouble());
+			Dcc.append("");
+		}
+		std::sort(ccD.begin(), ccD.end());
 	}
-	std::sort(ccD.begin(), ccD.end());
 	
 	pD = histDpEdit->text().toDouble();
 	
@@ -2432,26 +2438,32 @@ void doseInterface::outputMetrics() {
 	QVector <double> xD, xV, ccD;
 	double pD, minD = 1000000000, maxD = 0, minE = 0, maxE = 0;
 	
-	temp = histDxEdit->text().replace(' ',',').split(',');
-	for (int i = 0; i < temp.size(); i++) {
-		xD.append(temp[i].toDouble());
-		Dx.append("");
+	if (histDxEdit->text().length()) {
+		temp = histDxEdit->text().replace(' ',',').split(',');
+		for (int i = 0; i < temp.size(); i++) {
+			xD.append(temp[i].toDouble());
+			Dx.append("");
+		}
+		std::sort(xD.begin(), xD.end());
 	}
-	std::sort(xD.begin(), xD.end());
 	
-	temp = histVxEdit->text().replace(' ',',').split(',');
-	for (int i = 0; i < temp.size(); i++) {
-		xV.append(temp[i].toDouble());
-		Vx.append("");
+	if (histVxEdit->text().length()) {
+		temp = histVxEdit->text().replace(' ',',').split(',');
+		for (int i = 0; i < temp.size(); i++) {
+			xV.append(temp[i].toDouble());
+			Vx.append("");
+		}
+		std::sort(xV.begin(), xV.end());
 	}
-	std::sort(xV.begin(), xV.end());
 	
-	temp = histDccEdit->text().replace(' ',',').split(',');
-	for (int i = 0; i < temp.size(); i++) {
-		ccD.append(temp[i].toDouble());
-		Dcc.append("");
+	if (histDccEdit->text().length()) {
+		temp = histDccEdit->text().replace(' ',',').split(',');
+		for (int i = 0; i < temp.size(); i++) {
+			ccD.append(temp[i].toDouble());
+			Dcc.append("");
+		}
+		std::sort(ccD.begin(), ccD.end());
 	}
-	std::sort(ccD.begin(), ccD.end());
 	
 	pD = histDpEdit->text().toDouble();
 	
