@@ -239,8 +239,12 @@ public:
 	
 	QLabel      *histDxLabel;
 	QLineEdit   *histDxEdit;
+	QLabel      *histDccLabel;
+	QLineEdit   *histDccEdit;
 	QLabel      *histVxLabel;
 	QLineEdit   *histVxEdit;
+	QLabel      *histDpLabel;
+	QLineEdit   *histDpEdit;
 	
 	QPushButton *histCalcButton;
 	QPushButton *histSaveButton;

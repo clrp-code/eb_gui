@@ -528,18 +528,30 @@ void doseInterface::createLayout() {
 	histOutputLabel  = new QLabel("Metrics");
 	//histOutputBox    = new QComboBox(); // to be implemented
 	
-	histDxLabel      = new QLabel("Dx");
+	histDxLabel      = new QLabel("Dx (%)");
 	histDxEdit       = new QLineEdit("10,20,80,90");
+	histDccLabel     = new QLabel("Dx (cc)");
+	histDccEdit      = new QLineEdit("1,5,10");
 	histVxLabel      = new QLabel("Vx");
 	histVxEdit       = new QLineEdit("20,40,60,80,100");
+	histDpLabel      = new QLabel("Prescription (Gy)");
+	histDpEdit       = new QLineEdit("145");
 	histDxEdit->setValidator(&allowedPercentArrs);
+	histDccEdit->setValidator(&allowedPosRealArrs);
 	histVxEdit->setValidator(&allowedPosRealArrs);
-	ttt = tr("Calculate Dx and Vx values, the dose deposited within at least x percent of the volume\n"
-			 "and total volume with at least x dose, respectively.");
+	histDpEdit->setValidator(&allowedPosReals);
+	ttt = tr("Calculate Dx (in cc or % of total volume) and Vx (in % of prescription) values, the dose deposited within\n"
+			 " at least x percent of the volume and total volume with at least x dose, respectively.");
 	histDxLabel->setToolTip(ttt);
 	histDxEdit->setToolTip(ttt);
+	histDccLabel->setToolTip(ttt);
+	histDccEdit->setToolTip(ttt);
 	histVxLabel->setToolTip(ttt);
 	histVxEdit->setToolTip(ttt);
+	
+	ttt = tr("Prescription dose used to calculate Vx metrics.");
+	histDpLabel->setToolTip(ttt);
+	histDpEdit->setToolTip(ttt);
 	
 	histCalcButton   = new QPushButton("Calculate");
 	ttt = tr("Calculate and display data metrics.");
@@ -556,13 +568,20 @@ void doseInterface::createLayout() {
 	
 	histOutputLayout->addWidget(histOutputLabel, 0, 0, 1, 2);
 	//histOutputLayout->addWidget(histOutputBox  , 0, 0, 1, 2);  // to be implemented
-	histOutputLayout->addWidget(histDxLabel    , 1, 0, 1, 2);
-	histOutputLayout->addWidget(histDxEdit     , 1, 2, 1, 4);
-	histOutputLayout->addWidget(histVxLabel    , 2, 0, 1, 2);
-	histOutputLayout->addWidget(histVxEdit     , 2, 2, 1, 4);
+	histOutputLayout->addWidget(histDxLabel    , 1, 0, 1, 1);
+	histOutputLayout->addWidget(histDxEdit     , 1, 1, 1, 2);
+	histOutputLayout->addWidget(histDccLabel   , 1, 3, 1, 1);
+	histOutputLayout->addWidget(histDccEdit    , 1, 4, 1, 2);
+	histOutputLayout->addWidget(histVxLabel    , 2, 0, 1, 1);
+	histOutputLayout->addWidget(histVxEdit     , 2, 1, 1, 2);
+	histOutputLayout->addWidget(histDpLabel    , 2, 3, 1, 2);
+	histOutputLayout->addWidget(histDpEdit     , 2, 5, 1, 1);
 	histOutputLayout->addWidget(histCalcButton , 3, 0, 1, 2);
 	histOutputLayout->addWidget(histSaveButton , 3, 2, 1, 2);
 	histOutputLayout->addWidget(histRawButton  , 3, 4, 1, 2);
+	
+	for (int i = 0; i < 6; i++)
+		histOutputLayout->setColumnStretch(i, 5);
 	
 	histOutputFrame->setLayout(histOutputLayout);
 	histOutputFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
@@ -2146,20 +2165,33 @@ void doseInterface::calcMetrics() {
 	int count = histDoses.size();
 	
 	// Metrics to extract
-	QString names, units, average, uncertainty, voxels, volumes;
-	QStringList Dx, Vx, temp;
-	QVector <double> xD, xV;
+	QString names, units, average, uncertainty, voxels, volumes, minimum, maximum;
+	QStringList Dx, Vx, Dcc, temp;
+	QVector <double> xD, xV, ccD;
+	double pD, minD = 1000000000, maxD = 0, minE = 0, maxE = 0;
+	
 	temp = histDxEdit->text().replace(' ',',').split(',');
 	for (int i = 0; i < temp.size(); i++) {
 		xD.append(temp[i].toDouble());
 		Dx.append("");
 	}
+	std::sort(xD.begin(), xD.end());
 	
 	temp = histVxEdit->text().replace(' ',',').split(',');
 	for (int i = 0; i < temp.size(); i++) {
 		xV.append(temp[i].toDouble());
 		Vx.append("");
 	}
+	std::sort(xV.begin(), xV.end());
+	
+	temp = histDccEdit->text().replace(' ',',').split(',');
+	for (int i = 0; i < temp.size(); i++) {
+		ccD.append(temp[i].toDouble());
+		Dcc.append("");
+	}
+	std::sort(ccD.begin(), ccD.end());
+	
+	pD = histDpEdit->text().toDouble();
 	
 	// Get dose values	
 	for (int i = 0; i < count; i++) {
@@ -2195,30 +2227,44 @@ void doseInterface::calcMetrics() {
 		parent->nameProgress("Extracting metrics");
 		
 		// Generate metric data
-		double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0;
-		int vIndex = 0, dIndex = 0;
+		double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
+		int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
 		for (int j = 0; j < data.size(); j++) {
 			countTally    += 1.0;
 			volumeTally   += data[j].vol;
 			doseTally     += data[j].dose;
-			doseTallyErr  += data[j].dose*data[j].err;
-			doseTallyErr2 += (data[j].dose*data[j].err)*(data[j].dose*data[j].err);
+			absError       = data[j].dose*data[j].err;
+			doseTallyErr  += absError;
+			doseTallyErr2 += absError*absError;
+			maxE = maxD<data[j].dose?absError:maxE;
+			maxD = maxD<data[j].dose?data[j].dose:maxD;
+			minE = minD>data[j].dose?absError:minE;
+			minD = minD>data[j].dose?data[j].dose:minD;
 			
 			// Append Vx values as we go
 			if (vIndex < xV.size()) {
-				if (data[j].dose > xV[vIndex] && j) {
-					Vx[vIndex] += QString::number(volumeTally-data[j].vol).left(11).rightJustified(11,' ')+" "
+				if (data[j].dose > (xV[vIndex]*pD/100.0) && j) {
+					Vx[vIndex] += QString::number(volume-volumeTally+data[j].vol).left(11).rightJustified(11,' ')+" "
 							   +  "            |";
 					vIndex++;
 				}
 			}
 			
 			// Append Dx values as we go
-			if (dIndex < xD.size()) {
+			if (dIndex >= 0) {
 				if ((volume-volumeTally)/volume*100.0 < xD[dIndex] && j) {
 					Dx[dIndex] += QString::number(data[j-1].dose).left(11).rightJustified(11,' ')+" "
-							   +  QString::number(data[j-1].err).left(11).rightJustified(11,' ')+" |";
-					dIndex++;
+							   +  QString::number(data[j-1].dose*data[j-1].err).left(11).rightJustified(11,' ')+" |";
+					dIndex--;
+				}
+			}
+			
+			// Append Dcc values as we go
+			if (ccIndex >= 0) {
+				if ((volume-volumeTally) < ccD[ccIndex] && j) {
+					Dcc[ccIndex] += QString::number(data[j-1].dose).left(11).rightJustified(11,' ')+" "
+							     +  QString::number(data[j-1].dose*data[j-1].err).left(11).rightJustified(11,' ')+" |";
+					ccIndex--;
 				}
 			}
 		}
@@ -2226,8 +2272,11 @@ void doseInterface::calcMetrics() {
 		for (int j = vIndex; j < xV.size(); j++) 
 			Vx[j] += "        n/a         n/a |";
 		
-		for (int j = dIndex; j < xD.size(); j++) 
+		for (int j = dIndex; j >= 0; j--) 
 			Dx[j] += "        n/a         n/a |";
+		
+		for (int j = ccIndex; j >= 0; j--) 
+			Dcc[j] += "        n/a         n/a |";
 		
 		// Calculate global metrics
 		doseTally     /= countTally; // Average dose
@@ -2236,8 +2285,12 @@ void doseInterface::calcMetrics() {
 		
 		names       += histLoadedView->item(i)->text().left(23).rightJustified(23,' ')+" |";
 		units       += "   value    uncertainty |";
+		minimum     += QString::number(minD).left(11).rightJustified(11,' ')+" "
+		             + QString::number(minE).left(11).rightJustified(11,' ')+" |";
+		maximum     += QString::number(maxD).left(11).rightJustified(11,' ')+" "
+		             + QString::number(maxE).left(11).rightJustified(11,' ')+" |";
 		average     += QString::number(doseTally).left(11).rightJustified(11,' ')+" "
-		            +QString::number(doseTallyErr2).left(11).rightJustified(11,' ')+" |";
+		             + QString::number(doseTallyErr2).left(11).rightJustified(11,' ')+" |";
 		uncertainty += QString::number(doseTallyErr).left(11).rightJustified(11,' ')+"             |";
 		voxels      += QString::number(countTally).left(11).rightJustified(11,' ')+"             |";
 		volumes     += QString::number(volume).left(11).rightJustified(11,' ')+"             |";
@@ -2245,16 +2298,21 @@ void doseInterface::calcMetrics() {
 	
 	QString text = QString("Dataset").left(24).rightJustified(24,' ')+"|"+names+"\n";
 	text        += QString(" ").left(24).rightJustified(24,' ')+" "+units+"\n";
+	text        += QString("Max dose / Gy").left(24).rightJustified(24,' ')+"|"+maximum+"\n";
+	text        += QString("Min dose / Gy").left(24).rightJustified(24,' ')+"|"+minimum+"\n";
 	text        += QString("Average dose / Gy").left(24).rightJustified(24,' ')+"|"+average+"\n";
 	text        += QString("Average uncertainty / Gy").left(24).rightJustified(24,' ')+"|"+uncertainty+"\n";
 	text        += QString("Number of voxels").left(24).rightJustified(24,' ')+"|"+voxels+"\n";
 	text        += QString("Total volume / cm^3").left(24).rightJustified(24,' ')+"|"+volumes+"\n";
 	
 	for (int i = 0; i < Dx.size(); i++)
-		text += (QString("D")+QString::number(xD[i])+" / Gy").left(24).rightJustified(24,' ')+"|"+Dx[i]+"\n";
+		text += (QString("D")+QString::number(xD[i])+" (%) / Gy").left(24).rightJustified(24,' ')+"|"+Dx[i]+"\n";
+	
+	for (int i = 0; i < Dcc.size(); i++)
+		text += (QString("D")+QString::number(ccD[i])+" (cc) / Gy").left(24).rightJustified(24,' ')+"|"+Dcc[i]+"\n";
 	
 	for (int i = 0; i < Vx.size(); i++)
-		text += (QString("V")+QString::number(xV[i])+" / cm^3").left(24).rightJustified(24,' ')+"|"+Vx[i]+"\n";
+		text += (QString("V")+QString::number(xV[i])+" ("+QString::number(pD)+" Gy) / cm^3").left(24).rightJustified(24,' ')+"|"+Vx[i]+"\n";
 	
 	parent->finishedProgress();
 	
@@ -2317,20 +2375,33 @@ void doseInterface::outputMetrics() {
 	int count = histDoses.size();
 	
 	// Metrics to extract
-	QString names, units, average, uncertainty, voxels, volumes;
-	QStringList Dx, Vx, temp;
-	QVector <double> xD, xV;
+	QString names, units, average, uncertainty, voxels, volumes, minimum, maximum;
+	QStringList Dx, Vx, Dcc, temp;
+	QVector <double> xD, xV, ccD;
+	double pD, minD = 1000000000, maxD = 0, minE = 0, maxE = 0;
+	
 	temp = histDxEdit->text().replace(' ',',').split(',');
 	for (int i = 0; i < temp.size(); i++) {
 		xD.append(temp[i].toDouble());
 		Dx.append("");
 	}
+	std::sort(xD.begin(), xD.end());
 	
 	temp = histVxEdit->text().replace(' ',',').split(',');
 	for (int i = 0; i < temp.size(); i++) {
 		xV.append(temp[i].toDouble());
 		Vx.append("");
 	}
+	std::sort(xV.begin(), xV.end());
+	
+	temp = histDccEdit->text().replace(' ',',').split(',');
+	for (int i = 0; i < temp.size(); i++) {
+		ccD.append(temp[i].toDouble());
+		Dcc.append("");
+	}
+	std::sort(ccD.begin(), ccD.end());
+	
+	pD = histDpEdit->text().toDouble();
 	
 	// Get dose values	
 	for (int i = 0; i < count; i++) {
@@ -2366,28 +2437,41 @@ void doseInterface::outputMetrics() {
 		parent->nameProgress("Extracting metrics");
 		
 		// Generate metric data
-		double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0;
-		int vIndex = 0, dIndex = 0;
+		double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
+		int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
 		for (int j = 0; j < data.size(); j++) {
 			countTally    += 1.0;
 			volumeTally   += data[j].vol;
 			doseTally     += data[j].dose;
-			doseTallyErr  += data[j].dose*data[j].err;
-			doseTallyErr2 += (data[j].dose*data[j].err)*(data[j].dose*data[j].err);
+			absError       = data[j].dose*data[j].err;
+			doseTallyErr  += absError;
+			doseTallyErr2 += absError*absError;
+			maxE = maxD<data[j].dose?absError:maxE;
+			maxD = maxD<data[j].dose?data[j].dose:maxD;
+			minE = minD>data[j].dose?absError:minE;
+			minD = minD>data[j].dose?data[j].dose:minD;
 			
 			// Append Vx values as we go
 			if (vIndex < xV.size()) {
-				if (data[j].dose > xV[vIndex] && j) {
-					Vx[vIndex] += QString::number(volumeTally-data[j].vol)+",,";
+				if (data[j].dose > (xV[vIndex]*pD/100.0) && j) {
+					Vx[vIndex] += QString::number(volume-volumeTally+data[j].vol)+",,";
 					vIndex++;
 				}
 			}
 			
 			// Append Dx values as we go
-			if (dIndex < xD.size()) {
+			if (dIndex >= 0) {
 				if ((volume-volumeTally)/volume*100.0 < xD[dIndex] && j) {
-					Dx[dIndex] += QString::number(data[j-1].dose)+","+QString::number(data[j-1].err)+",";
-					dIndex++;
+					Dx[dIndex] += QString::number(data[j-1].dose)+","+QString::number(data[j-1].dose*data[j-1].err)+",";
+					dIndex--;
+				}
+			}
+			
+			// Append Dcc values as we go
+			if (ccIndex >= 0) {
+				if ((volume-volumeTally) < ccD[ccIndex] && j) {
+					Dcc[ccIndex] += QString::number(data[j-1].dose)+","+QString::number(data[j-1].dose*data[j-1].err)+",";
+					ccIndex--;
 				}
 			}
 		}
@@ -2395,8 +2479,11 @@ void doseInterface::outputMetrics() {
 		for (int j = vIndex; j < xV.size(); j++) 
 			Vx[j] += "n/a,n/a,";
 		
-		for (int j = dIndex; j < xD.size(); j++) 
+		for (int j = dIndex; j >= 0; j--) 
 			Dx[j] += "n/a,n/a,";
+		
+		for (int j = ccIndex; j >= 0; j--) 
+			Dcc[j] += "n/a,n/a,";
 		
 		// Calculate global metrics
 		doseTally     /= countTally; // Average dose
@@ -2405,6 +2492,8 @@ void doseInterface::outputMetrics() {
 		
 		names       += histLoadedView->item(i)->text()+",,";
 		units       += "value,uncertainty,";
+		minimum     += QString::number(minD)+","+QString::number(minE)+",";
+		maximum     += QString::number(maxD)+","+QString::number(maxE)+",";
 		average     += QString::number(doseTally)+","+QString::number(doseTallyErr2)+",";
 		uncertainty += QString::number(doseTallyErr)+",,";
 		voxels      += QString::number(countTally)+",,";
@@ -2413,13 +2502,18 @@ void doseInterface::outputMetrics() {
 	
 	text        += QString("Dataset,")+names+"\n";
 	text        += QString(",")+units+"\n";
+	text        += QString("Max dose / Gy,")+maximum+"\n";
+	text        += QString("Min dose / Gy,")+minimum+"\n";
 	text        += QString("Average dose / Gy,")+average+"\n";
 	text        += QString("Average uncertainty / Gy,")+uncertainty+"\n";
 	text        += QString("Number of voxels,")+voxels+"\n";
 	text        += QString("Total volume / cm^3,")+volumes+"\n";
 	
 	for (int i = 0; i < Dx.size(); i++)
-		text += QString("D")+QString::number(xD[i])+" / Gy,"+Dx[i]+"\n";
+		text += QString("D")+QString::number(xD[i])+" (%) / Gy,"+Dx[i]+"\n";
+	
+	for (int i = 0; i < Dcc.size(); i++)
+		text += QString("D")+QString::number(ccD[i])+" (cc) / Gy,"+Dcc[i]+"\n";
 	
 	for (int i = 0; i < Vx.size(); i++)
 		text += QString("V")+QString::number(xV[i])+" / cm^3,"+Vx[i]+"\n";

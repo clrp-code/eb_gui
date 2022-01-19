@@ -526,6 +526,7 @@ void EGSPhant::loadgzEGSPhantFile(QString path) {
 		*data >> nmed;
 		
 		std::string med;
+		media.clear(); // in case of reload
 		for (int i=0; i < nmed; i++) {
 			*data >> med;
             media.append(QString(med.c_str()));
@@ -542,14 +543,17 @@ void EGSPhant::loadgzEGSPhantFile(QString path) {
 		
 		*data >> nx >> ny >> nz;
 		
+		x.clear(); // in case of reload
 		for (int i=0; i < nx+1; i++) {
 			*data >> bound;
 			x.append(bound);
 		}
+		y.clear(); // in case of reload
 		for (int i=0; i < ny+1; i++) {
 			*data >> bound;
 			y.append(bound);
 		}
+		z.clear(); // in case of reload
 		for (int i=0; i < nz+1; i++) {
 			*data >> bound;
 			z.append(bound);
@@ -590,6 +594,7 @@ void EGSPhant::loadgzEGSPhantFilePlus(QString path) {
 		*data >> nmed;
 		
 		std::string med;
+		media.clear(); // in case of reload
 		for (int i=0; i < nmed; i++) {
 			*data >> med;
             media.append(QString(med.c_str()));
@@ -606,14 +611,17 @@ void EGSPhant::loadgzEGSPhantFilePlus(QString path) {
 		
 		*data >> nx >> ny >> nz;
 		
+		x.clear(); // in case of reload
 		for (int i=0; i < nx+1; i++) {
 			*data >> bound;
 			x.append(bound);
 		}
+		y.clear(); // in case of reload
 		for (int i=0; i < ny+1; i++) {
 			*data >> bound;
 			y.append(bound);
 		}
+		z.clear(); // in case of reload
 		for (int i=0; i < nz+1; i++) {
 			*data >> bound;
 			z.append(bound);

@@ -844,7 +844,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 			for (int l = 0; l < contourNum; l++) {
 					for (int m = 0; m < structZ[structIndex->at(l)].size(); m++) {
 						// If slice j of struct i on the same plane as slice k of the phantom
-						if (abs(structZ[structIndex->at(l)][m] - zMid) < (phant->z[k+1]-phant->z[k])/2.0 && tasIndex->at(l) != -1) {
+						if (abs(structZ[structIndex->at(l)][m] - zMid) < (phant->z[k+1]-phant->z[k])/2.0) { // && tasIndex->at(l) != -1) { // Don't filter non-default to be able to tally
 							zIndex << QPoint(structIndex->at(l),m); // Add it to lookup
 						}
 					}
@@ -987,7 +987,7 @@ int Data::parsePlan(QString* log) {
 	QByteArray tempData, tempData2, tempData3;
 	QStringList pointData2;
 	QString treatDate = "", kermaDate = "";
-	double treatTime = -1, kermaTime = -1;
+	QString treatTime = "", kermaTime = "";
 	
 	// Reset plan data variables to default to know what worked
 	treatmentType = "UNKNOWN";
@@ -1043,11 +1043,12 @@ int Data::parsePlan(QString* log) {
 		for (unsigned int s = 0; s < tempAtt->vl; s++) {
 			temp.append(tempAtt->vf[s]);
 		}
-		treatTime = temp.trimmed().toDouble();
+		treatTime = temp.trimmed();
 	}
 	*log = *log + "Treatment time: " + treatDate.left(4) + "-" + 
 		   treatDate.left(6).right(2) + "-" + treatDate.left(8).right(2) + " " +
-		   QString::number(int(treatTime/3600)) + ":" + QString::number(int(treatTime/60)) + "\n";
+		   treatTime.left(2) + ":" + treatTime.left(4).right(2) + ":" +
+		   treatTime.left(6).right(2) +  "\n";
 		
 	*log = *log + "----------------------------------------------\n";
 		
@@ -1116,8 +1117,8 @@ int Data::parsePlan(QString* log) {
 				seedInfo = tempInf.trimmed();
 			if (kermaDate == "" && tempD != "")
 				kermaDate = tempD.trimmed();
-			if (kermaTime == -1 && tempD != "")
-				kermaTime = tempT.trimmed().toDouble();
+			if (kermaTime == "" && tempT != "")
+				kermaTime = tempT.trimmed();
 
 			for (int l = 0; l < att->size(); l++) {
 				delete att->at(l);
@@ -1151,30 +1152,32 @@ int Data::parsePlan(QString* log) {
 	
 	*log = *log + "Measurement time: " + kermaDate.left(4) + "-" + 
 		   kermaDate.left(6).right(2) + "-" + kermaDate.left(8).right(2) + " " +
-		   QString::number(int(kermaTime/3600)) + ":" + QString::number(int(kermaTime/60)) + "\n";
-		   
-	if (kermaDate != "" && treatDate != "" && kermaTime != -1 && treatTime != -1) {
-		tm treat, kerma;
-		treat.tm_year = treatDate.left(4).toInt()-1900;
-		kerma.tm_year = kermaDate.left(4).toInt()-1900;
-		treat.tm_mon = treatDate.left(6).right(2).toInt()-1;
-		kerma.tm_mon = kermaDate.left(6).right(2).toInt()-1;
-		treat.tm_mday = treatDate.left(8).right(2).toInt();
-		kerma.tm_mday = kermaDate.left(8).right(2).toInt();
-		treat.tm_hour = int(treatTime)/3600;
-		kerma.tm_hour = int(kermaTime)/3600;
-		treat.tm_min = (int(treatTime)%3600)/60;
-		kerma.tm_min = (int(kermaTime)%3600)/60;
-		treat.tm_sec = int(treatTime)%60;
-		kerma.tm_sec = int(kermaTime)%60;
-		
-		double timeDiff = double(mktime(&treat)-mktime(&kerma))/3600.0; // Time difference in hours
-		*log = *log + "Time difference (h): " + QString::number(timeDiff) + "\n";
-		
-		airKerma *= pow(2,-timeDiff/(halfLife*24.0));
-		
-		*log = *log + "Adjusted air kerma strength (Gy*cm^2/h): " + QString::number(airKerma) + "\n";		
-	}
+		   kermaTime.left(2) + ":" + kermaTime.left(4).right(2) + ":" +
+		   kermaTime.left(6).right(2) +  "\n";
+	
+	// Removed as it seems plan data auto-adjusts strength for treatment date
+	//if (kermaDate != "" && treatDate != "" && kermaTime != "" && treatTime != "") {
+	//	tm treat, kerma;
+	//	treat.tm_year = treatDate.left(4).toInt()-1900;
+	//	kerma.tm_year = kermaDate.left(4).toInt()-1900;
+	//	treat.tm_mon = treatDate.left(6).right(2).toInt()-1;
+	//	kerma.tm_mon = kermaDate.left(6).right(2).toInt()-1;
+	//	treat.tm_mday = treatDate.left(8).right(2).toInt();
+	//	kerma.tm_mday = kermaDate.left(8).right(2).toInt();
+	//	treat.tm_hour = treatTime.left(2).toInt();
+	//	kerma.tm_hour = kermaTime.left(2).toInt();
+	//	treat.tm_min = treatTime.left(4).right(2).toInt();
+	//	kerma.tm_min = kermaTime.left(4).right(2).toInt();
+	//	treat.tm_sec = treatTime.left(6).right(2).toInt();
+	//	kerma.tm_sec = kermaTime.left(6).right(2).toInt();
+	//	
+	//	double timeDiff = double(mktime(&treat)-mktime(&kerma))/3600.0; // Time difference in hours
+	//	*log = *log + "Time difference (h): " + QString::number(timeDiff) + "\n";
+	//	
+	//	airKerma *= pow(2,-timeDiff/(halfLife*24.0));
+	//	
+	//	*log = *log + "Adjusted air kerma strength (Gy*cm^2/h): " + QString::number(airKerma) + "\n";		
+	//}
 	
 	*log = *log + "Additional seed data: " + seedInfo + "\n";
 	*log = *log + "----------------------------------------------\n";
