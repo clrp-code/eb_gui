@@ -421,7 +421,7 @@ void doseInterface::createLayout() {
 	histPhant       = new EGSPhant();
 	histPhantSelect = new QComboBox();
 	histPhantSelect->addItem("none");
-	ttt = tr("The phantom used to select masks and media for filtering dose data.");
+	ttt = tr("The phantom used to select structures and media for filtering dose data.");
 	histPhantLabel->setToolTip(ttt);
 	histPhantSelect->setToolTip(ttt);
 	
@@ -438,11 +438,12 @@ void doseInterface::createLayout() {
 	// Filters
 	histFilterLabel  = new QLabel("Filters");
 	
-	histMaskLabel    = new QLabel("Mask");
+	histMaskLabel    = new QLabel("Structure");
 	histMaskSelect   = new QComboBox();
 	histMaskSelect->addItem("none");
 	histMask         = new EGSPhant();
-	ttt = tr("Ignore all dose data not within the selected contour mask.");
+	ttt = tr("Ignore all dose data not within the selected structure.  This list\n"
+			 "is populated when generating the egsphant using the metrics option.");
 	histMaskLabel->setToolTip(ttt);
 	histMaskSelect->setToolTip(ttt);
 	

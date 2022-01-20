@@ -179,7 +179,7 @@ void phantInterface::createLayout() {
 	ttt = tr("The TAS selected here will only be used in the specified contour.");
 	contourScrollFrame->setToolTip(ttt);
 	
-	contourTASMaskLabel  = new QLabel("Mask");
+	contourTASMaskLabel  = new QLabel("Metrics");
 	contourTASLabelLabel = new QLabel("Contour");
 	contourTASBoxLabel   = new QLabel("TAS");
 	
@@ -198,7 +198,7 @@ void phantInterface::createLayout() {
 	contourGrid->addWidget(defaultTASBox     , 1, 1, 1, 2);
 	contourGrid->addWidget(contourScrollArea , 2, 0, 1, 3);
 	
-	for (int i = 0; i < numCont; i++) {
+	for (int i = 0; i < STRUCT_COUNT; i++) {
 		contourTASMask.append(new QCheckBox());
 		contourTASLabel.append(new QLabel(tr("no contour selected")));
 		contourTASBox.append(new QComboBox());
@@ -219,6 +219,7 @@ void phantInterface::createLayout() {
 		contourTASBox.last()->setToolTip(ttt);
 	}
 	contourScrollArea->setWidget(contourScrollFrame);
+	contourScrollArea->setWidgetResizable(true);
 	
 	contourFrame->setLayout(contourGrid);
 	contourFrame->setFrameStyle(QFrame::Box | QFrame::Sunken);
@@ -956,7 +957,7 @@ void phantInterface::loadStruct() {
 		contourTASLabel[i]->setEnabled(true);
 		contourTASBox[i]->setEnabled(true);
 	}
-	for (; i < numCont; i++) {
+	for (; i < STRUCT_COUNT; i++) {
 		contourTASLabel[i]->setText("no further structs");
 		
 		contourTASMask[i]->setEnabled(false);

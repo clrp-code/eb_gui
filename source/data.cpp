@@ -272,7 +272,6 @@ int Data::loadDefaults() {
 		metricNames.append("Custom");
 	}
 	else {
-		qDebug() << "Loaded" << metric_location;
 		QTextStream in(file);
 		QStringList fields;	
 		while(!in.atEnd()) {

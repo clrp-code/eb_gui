@@ -96,7 +96,6 @@ public:
 	QLabel*              defaultTASLabel;
 	QComboBox*           defaultTASBox;
 	
-	int numCont = 100;
 	QLabel*              contourTASMaskLabel;
 	QLabel*              contourTASLabelLabel;
 	QLabel*              contourTASBoxLabel;

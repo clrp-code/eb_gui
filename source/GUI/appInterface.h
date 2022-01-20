@@ -59,11 +59,46 @@ public:
 
     Interface *parent; // Pointer to the parent to access data with
 	
-	// Output RT Dose
+	// Selections
+	QLabel *egsphantLabel;
+	QLabel *transformLabel;
+	QLabel *doseLabel;
+	QComboBox *egsphant;
+	QComboBox *transform;
+	QComboBox *dose;
+	
+	// Data
+	QVector <EGSPhant*>  masks;
+	Dose*                results;
+	
+	// Metrics
+	QLabel*              contourTitleLabel;
+	QVector <QLabel*>    contourNameLabel;
+	QVector <QString>    contourFileName;
+	
+	QLabel*              loadMetricLabel;
+	QVector <QComboBox*> loadMetricBox;
+	
+	QLabel*              saveDVHLabel;
+	QVector <QCheckBox*> saveDVHBox;
+	
+	QLabel*              saveDiffLabel;
+	QVector <QCheckBox*> saveDiffBox;
+	
+	QGridLayout*         metricGrid;
+	QFrame*              metricFrame;
+	QScrollArea*         metricArea;
+	
+	// Outputs
 	QPushButton *outputRT;
+	QPushButton *outputFullData;
 
 public slots:
+	// Output just RT Dose
 	void outputRTdose();
+	
+	// Reset structures
+	void loadStructs();
 public:
 // LAYOUT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     QGridLayout *mainLayout;
@@ -72,6 +107,7 @@ public:
     void createLayout();
     void connectLayout();
     void refresh(); // Reset all on screen values properly
+	
 };
 
 #endif

@@ -123,6 +123,12 @@ public:
 	void getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, double* volume, double minDose, double maxDose, int n = 1);
 	void getDV(QVector <DV> *data, EGSPhant* mask, double* volume, double minDose, double maxDose, int n = 1);
 	void getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSPhant* mask, double* volume, double minDose, double maxDose, int n = 1);
+	
+	// Get sorted dose data for final metric extraction using masks
+	void getDVs(QVector <QVector <DV> > *data, QVector <EGSPhant*> *masks, QVector <double> *volume);
+	
+	// Generate metric outputs
+	QString getMetricCSV (QVector <DV> *data, double volume, QString name, QString DxStr, QString DccStr, QString VxStr, QString pDStr);
 };
 
 #endif

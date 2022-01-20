@@ -46,6 +46,9 @@
 // Global QFrame widgets' frame line width
 #define LINE_WIDTH 2
 
+// Global maximum structure input/output count
+#define STRUCT_COUNT 100
+
 // List of media indices used in egsphants
 #define EGSPHANT_CHARS "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 

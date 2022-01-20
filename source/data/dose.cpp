@@ -1200,6 +1200,167 @@ void Dose::getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSP
 	std::sort(data->begin(), data->end(), DV_sorter);
 }
 
+void Dose::getDVs(QVector <QVector <DV> > *data, QVector <EGSPhant*> *masks, QVector <double> *volume) {
+	if (data->size() != masks->size() && data->size() != volume->size())
+		return; // Quit if mask and data array size do not align
+	
+	double increment = 75.0/double(data->size())/double(z);
+	double xVal, yVal, zVal;
+	double xLen, yLen, zLen;
+	double vol;
+	
+	for (int i = 0; i < volume->size(); i++) {
+		(*volume)[i] = 0;
+		(*data)[i].clear();
+	}
+	
+    for (int k = 0; k < z; k++) {
+		zVal = (cz[k]+cz[k+1])/2.0;
+		zLen = (cz[k+1]-cz[k]);
+		emit madeProgress(increment); // Update progress bar
+        for (int j = 0; j < y; j++) {
+			yVal = (cy[j]+cy[j+1])/2.0;
+			yLen = (cy[j+1]-cy[j]);
+            for (int i = 0; i < x; i++) {
+				xVal = (cx[i]+cx[i+1])/2.0;
+				xLen = (cx[i+1]-cx[i]);
+				vol = xLen*yLen*zLen;
+				for (int n = 0; n < masks->size(); n++) {
+					if ((*masks)[n]->getMedia(xVal, yVal, zVal) == 50) {
+						(*volume)[n] += vol;
+						(*data)[n].append({val[i][j][k], err[i][j][k], vol});
+					}
+				}
+			}
+		}
+	}
+	
+	emit nameProgress("Sorting (bar does not update)"); // Change progress bar name
+	for (int i = 0; i < data->size(); i++)
+		std::sort((*data)[i].begin(), (*data)[i].end(), DV_sorter);
+}
+
+QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QString DxStr, QString DccStr, QString VxStr, QString pDStr) {
+	QString names, units, average, uncertainty, voxels, volumes, minimum, maximum;
+	QStringList Dx, Vx, Dcc, temp;
+	QVector <double> xD, xV, ccD;
+	double pD, minD = 1000000000, maxD = 0, minE = 0, maxE = 0;
+	
+	QString text = "";
+	
+	if (DxStr.length()) {
+		temp = DxStr.replace(' ',',').split(',');
+		for (int i = 0; i < temp.size(); i++) {
+			xD.append(temp[i].toDouble());
+			Dx.append("");
+		}
+		std::sort(xD.begin(), xD.end());
+	}
+	
+	if (VxStr.length()) {
+		temp = VxStr.replace(' ',',').split(',');
+		for (int i = 0; i < temp.size(); i++) {
+			xV.append(temp[i].toDouble());
+			Vx.append("");
+		}
+		std::sort(xV.begin(), xV.end());
+	}
+	
+	if (DccStr.length()) {
+		temp = DccStr.replace(' ',',').split(',');
+		for (int i = 0; i < temp.size(); i++) {
+			ccD.append(temp[i].toDouble());
+			Dcc.append("");
+		}
+		std::sort(ccD.begin(), ccD.end());
+	}
+	
+	pD = pDStr.toDouble();
+	
+	// Generate metric data
+	double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
+	int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
+	for (int j = 0; j < data->size(); j++) {
+		countTally    += 1.0;
+		volumeTally   += data->at(j).vol;
+		doseTally     += data->at(j).dose;
+		absError       = data->at(j).dose*data->at(j).err;
+		doseTallyErr  += absError;
+		doseTallyErr2 += absError*absError;
+		maxE = maxD<data->at(j).dose?absError:maxE;
+		maxD = maxD<data->at(j).dose?data->at(j).dose:maxD;
+		minE = minD>data->at(j).dose?absError:minE;
+		minD = minD>data->at(j).dose?data->at(j).dose:minD;
+		
+		// Append Vx values as we go
+		if (vIndex < xV.size()) {
+			if (data->at(j).dose > (xV[vIndex]*pD/100.0) && j) {
+				Vx[vIndex] += QString::number(volume-volumeTally+data->at(j).vol)+",,";
+				vIndex++;
+			}
+		}
+		
+		// Append Dx values as we go
+		if (dIndex >= 0) {
+			if ((volume-volumeTally)/volume*100.0 < xD[dIndex] && j) {
+				Dx[dIndex] += QString::number(data->at(j-1).dose)+","+QString::number(data->at(j-1).dose*data->at(j-1).err)+",";
+				dIndex--;
+			}
+		}
+		
+		// Append Dcc values as we go
+		if (ccIndex >= 0) {
+			if ((volume-volumeTally) < ccD[ccIndex] && j) {
+				Dcc[ccIndex] += QString::number(data->at(j-1).dose)+","+QString::number(data->at(j-1).dose*data->at(j-1).err)+",";
+				ccIndex--;
+			}
+		}
+	}
+	
+	for (int j = vIndex; j < xV.size(); j++) 
+		Vx[j] += "n/a,n/a,";
+	
+	for (int j = dIndex; j >= 0; j--) 
+		Dx[j] += "n/a,n/a,";
+	
+	for (int j = ccIndex; j >= 0; j--) 
+		Dcc[j] += "n/a,n/a,";
+	
+	// Calculate global metrics
+	doseTally     /= countTally; // Average dose
+	doseTallyErr  /= countTally; // Average uncertainty
+	doseTallyErr2 = sqrt(doseTallyErr2/countTally); // Propagated average dose uncertainty
+	
+	names       = name+",,";
+	units       = "value,uncertainty,";
+	minimum     = QString::number(minD)+","+QString::number(minE)+",";
+	maximum     = QString::number(maxD)+","+QString::number(maxE)+",";
+	average     = QString::number(doseTally)+","+QString::number(doseTallyErr2)+",";
+	uncertainty = QString::number(doseTallyErr)+",,";
+	voxels      = QString::number(countTally)+",,";
+	volumes     = QString::number(volume)+",,";
+	
+	text        += QString("Dataset,")+names+"\n";
+	text        += QString(",")+units+"\n";
+	text        += QString("Max dose / Gy,")+maximum+"\n";
+	text        += QString("Min dose / Gy,")+minimum+"\n";
+	text        += QString("Average dose / Gy,")+average+"\n";
+	text        += QString("Average uncertainty / Gy,")+uncertainty+"\n";
+	text        += QString("Number of voxels,")+voxels+"\n";
+	text        += QString("Total volume / cm^3,")+volumes+"\n";
+	
+	for (int i = 0; i < Dx.size(); i++)
+		text += QString("D")+QString::number(xD[i])+" (%) / Gy,"+Dx[i]+"\n";
+	
+	for (int i = 0; i < Dcc.size(); i++)
+		text += QString("D")+QString::number(ccD[i])+" (cc) / Gy,"+Dcc[i]+"\n";
+	
+	for (int i = 0; i < Vx.size(); i++)
+		text += QString("V")+QString::number(xV[i])+" / cm^3,"+Vx[i]+"\n";
+	
+	return text;
+}
+
 // Comparison function for std containers
 bool DV_sorter(const DV& a, const DV& b) {
 	return a.dose < b.dose;

@@ -338,11 +338,15 @@ void Interface::phantomRepopulate() {
 	((doseInterface*)doseInt)->profPhantSelect->clear();
 	((doseInterface*)doseInt)->profPhantSelect->addItem("none");
 	
+	((appInterface*)appInt)->egsphant->clear();
+	((appInterface*)appInt)->egsphant->addItem("none");
+	
 	for (int i = 0; i < data->localNamePhants.size(); i++) {
 		phantomListView->addItem(data->localNamePhants[i]);
 		((doseInterface*)doseInt)->phantSelect->addItem(data->localNamePhants[i]);
 		((doseInterface*)doseInt)->histPhantSelect->addItem(data->localNamePhants[i]);
 		((doseInterface*)doseInt)->profPhantSelect->addItem(data->localNamePhants[i]);
+		((appInterface*)appInt)->egsphant->addItem(data->localNamePhants[i]);
 	}
 	if (!phantomOnlyLocal->isChecked())
 		for (int i = 0; i < data->libNamePhants.size(); i++) {
@@ -364,10 +368,15 @@ void Interface::sourceRepopulate() {
 
 void Interface::transformationRepopulate() {
 	transformationListView->clear();
+	
+	((appInterface*)appInt)->transform->clear();
+	((appInterface*)appInt)->transform->addItem("none");
+	
 	((phantInterface*)phantInt)->marTransformation->clear();
 	for (int i = 0; i < data->localNameTransforms.size(); i++) {
 		transformationListView->addItem(data->localNameTransforms[i]);
 		((phantInterface*)phantInt)->marTransformation->addItem(data->localNameTransforms[i]);
+		((appInterface*)appInt)->transform->addItem(data->localNameTransforms[i]);
 	}
 	if (!transformationOnlyLocal->isChecked())
 		for (int i = 0; i < data->libNameTransforms.size(); i++) {
@@ -415,6 +424,9 @@ void Interface::doseRepopulate() {
 	((doseInterface*)doseInt)->isoDoseBox[1]->addItem("none");
 	((doseInterface*)doseInt)->isoDoseBox[2]->addItem("none");
 	
+	((appInterface*)appInt)->dose->clear();
+	((appInterface*)appInt)->dose->addItem("none");
+	
 	for (int i = 0; i < data->localNameDoses.size(); i++) {
 		doseListView->addItem(data->localNameDoses[i]);
 		((doseInterface*)doseInt)->mapDoseBox->addItem(data->localNameDoses[i]);
@@ -423,6 +435,7 @@ void Interface::doseRepopulate() {
 		((doseInterface*)doseInt)->isoDoseBox[2]->addItem(data->localNameDoses[i]);
 		((doseInterface*)doseInt)->histDoseSelect->addItem(data->localNameDoses[i]);
 		((doseInterface*)doseInt)->profDoseSelect->addItem(data->localNameDoses[i]);
+		((appInterface*)appInt)->dose->addItem(data->localNameDoses[i]);
 	}
 }
 
@@ -527,6 +540,14 @@ void Interface::phantomDeleteFile() {
 	// Delete all associated files
 	QFile(data->localDirPhants[i]+matchingNames[0]->text()).remove();
 	QFile(data->localDirPhants[i]+fileName+".log").remove();
+	
+	QDirIterator files (data->gui_location+"/database/mask/", {QString(fileName)+".*.egsphant.gz"},
+						QDir::NoFilter, QDirIterator::Subdirectories);
+	
+	while(files.hasNext()) {
+		files.next();
+		QFile (data->gui_location+"/database/mask/"+files.fileName()).remove();
+	}
 	
 	// Delete the file references
 	data->localNamePhants.removeAt(i);
