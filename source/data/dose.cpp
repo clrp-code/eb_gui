@@ -1201,10 +1201,12 @@ void Dose::getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSP
 }
 
 void Dose::getDVs(QVector <QVector <DV> > *data, QVector <EGSPhant*> *masks, QVector <double> *volume) {
+	emit nameProgress("Sorting (bar does not update)"); // Change progress bar name
+	
 	if (data->size() != masks->size() && data->size() != volume->size())
 		return; // Quit if mask and data array size do not align
 	
-	double increment = 75.0/double(data->size())/double(z);
+	double increment = 50.0/double(data->size())/double(z);
 	double xVal, yVal, zVal;
 	double xLen, yLen, zLen;
 	double vol;

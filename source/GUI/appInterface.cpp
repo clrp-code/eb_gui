@@ -122,21 +122,25 @@ void appInterface::createLayout() {
 	ttt = tr("Convert selected 3ddose file to RT dose file.");
 	outputRT->setToolTip(ttt);
 	
-	outputFullData = new QPushButton("Output all data");
+	outputFullDataCSV   = new QPushButton("Output all data (csv metrics)");
+	outputFullDataDICOM = new QPushButton("Output all data (DICOM metrics)");
 	ttt = tr("Output egsphant, transformation, dose, input files, and associated logs to a patient folder.\n"
 			 "Additional metrics selected above can also be output.");
-	outputRT->setToolTip(ttt);
+	outputFullDataCSV->setToolTip(ttt);
+	outputFullDataDICOM->setToolTip(ttt);
+	outputFullDataDICOM->setDisabled(true);  // to be implemented
 	
-	mainLayout->addWidget(parent->doseFrame, 0, 0, 4, 2);
-	mainLayout->addWidget(outputRT         , 4, 0, 1, 2);
-	mainLayout->addWidget(egsphantLabel    , 0, 2, 1, 1);
-	mainLayout->addWidget(transformLabel   , 1, 2, 1, 1);
-	mainLayout->addWidget(doseLabel        , 2, 2, 1, 1);
-	mainLayout->addWidget(egsphant         , 0, 3, 1, 1);
-	mainLayout->addWidget(transform        , 1, 3, 1, 1);
-	mainLayout->addWidget(dose             , 2, 3, 1, 1);
-	mainLayout->addWidget(metricArea       , 3, 2, 1, 2);
-	mainLayout->addWidget(outputFullData   , 4, 2, 1, 2);
+	mainLayout->addWidget(parent->doseFrame  , 0, 0, 4, 2);
+	mainLayout->addWidget(outputRT           , 4, 0, 1, 1);
+	mainLayout->addWidget(egsphantLabel      , 0, 2, 1, 1);
+	mainLayout->addWidget(transformLabel     , 1, 2, 1, 1);
+	mainLayout->addWidget(doseLabel          , 2, 2, 1, 1);
+	mainLayout->addWidget(egsphant           , 0, 3, 1, 1);
+	mainLayout->addWidget(transform          , 1, 3, 1, 1);
+	mainLayout->addWidget(dose               , 2, 3, 1, 1);
+	mainLayout->addWidget(metricArea         , 3, 2, 1, 2);
+	mainLayout->addWidget(outputFullDataCSV  , 4, 2, 1, 1);
+	mainLayout->addWidget(outputFullDataDICOM, 4, 3, 1, 1);
 	
 	mainLayout->setColumnStretch(0,1);
 	mainLayout->setColumnStretch(1,1);
@@ -152,6 +156,9 @@ void appInterface::connectLayout() {
 			
 	connect(egsphant, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(loadStructs()));
+	
+	connect(outputFullDataCSV, SIGNAL(pressed()),
+			this, SLOT(outputCSV()));
 }
 
 // Refresh
@@ -285,4 +292,215 @@ void appInterface::loadStructs() {
 		saveDVHBox[i]->setDisabled(true);
 		saveDiffBox[i]->setDisabled(true);
 	}
+}
+
+void appInterface::outputCSV() {
+	// Exit statements
+	int iD = dose->currentIndex()-1;
+	if (iD < 0) {return;} // Exit if none is selected or box is empty in setup
+	
+	Dose doseData;
+	
+	if (iD >= parent->data->localDirDoses.size()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected dose index is larger than the local dose count.  Aborting"));		
+		return;
+	}
+	
+	int iP = egsphant->currentIndex()-1;
+	if (iP < 0) {return;} // Exit if none is selected or box is empty in setup
+		
+	if (iP >= parent->data->localDirPhants.size()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected egsphant index is larger than the local dose count.  Aborting"));		
+		return;
+	}
+	
+	int iT = transform->currentIndex()-1;
+	if (iT < 0) {return;} // Exit if none is selected or box is empty in setup
+		
+	if (iT >= parent->data->localDirTransforms.size()) {
+		QMessageBox::warning(0, "Index error",
+		tr("Somehow the selected dose index is larger than the local dose count.  Aborting"));		
+		return;
+	}
+	
+	// Get output directory
+	QString path = QFileDialog::getExistingDirectory(this, tr("Select DICOM CT directory"));
+	
+	if (path.length() < 1)
+		return;
+	
+	// Make subdirectories
+	if (!QDir(path+"/phantom").exists())
+		QDir().mkdir(path+"/phantom");
+	if (!QDir(path+"/plan").exists())
+		QDir().mkdir(path+"/plan");
+	if (!QDir(path+"/simulation").exists())
+		QDir().mkdir(path+"/simulation");
+	
+	// Get RT file save location
+	QString rtFile = path+parent->data->localNamePhants[iD];
+	if (rtFile.endsWith("phantom.b3ddose"))
+		rtFile = rtFile.left(rtFile.size()-16);
+	else if (rtFile.endsWith("phantom.3ddose"))
+		rtFile = rtFile.left(rtFile.size()-15);
+	
+	QString rtFile2 = rtFile+".error.dcm";
+	rtFile = rtFile+".dose.dcm";
+	
+	QString doseFile = parent->data->localDirDoses[iD]+parent->data->localNameDoses[iD]; // Get file location
+		
+	// Connect the progress bar and load dose
+	parent->resetProgress("Loading 3ddose file");
+	connect(&doseData, SIGNAL(madeProgress(double)),
+			parent, SLOT(updateProgress(double)));
+		
+	if (doseFile.endsWith(".b3ddose"))
+		doseData.readBIn(doseFile, 5);
+	else if (doseFile.endsWith(".3ddose"))
+		doseData.readIn(doseFile, 5);
+	else {
+		QMessageBox::warning(0, "File error",
+		tr("Selected dose file is not of type 3ddose or b3ddose.  Aborting"));
+		parent->finishedProgress();
+		return;		
+	}
+	
+	// Get egsinp file dose scaling if one exists
+	QString doseScaling = "", line;
+	
+	if (doseFile.endsWith(".phantom.3ddose"))
+		doseFile = doseFile.left(doseFile.length()-15);
+	else if (doseFile.endsWith(".phantom.b3ddose"))
+		doseFile = doseFile.left(doseFile.length()-16);
+	
+	QFile egsinp(doseFile+".egsinp");
+	QTextStream egsinpinp(&egsinp);
+	if (egsinp.open(QIODevice::ReadOnly | QIODevice::Text))
+		do {
+			line = egsinpinp.readLine();
+			if (line.contains("dose scaling factor") && line.contains("=")) {
+				doseScaling = line.split("=")[1].split("#")[0].trimmed();
+				break;
+			}
+		} while (!egsinpinp.atEnd());
+	
+	// Now save RT Dose
+	parent->data->outputRTDose(rtFile, rtFile2, &doseData, doseScaling, 3.0);
+		
+	// Copy all additional files associated with dose
+	QString tempPath, tempName;
+	
+	// Copy egsphant
+	tempPath = parent->data->localDirPhants[iD];
+	tempName = parent->data->localNamePhants[iD];
+	qDebug() << "Copying egsphants around" << tempPath << tempName;
+	
+	QFile(tempPath+tempName).copy(path+"/phantom/"+tempName);
+	
+	if (tempName.endsWith(".gz"))
+		tempName = tempName.left(tempName.size()-3);
+	
+	if (tempName.endsWith(".egsphant"))
+		tempName = tempName.left(tempName.size()-9);
+	else if (tempName.endsWith(".begsphant"))
+		tempName = tempName.left(tempName.size()-10);
+	else if (tempName.endsWith(".geom"))
+		tempName = tempName.left(tempName.size()-5);
+	
+	QFile(tempPath+tempName+".log").copy(path+"/phantom/"+tempName+".log"); // Get egsphant log
+	
+	// Copy transformation
+	tempPath = parent->data->localDirTransforms[iD];
+	tempName = parent->data->localNameTransforms[iD];
+	qDebug() << "Copying transformation around" << tempPath << tempName;
+	
+	QFile(tempPath+tempName).copy(path+"/plan/"+tempName);
+		
+	QFile(tempPath+tempName+".log").copy(path+"/plan/"+tempName+".log"); // Get plan log
+	QFile(tempPath+tempName+".dwell").copy(path+"/plan/"+tempName+".dwell"); // Get dwell times if they exist
+	
+	// Copy dose
+	tempPath = parent->data->localDirDoses[iD];
+	tempName = parent->data->localNameDoses[iD];
+	qDebug() << "Copying doses around" << tempPath << tempName;
+	
+	QFile(tempPath+tempName).copy(path+"/simulation/"+tempName);
+	
+	if (tempName.endsWith("phantom.b3ddose"))
+		tempName = tempName.left(tempName.size()-16);
+	else if (tempName.endsWith("phantom.3ddose"))
+		tempName = tempName.left(tempName.size()-15);
+	
+	QFile(tempPath+tempName+".egsinp").copy(path+"/simulation/"+tempName+".egsinp"); // Get input file
+	QFile(tempPath+tempName+".egslog").copy(path+"/simulation/"+tempName+".egslog"); // Get output log file
+	
+	// Setup metric extraction data
+	QVector <QVector <DV> > data;
+	QVector <double> volume;
+	QVector <QString> Dx, Dcc, Vx, pD;
+	for (int i = 0; i < masks.size(); i++)
+		delete masks[i];
+	masks.clear();
+	
+	int structCount; // Get structure count
+	for (structCount = 0; structCount < STRUCT_COUNT; structCount++)
+		if (!contourNameLabel[structCount]->text().compare("no contour loaded"))
+			break;
+	
+	data.resize(structCount);
+	volume.resize(structCount);
+	masks.resize(structCount);
+	Dx.resize(structCount);
+	Dcc.resize(structCount);
+	Vx.resize(structCount);
+	pD.resize(structCount);
+	qDebug() << "Resetting arrays to size" << structCount;
+	
+	// Load masks
+	tempPath = parent->data->localDirPhants[iD].left(parent->data->localDirPhants[iD].size()-9)+"mask/";
+	tempName = parent->data->localNamePhants[iD];
+	qDebug() << "Copying masks around" << tempPath << tempName;
+	
+	if (tempName.endsWith(".gz"))
+		tempName = tempName.left(tempName.size()-3);
+	
+	if (tempName.endsWith(".egsphant"))
+		tempName = tempName.left(tempName.size()-9);
+	else if (tempName.endsWith(".begsphant"))
+		tempName = tempName.left(tempName.size()-10);
+	else if (tempName.endsWith(".geom"))
+		tempName = tempName.left(tempName.size()-5);
+	
+	int j;
+	for (int i = 0; i < structCount; i++) {
+		qDebug() << "Loop" << i;
+		qDebug() << "Loading" << tempPath+tempName+"."+contourNameLabel[i]->text()+".mask.egsphant.gz";
+		sleep(5);
+		masks[i] = new EGSPhant();
+		masks[i]->loadgzEGSPhantFile(tempPath+tempName+"."+contourNameLabel[i]->text()+".mask.egsphant.gz");
+		j      = loadMetricBox[i]->currentIndex();
+		Dx[i]  = parent->data->metricDx[j];
+		Dcc[i] = parent->data->metricDcc[j];
+		Vx[i]  = parent->data->metricVx[j];
+		pD[i]  = parent->data->metricDp[j];
+	}
+	
+	doseData.getDVs(&data,&masks,&volume);
+	
+	QString csvText;
+	for (int i = 0; i < structCount; i++){
+		csvText = doseData.getMetricCSV(&(data[i]), volume[i], contourNameLabel[i]->text(),
+										Dx[i], Dcc[i], Vx[i], pD[i]);
+		QFile csvFile(path+"/"+contourNameLabel[i]->text()+"_metrics.csv");
+		if (csvFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+			QTextStream csvOut(&csvFile);
+			csvOut << csvText;
+		}
+		csvFile.close();
+	}
+	
+	// Finish with progress bar
+	parent->finishedProgress();
 }

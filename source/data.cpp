@@ -298,7 +298,7 @@ Data::~Data(){
 
 int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defaultTAS,
 					    QVector <int>* structIndex, QVector <int>* tasIndex,
-					    QVector <EGSPhant*>* makeMasks) {
+					    QVector <EGSPhant*>* makeMasks) {							
 	#if defined(DEBUG_BUILDEGSPHANT)
 		std::cout << "Building egsphant\n"; std::cout.flush();
 	#endif
@@ -1352,7 +1352,7 @@ int Data::parsePlan(QString* log) {
 	return 0;
 }
 
-int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QString doseScaling) {	
+int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QString doseScaling, double n) {	
 	static int counter = 1;
 	// Generate UID
 	QString UID = "1.2.840";                        // Common root
@@ -1385,8 +1385,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, 128);
 		out2.writeRawData((char*)dat, 128);
 		delete[] dat;
-		emit madeProgress(0.5);
-		
 		
 		// Output the DICM header
 		dat = new unsigned char[4];
@@ -1394,9 +1392,26 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, 4);
 		out2.writeRawData((char*)dat, 4);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		int size;
+		
+		/* Format breakdown
+		size: 8 (start of element, 4 for tag, 4 for size and/or VR) + expected data size
+		dat: create a data element large enough to hold all the required data
+		
+		This is the tag definition, below would be for the tag (A1B2,C3D4)
+		dat[1] = 0xA1; dat[0] = 0xB2; dat[3] = 0xC3; dat[2] = 0xD4;
+		
+		Either the dat[4] & dat[5] give you value representation and dat[6] and dat[7] hold size 
+		memcpy((void*)(&dat[4]),(void*)"UL",2); dat[6] = size-8; dat[7] = 0;
+		
+		Or all elements from 4 to 7 give size
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		
+		NOTE: Since most sizes are smaller than 255, size is usually only encoded in the
+		least byte, with zeros everywhere else.  For sizes larger than 255, ensure that each
+		field is filled appropriately for the correct transfer syntax
+		*/
 		
 		// File Meta Information Group Length 0002,0000
 		size = 8 + 4;
@@ -1410,7 +1425,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// File Meta Information Version 0002,0001
 		size = 8 + 6;  
@@ -1424,7 +1438,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Media Storage SOP Class UID 0002,0002
 		size = 8 + 30;
@@ -1437,7 +1450,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Transfer Syntax UID 0002,0010
 		size = 8 + 18;  
@@ -1450,7 +1462,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Specific Character Set 0008,0005
 		size = 8 + 10;  
@@ -1463,7 +1474,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		auto now = std::chrono::system_clock::now();
 		std::time_t now_c = std::chrono::system_clock::to_time_t(now);
@@ -1488,7 +1498,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		std::string time = std::to_string(parts->tm_hour);
 		if (time.size() == 1) time = "0"+time;
@@ -1510,7 +1519,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// SOP Class UID 0008,0016
 		size = 8 + 30;  
@@ -1523,7 +1531,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Accession Number 0008,0050
 		size = 8;  
@@ -1535,7 +1542,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Modality 0008,0060
 		size = 8+6;  
@@ -1548,7 +1554,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Study Description 0008,1030
 		size = 8+22;  
@@ -1561,7 +1566,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Referenced SOP Class UID  0008,1150
 		//size = 8 + UID.length();
@@ -1592,7 +1596,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Study Instance UID  0020,0000
 		size = 8 + UID.length();
@@ -1608,7 +1611,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		
 		out2.writeRawData((char*)dat, size2);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Study ID  0020,0010	
 		size = 8+22;  
@@ -1621,7 +1623,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Series Number  0020,0011		
 		size = 8+2;  
@@ -1636,7 +1637,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		memcpy((void*)(&dat[8]),(void*)"2 ",size-8);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Instance Number  0020,0013
 		size = 8+2;  
@@ -1649,7 +1649,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Image Position Patient  0020,0032
 		std::string position = std::to_string((output->cx[1]+output->cx[0])/2*10)+"\\"+
@@ -1666,7 +1665,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Image Orientation Patient  0020,0037
 		size = 8 + 12;  
@@ -1679,7 +1677,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Position Reference Indicator  0020,1040
 		size = 8 + 0;  
@@ -1691,7 +1688,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Samples per Pixel  0028,0002
 		size = 8 + 2;
@@ -1704,7 +1700,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Photometric Interpretation  0028,0004
 		size = 8+12;  
@@ -1717,7 +1712,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Number of Frames  0028,0008
 		std::string zCount = std::to_string(output->z);
@@ -1732,7 +1726,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Frame Increment Pointer  0028,0009
 		size = 8+4;  
@@ -1745,7 +1738,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Rows  0028,0010
 		size = 8+2;  
@@ -1758,7 +1750,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Columns  0028,0011
 		size = 8+2;  
@@ -1771,7 +1762,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Pixel Spacing  0028,0030
 		std::string xyThick = std::to_string((output->cx[1]-output->cx[0])*10)+"\\"+
@@ -1787,7 +1777,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Bits Allocated  0028,0100
 		size = 8+2;  
@@ -1800,7 +1789,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Bits Stored  0028,0101
 		size = 8+2;  
@@ -1813,7 +1801,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// High Bit  0028,0102	
 		size = 8+2;  
@@ -1826,7 +1813,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Pixel Representation  0028,0103
 		size = 8+2;  
@@ -1839,7 +1825,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Dose Units  3004,0002
 		size = 8+2;  
@@ -1852,7 +1837,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Dose Type  3004,0004
 		size = 8+8;  
@@ -1870,7 +1854,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		
 		out2.writeRawData((char*)dat, size-2);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Dose Comment  3004,0006
 		QString DS = QString("Dose Scaling (Gy/history to absolute Gy) = ")+doseScaling;
@@ -1887,7 +1870,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Dose Summation Type  3004,000A
 		size = 8+6;  
@@ -1900,7 +1882,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Grid Frame Offset Vector  3004,000C
 		std::string zPlanes = "";
@@ -1918,7 +1899,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Dose Grid Scaling  3004,000E
 		double scaling = (0xEFFF)/output->getMax();
@@ -1936,7 +1916,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Tissue Heterogeneity Correction  3004,0014
 		size = 8+6;
@@ -1949,7 +1928,6 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, size);
 		out2.writeRawData((char*)dat, size);
 		delete[] dat;
-		emit madeProgress(0.5);
 		
 		// Pixel Data  7fe0,0010
 		dat = new unsigned char[8];
@@ -1961,10 +1939,9 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		out.writeRawData((char*)dat, 8);
 		out2.writeRawData((char*)dat, 8);
 		delete[] dat;
-		emit madeProgress(0.5); // 30.5% left at this point
 		
 		emit newProgressName("Outputting DICOM dose data");
-		double increment = 30.5/output->z;
+		double increment = 50.0/n/output->z;
 		
 		unsigned short int bDat, eDat;
 		for (int k = 0; k < output->z; k++) {

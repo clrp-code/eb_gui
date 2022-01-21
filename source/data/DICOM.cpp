@@ -443,15 +443,15 @@ int DICOM::parse(QString p) {
                     }
                 }
 
-                // Save slice height for later sorting
-                if (temp->tag[0] == 0x0020 && temp->tag[1] == 0x1041) {
+                // Save instance number for later sorting
+				if (temp->tag[0] == 0x0020 && temp->tag[1] == 0x0013) {
 					QString tempS = "";
 					for (unsigned int s = 0; s < temp->vl; s++) {
 						tempS.append(temp->vf[s]);
 					}
 
 					z = tempS.toDouble();
-                }
+				}
             }
             else if (nested) {
                 #if defined(OUTPUT_ALL) || defined(OUTPUT_TAG)

@@ -91,11 +91,15 @@ public:
 	
 	// Outputs
 	QPushButton *outputRT;
-	QPushButton *outputFullData;
+	QPushButton *outputFullDataCSV;
+	QPushButton *outputFullDataDICOM;
 
 public slots:
 	// Output just RT Dose
 	void outputRTdose();
+	
+	// Output 
+	void outputCSV();
 	
 	// Reset structures
 	void loadStructs();
