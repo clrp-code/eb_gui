@@ -166,7 +166,7 @@ public:
 	int parsePlan(QString* log);
 	
 	// Output RT dose
-	int outputRTDose(QString path, Dose* output);
+	int outputRTDose(QString dosePath, QString errorPath, Dose* output, QString doseScaling = "");
 	
 	// signal used for the progress bar
 signals:

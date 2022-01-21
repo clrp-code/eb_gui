@@ -1219,7 +1219,6 @@ allowedPrios(100,1000) {
 	createLayout();
 }
 
-
 EGS_geom::EGS_geom() : name ("Error"), index(-1), allowedNums(), allowedPrios() {createLayout();}
 
 // Generic GUI methods

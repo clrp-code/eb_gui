@@ -1352,12 +1352,29 @@ int Data::parsePlan(QString* log) {
 	return 0;
 }
 
-int Data::outputRTDose(QString path, Dose* output) {	
+int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QString doseScaling) {	
+	static int counter = 1;
+	// Generate UID
+	QString UID = "1.2.840";                        // Common root
+	UID        += ".1111";                          // Organization ID (currently a placeholder)
+	UID        += ".1";                             // eb_gui ID
+	UID        += "." + QString::number(counter++); // study ID
+	
+	QString UID2 = UID+".2";                        // series ID
+	UID         += ".1";                            // series ID
+	
+	if (UID.length()%2)
+		UID += " ";
+	if (UID2.length()%2)
+		UID2 += " ";
+
 	// Open the DICOM file
-    QFile file(path);
-    if (file.open(QIODevice::WriteOnly)) {
+    QFile file(dosePath);
+    QFile file2(errorPath);
+    if (file.open(QIODevice::WriteOnly) && file2.open(QIODevice::WriteOnly)) {
         unsigned char *dat;
         QDataStream out(&file);
+        QDataStream out2(&file2);
         out.setByteOrder(QDataStream::LittleEndian);
 		
 		emit newProgressName("Outputting DICOM tag data");
@@ -1366,6 +1383,7 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat = new unsigned char[128];
 		memcpy((void*)dat,(void*)"          This file is written by the eb_gui application intended for use with egs_brachy, written by Martin Martinov.          ",128);
 		out.writeRawData((char*)dat, 128);
+		out2.writeRawData((char*)dat, 128);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
@@ -1374,11 +1392,13 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat = new unsigned char[4];
 		memcpy((void*)dat,(void*)"DICM",4);
 		out.writeRawData((char*)dat, 4);
+		out2.writeRawData((char*)dat, 4);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
 		int size;
-		// Below are data elements taken from an example, some of which are used for output
+		
+		// File Meta Information Group Length 0002,0000
 		size = 8 + 4;
 		dat = new unsigned char[size];
 		
@@ -1388,9 +1408,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat[8] = 72; dat[9] = 0; dat[10] = 0; dat[11] = 0;
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// File Meta Information Version 0002,0001
 		size = 8 + 6;  
 		dat = new unsigned char[size];
 		
@@ -1400,9 +1422,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat[12] = 0; dat[13] = 1;
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Media Storage SOP Class UID 0002,0002
 		size = 8 + 30;
 		dat = new unsigned char[size];
 		
@@ -1411,9 +1435,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"1.2.840.10008.5.1.4.1.1.481.2",size-8); // RT Dose Storage
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Transfer Syntax UID 0002,0010
 		size = 8 + 18;  
 		dat = new unsigned char[size];
 		
@@ -1422,9 +1448,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"1.2.840.10008.1.2",size-8); // Implicit VR Endian: Default Transfer Syntax for DICOM
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Specific Character Set 0008,0005
 		size = 8 + 10;  
 		dat = new unsigned char[size];
 		
@@ -1433,6 +1461,7 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"ISO_IR 100",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
@@ -1448,6 +1477,7 @@ int Data::outputRTDose(QString path, Dose* output) {
 		if (temp.size() == 1) temp = "0"+temp;
 		date = date + temp;
 		
+		// Instance Creation Date 0008,0012
 		size = 8 + date.size();  
 		dat = new unsigned char[size];
 		
@@ -1456,6 +1486,7 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)date.data(),size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
@@ -1468,6 +1499,7 @@ int Data::outputRTDose(QString path, Dose* output) {
 		if (temp.size() == 1) temp = "0"+temp;
 		time = time + temp;
 		
+		// Instance Creation Time 0008,0013
 		size = 8 + time.size();  
 		dat = new unsigned char[size];
 		
@@ -1476,9 +1508,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)time.data(),size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// SOP Class UID 0008,0016
 		size = 8 + 30;  
 		dat = new unsigned char[size];
 		
@@ -1487,9 +1521,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"1.2.840.10008.5.1.4.1.1.481.2",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Accession Number 0008,0050
 		size = 8;  
 		dat = new unsigned char[size];
 		
@@ -1497,9 +1533,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Modality 0008,0060
 		size = 8+6;  
 		dat = new unsigned char[size];
 		
@@ -1508,9 +1546,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"RTDOSE",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Study Description 0008,1030
 		size = 8+22;  
 		dat = new unsigned char[size];
 		
@@ -1519,33 +1559,58 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"EGS BRACHY CALCULATION",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
-		size = 8 + 24;  
-		dat = new unsigned char[size];
+		// Referenced SOP Class UID  0008,1150
+		//size = 8 + UID.length();
+		//int size2 = 8 + UID2.length();
+		//dat = new unsigned char[size];
+		//
+		//dat[1] = 0x0; dat[0] = 0x8; dat[3] = 0x11; dat[2] = 0x50;
+		//dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		//memcpy((void*)(&dat[8]),(void*)UID.toStdString().c_str(),size-8);
+		//
+		//out.writeRawData((char*)dat, size);
+		//memcpy((void*)(&dat[8]),(void*)UID2.toStdString().c_str(),size2-8);
+		//
+		//out2.writeRawData((char*)dat, size2);
+		//delete[] dat;
+		//emit madeProgress(0.5);
 		
-		dat[1] = 0x0; dat[0] = 0x8; dat[3] = 0x11; dat[2] = 0x50;
-		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
-		memcpy((void*)(&dat[8]),(void*)"1.2.840.10008.3.1.2.3.2",size-8);
-		
-		out.writeRawData((char*)dat, size);
-		delete[] dat;
-		emit madeProgress(0.5);
-		
+		// Slice Thickness  0008,0050	
 		std::string thick = std::to_string((output->cz[1]-output->cz[0])*10);
 		if (!(thick.size()%2)) thick = thick+" ";
 		size = 8 + thick.size();  
 		dat = new unsigned char[size];
-		
+
 		dat[1] = 0x0; dat[0] = 0x18; dat[3] = 0x0; dat[2] = 0x50;
 		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
 		memcpy((void*)(&dat[8]),(void*)thick.data(),size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Study Instance UID  0020,0000
+		size = 8 + UID.length();
+		int size2 = 8 + UID2.length();
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x0; dat[0] = 0x20; dat[3] = 0x00; dat[2] = 0x00;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)UID.toStdString().c_str(),size-8);
+		
+		out.writeRawData((char*)dat, size);
+		memcpy((void*)(&dat[8]),(void*)UID2.toStdString().c_str(),size2-8);
+		
+		out2.writeRawData((char*)dat, size2);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		// Study ID  0020,0010	
 		size = 8+22;  
 		dat = new unsigned char[size];
 		
@@ -1554,9 +1619,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"EGS BRACHY CALCULATION",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Series Number  0020,0011		
 		size = 8+2;  
 		dat = new unsigned char[size];
 		
@@ -1565,9 +1632,13 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"1 ",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		
+		memcpy((void*)(&dat[8]),(void*)"2 ",size-8);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Instance Number  0020,0013
 		size = 8+2;  
 		dat = new unsigned char[size];
 		
@@ -1576,9 +1647,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"1 ",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Image Position Patient  0020,0032
 		std::string position = std::to_string((output->cx[1]+output->cx[0])/2*10)+"\\"+
 							   std::to_string((output->cy[1]+output->cy[0])/2*10)+"\\"+
 							   std::to_string((output->cz[1]+output->cz[0])/2*10);
@@ -1591,9 +1664,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)position.data(),size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Image Orientation Patient  0020,0037
 		size = 8 + 12;  
 		dat = new unsigned char[size];
 		
@@ -1602,9 +1677,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"1\\0\\0\\0\\1\\0 ",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Position Reference Indicator  0020,1040
 		size = 8 + 0;  
 		dat = new unsigned char[size];
 		
@@ -1612,10 +1689,12 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
-		size = 8 + 2;  
+		// Samples per Pixel  0028,0002
+		size = 8 + 2;
 		dat = new unsigned char[size];
 		
 		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x0; dat[2] = 0x2;
@@ -1623,9 +1702,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat[8] = 1; dat[9] = 0;
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Photometric Interpretation  0028,0004
 		size = 8+12;  
 		dat = new unsigned char[size];
 		
@@ -1634,9 +1715,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"MONOCHROME2 ",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Number of Frames  0028,0008
 		std::string zCount = std::to_string(output->z);
 		if (!(zCount.size()%2)) zCount = zCount+" ";
 		size = 8+zCount.size();  
@@ -1647,9 +1730,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)zCount.data(),size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Frame Increment Pointer  0028,0009
 		size = 8+4;  
 		dat = new unsigned char[size];
 		
@@ -1658,9 +1743,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat[9] = 0x30; dat[8] = 0x4; dat[11] = 0x0; dat[10] = 0xc;
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Rows  0028,0010
 		size = 8+2;  
 		dat = new unsigned char[size];
 		
@@ -1669,9 +1756,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat[8] = output->x%(1<<8); dat[9] = int(output->x/(1<<8));
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Columns  0028,0011
 		size = 8+2;  
 		dat = new unsigned char[size];
 		
@@ -1680,9 +1769,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat[8] = output->y%(1<<8); dat[9] = int(output->y/(1<<8));
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Pixel Spacing  0028,0030
 		std::string xyThick = std::to_string((output->cx[1]-output->cx[0])*10)+"\\"+
 							  std::to_string((output->cy[1]-output->cy[0])*10)+" ";
 		if (!(xyThick.size()%2)) xyThick = xyThick+" ";
@@ -1694,9 +1785,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)xyThick.data(),size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Bits Allocated  0028,0100
 		size = 8+2;  
 		dat = new unsigned char[size];
 		
@@ -1705,9 +1798,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat[8] = 16; dat[9] = 0;
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Bits Stored  0028,0101
 		size = 8+2;  
 		dat = new unsigned char[size];
 		
@@ -1716,9 +1811,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat[8] = 16; dat[9] = 0;
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// High Bit  0028,0102	
 		size = 8+2;  
 		dat = new unsigned char[size];
 		
@@ -1727,20 +1824,24 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat[8] = 15; dat[9] = 0;
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Pixel Representation  0028,0103
 		size = 8+2;  
 		dat = new unsigned char[size];
-		
+			
 		dat[1] = 0x0; dat[0] = 0x28; dat[3] = 0x1; dat[2] = 0x3;
 		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
 		dat[8] = 0; dat[9] = 0;
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Dose Units  3004,0002
 		size = 8+2;  
 		dat = new unsigned char[size];
 		
@@ -1749,9 +1850,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"GY",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Dose Type  3004,0004
 		size = 8+8;  
 		dat = new unsigned char[size];
 		
@@ -1760,20 +1863,46 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"PHYSICAL",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		
+		dat[1] = 0x30; dat[0] = 0x4; dat[3] = 0x0; dat[2] = 0x4;
+		dat[4] = size-8-2; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)"ERROR ",size-8-2);
+		
+		out2.writeRawData((char*)dat, size-2);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Dose Comment  3004,0006
+		QString DS = QString("Dose Scaling (Gy/history to absolute Gy) = ")+doseScaling;
+		if (DS.length()%2)
+			DS += " ";
+		
+		size = 8+DS.length();
+		dat = new unsigned char[size];
+		
+		dat[1] = 0x30; dat[0] = 0x4; dat[3] = 0x0; dat[2] = 0x6;
+		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
+		memcpy((void*)(&dat[8]),(void*)DS.toStdString().c_str(),size-8);
+		
+		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
+		delete[] dat;
+		emit madeProgress(0.5);
+		
+		// Dose Summation Type  3004,000A
 		size = 8+6;  
 		dat = new unsigned char[size];
 		
 		dat[1] = 0x30; dat[0] = 0x4; dat[3] = 0x0; dat[2] = 0xA;
 		dat[4] = size-8; dat[5] = 0; dat[6] = 0; dat[7] = 0;
-		memcpy((void*)(&dat[8]),(void*)"RECORD",size-8);
+		memcpy((void*)(&dat[8]),(void*)"BRACHY",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Grid Frame Offset Vector  3004,000C
 		std::string zPlanes = "";
 		for (int i = 0; i < output->z-1; i++)
 			zPlanes += std::to_string((output->cz[i+1]+output->cz[i])/2*10)+"\\";
@@ -1787,9 +1916,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)zPlanes.data(),size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Dose Grid Scaling  3004,000E
 		double scaling = (0xEFFF)/output->getMax();
 		output->scale(scaling);
 		
@@ -1803,10 +1934,12 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)scalingString.data(),size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
-		size = 8+6;  
+		// Tissue Heterogeneity Correction  3004,0014
+		size = 8+6;
 		dat = new unsigned char[size];
 		
 		dat[1] = 0x30; dat[0] = 0x4; dat[3] = 0x0; dat[2] = 0x14;
@@ -1814,9 +1947,11 @@ int Data::outputRTDose(QString path, Dose* output) {
 		memcpy((void*)(&dat[8]),(void*)"IMAGE ",size-8);
 		
 		out.writeRawData((char*)dat, size);
+		out2.writeRawData((char*)dat, size);
 		delete[] dat;
 		emit madeProgress(0.5);
 		
+		// Pixel Data  7fe0,0010
 		dat = new unsigned char[8];
 		unsigned long int bSize = output->x*output->y*output->z*2;
 		
@@ -1824,23 +1959,29 @@ int Data::outputRTDose(QString path, Dose* output) {
 		dat[4] = bSize%(1<<8); dat[5] = int(bSize/(1<<8))%(1<<8); dat[6] = int(bSize/(1<<16))%(1<<8); dat[7] = int(bSize/(1<<24));
 		
 		out.writeRawData((char*)dat, 8);
+		out2.writeRawData((char*)dat, 8);
 		delete[] dat;
 		emit madeProgress(0.5); // 30.5% left at this point
 		
 		emit newProgressName("Outputting DICOM dose data");
 		double increment = 30.5/output->z;
 		
-		unsigned short int bDat;
+		unsigned short int bDat, eDat;
 		for (int k = 0; k < output->z; k++) {
 			for (int j = 0; j < output->y; j++) {
 				for (int i = 0; i < output->x; i++) {
 					bDat = output->val[i][j][k];
+					eDat = output->val[i][j][k]*output->err[i][j][k];
 					out << bDat;
+					out2 << eDat;
 				}
 			}
 			emit madeProgress(increment);
 		}
 	}
+	
+	file.close();
+	file2.close();
 	
     return 1;
 }

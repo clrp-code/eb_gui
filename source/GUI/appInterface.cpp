@@ -172,13 +172,16 @@ void appInterface::outputRTdose() {
 	}
 	
 	// Get RT file save location
-	QString rtFile = QFileDialog::getSaveFileName(this, tr("Save RT Dose File"), ".", tr("DICOM (*.dcm)"));
+	QString rtFile = QFileDialog::getSaveFileName(this, tr("Save RT files"), ".", tr("DICOM (*.dcm)"));
 	
 	if (rtFile.length() < 1) // No name selected
 		return;
 		
-	if (!rtFile.endsWith(".dcm"))
-		rtFile += ".dcm";
+	if (rtFile.endsWith(".dcm"))
+		rtFile = rtFile.left(rtFile.length()-4);
+	
+	QString rtFile2 = rtFile+".error.dcm";
+	rtFile = rtFile+".dose.dcm";
 	
 	QString doseFile = parent->data->localDirDoses[i]+parent->data->localNameDoses[i]; // Get file location
 		
@@ -198,8 +201,27 @@ void appInterface::outputRTdose() {
 		return;		
 	}
 	
+	// Get egsinp file dose scaling if one exists
+	QString doseScaling = "", line;
+	
+	if (doseFile.endsWith(".phantom.3ddose"))
+		doseFile = doseFile.left(doseFile.length()-15);
+	else if (doseFile.endsWith(".phantom.b3ddose"))
+		doseFile = doseFile.left(doseFile.length()-16);
+	
+	QFile egsinp(doseFile+".egsinp");
+	QTextStream egsinpinp(&egsinp);
+	if (egsinp.open(QIODevice::ReadOnly | QIODevice::Text))
+		do {
+			line = egsinpinp.readLine();
+			if (line.contains("dose scaling factor") && line.contains("=")) {
+				doseScaling = line.split("=")[1].split("#")[0].trimmed();
+				break;
+			}
+		} while (!egsinpinp.atEnd());
+	
 	// Now save RT Dose
-	parent->data->outputRTDose(rtFile, &toBeRT);
+	parent->data->outputRTDose(rtFile, rtFile2, &toBeRT, doseScaling);
 	
 	// Finish with progress bar
 	parent->finishedProgress();
