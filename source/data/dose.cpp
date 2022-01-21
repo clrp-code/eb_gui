@@ -1206,7 +1206,7 @@ void Dose::getDVs(QVector <QVector <DV> > *data, QVector <EGSPhant*> *masks, QVe
 	if (data->size() != masks->size() && data->size() != volume->size())
 		return; // Quit if mask and data array size do not align
 	
-	double increment = 50.0/double(data->size())/double(z);
+	double increment = 55.0/double(z);
 	double xVal, yVal, zVal;
 	double xLen, yLen, zLen;
 	double vol;

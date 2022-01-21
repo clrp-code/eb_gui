@@ -298,9 +298,7 @@ void appInterface::outputCSV() {
 	// Exit statements
 	int iD = dose->currentIndex()-1;
 	if (iD < 0) {return;} // Exit if none is selected or box is empty in setup
-	
-	Dose doseData;
-	
+		
 	if (iD >= parent->data->localDirDoses.size()) {
 		QMessageBox::warning(0, "Index error",
 		tr("Somehow the selected dose index is larger than the local dose count.  Aborting"));		
@@ -325,6 +323,8 @@ void appInterface::outputCSV() {
 		return;
 	}
 	
+	Dose doseData; // Hold dose in memory for computations
+	
 	// Get output directory
 	QString path = QFileDialog::getExistingDirectory(this, tr("Select DICOM CT directory"));
 	
@@ -340,7 +340,7 @@ void appInterface::outputCSV() {
 		QDir().mkdir(path+"/simulation");
 	
 	// Get RT file save location
-	QString rtFile = path+parent->data->localNamePhants[iD];
+	QString rtFile = path+"/"+parent->data->localNamePhants[iP];
 	if (rtFile.endsWith("phantom.b3ddose"))
 		rtFile = rtFile.left(rtFile.size()-16);
 	else if (rtFile.endsWith("phantom.3ddose"))
@@ -353,13 +353,14 @@ void appInterface::outputCSV() {
 		
 	// Connect the progress bar and load dose
 	parent->resetProgress("Loading 3ddose file");
+	parent->progLabel->setText("Loading 3ddose file");
 	connect(&doseData, SIGNAL(madeProgress(double)),
 			parent, SLOT(updateProgress(double)));
 		
 	if (doseFile.endsWith(".b3ddose"))
-		doseData.readBIn(doseFile, 5);
+		doseData.readBIn(doseFile, 4);
 	else if (doseFile.endsWith(".3ddose"))
-		doseData.readIn(doseFile, 5);
+		doseData.readIn(doseFile, 4);
 	else {
 		QMessageBox::warning(0, "File error",
 		tr("Selected dose file is not of type 3ddose or b3ddose.  Aborting"));
@@ -393,9 +394,8 @@ void appInterface::outputCSV() {
 	QString tempPath, tempName;
 	
 	// Copy egsphant
-	tempPath = parent->data->localDirPhants[iD];
-	tempName = parent->data->localNamePhants[iD];
-	qDebug() << "Copying egsphants around" << tempPath << tempName;
+	tempPath = parent->data->localDirPhants[iP];
+	tempName = parent->data->localNamePhants[iP];
 	
 	QFile(tempPath+tempName).copy(path+"/phantom/"+tempName);
 	
@@ -412,9 +412,8 @@ void appInterface::outputCSV() {
 	QFile(tempPath+tempName+".log").copy(path+"/phantom/"+tempName+".log"); // Get egsphant log
 	
 	// Copy transformation
-	tempPath = parent->data->localDirTransforms[iD];
-	tempName = parent->data->localNameTransforms[iD];
-	qDebug() << "Copying transformation around" << tempPath << tempName;
+	tempPath = parent->data->localDirTransforms[iT];
+	tempName = parent->data->localNameTransforms[iT];
 	
 	QFile(tempPath+tempName).copy(path+"/plan/"+tempName);
 		
@@ -424,7 +423,6 @@ void appInterface::outputCSV() {
 	// Copy dose
 	tempPath = parent->data->localDirDoses[iD];
 	tempName = parent->data->localNameDoses[iD];
-	qDebug() << "Copying doses around" << tempPath << tempName;
 	
 	QFile(tempPath+tempName).copy(path+"/simulation/"+tempName);
 	
@@ -456,12 +454,10 @@ void appInterface::outputCSV() {
 	Dcc.resize(structCount);
 	Vx.resize(structCount);
 	pD.resize(structCount);
-	qDebug() << "Resetting arrays to size" << structCount;
 	
 	// Load masks
-	tempPath = parent->data->localDirPhants[iD].left(parent->data->localDirPhants[iD].size()-9)+"mask/";
-	tempName = parent->data->localNamePhants[iD];
-	qDebug() << "Copying masks around" << tempPath << tempName;
+	tempPath = parent->data->localDirPhants[iP].left(parent->data->localDirPhants[iP].size()-9)+"mask/";
+	tempName = parent->data->localNamePhants[iP];
 	
 	if (tempName.endsWith(".gz"))
 		tempName = tempName.left(tempName.size()-3);
@@ -474,10 +470,8 @@ void appInterface::outputCSV() {
 		tempName = tempName.left(tempName.size()-5);
 	
 	int j;
+	parent->progLabel->setText("Loading masks file");
 	for (int i = 0; i < structCount; i++) {
-		qDebug() << "Loop" << i;
-		qDebug() << "Loading" << tempPath+tempName+"."+contourNameLabel[i]->text()+".mask.egsphant.gz";
-		sleep(5);
 		masks[i] = new EGSPhant();
 		masks[i]->loadgzEGSPhantFile(tempPath+tempName+"."+contourNameLabel[i]->text()+".mask.egsphant.gz");
 		j      = loadMetricBox[i]->currentIndex();
@@ -485,10 +479,22 @@ void appInterface::outputCSV() {
 		Dcc[i] = parent->data->metricDcc[j];
 		Vx[i]  = parent->data->metricVx[j];
 		pD[i]  = parent->data->metricDp[j];
+		parent->updateProgress(5.0/structCount);
 	}
 	
+	parent->progLabel->setText("Filtering data");
 	doseData.getDVs(&data,&masks,&volume);
 	
+	int histoCount = 2; // Count metrics as 2, I guess
+	for (int i = 0; i < structCount; i++) {
+		if (saveDVHBox[i]->isChecked())
+			histoCount++;
+		if (saveDiffBox[i]->isChecked())
+			histoCount++;
+	}
+	double increment = 5.0/histoCount;
+	
+	parent->progLabel->setText("Outputting metrics");
 	QString csvText;
 	for (int i = 0; i < structCount; i++){
 		csvText = doseData.getMetricCSV(&(data[i]), volume[i], contourNameLabel[i]->text(),
@@ -499,6 +505,79 @@ void appInterface::outputCSV() {
 			csvOut << csvText;
 		}
 		csvFile.close();
+	}
+	parent->updateProgress(increment*2);
+	
+	parent->progLabel->setText("Generating DVHs");
+	for (int i = 0; i < structCount; i++) {
+		if (saveDVHBox[i]->isChecked()) {
+			csvText  = contourNameLabel[i]->text()+",\n";
+			csvText += "dose / Gy, Volume / %\n";
+			
+			int sInc = 1;
+			// Drop every (n-1)th point, where n is the multiple of full 200s in the data set
+			if (data[i].size() > 200) {
+				sInc = data[i].size()/200.0;
+			}
+			
+			for (int j = 0; j < data[i].size(); j++) {
+				if (!(j%sInc)) // Only add up to 399 points (start skipping at 400+)
+					csvText += QString::number(data[i][j].dose)+","+
+							   QString::number(100.0*double(data[i].size()-j)/double(data[i].size()))+"\n";
+			}
+			
+			if ((data[i].size()%sInc)) {// Add end point if it would be skipped
+				csvText += QString::number(data[i].last().dose)+","+
+						   QString::number(100.0/double(data[i].size()))+"\n";
+			}
+			
+			QFile csvFile(path+"/"+contourNameLabel[i]->text()+"_DVH.csv");
+			if (csvFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+				QTextStream csvOut(&csvFile);
+				csvOut << csvText;
+			}
+			
+			csvFile.close();
+			parent->updateProgress(increment);
+		}
+	}
+	
+	parent->progLabel->setText("Generating differential histograms");
+	for (int i = 0; i < structCount; i++) {
+		if (saveDVHBox[i]->isChecked()) {
+			csvText  = contourNameLabel[i]->text()+",\n";
+			csvText += "dose / Gy, Volume / voxels\n";
+			int binCount = parent->data->histogramBinCount;
+			double sInc = (data[i].last().dose-data[i][0].dose)/double(binCount);
+			double s0 = data[i][0].dose;
+			double prev = s0, cur = s0;
+			int dataIndex = 0, dataCount = 0;
+			
+			for (int j = 1; j <= binCount; j++) {
+				cur = s0+sInc*j;
+				
+				dataCount = 0;
+				while (dataIndex < data[i].size()) {
+					if (data[i][dataIndex].dose > cur)
+						break;
+					dataCount++;
+					dataIndex++;
+				}
+				
+				csvText += QString::number((cur+prev)/2.0)+","+QString::number(dataCount)+"\n";
+				
+				prev = cur;
+			}
+			
+			QFile csvFile(path+"/"+contourNameLabel[i]->text()+"_diff.csv");
+			if (csvFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+				QTextStream csvOut(&csvFile);
+				csvOut << csvText;
+			}
+			
+			csvFile.close();
+			parent->updateProgress(increment);
+		}
 	}
 	
 	// Finish with progress bar
