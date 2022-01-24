@@ -1073,7 +1073,8 @@ void phantInterface::loadHU2rho() {
 	// No other checks, leave it for actual egsphant creation time
 	
 	calibEdit->setText(path);
-	calibEdit->setToolTip(path);	
+	parent->data->hu_location = path;
+	calibEdit->setToolTip(path);
 }
 
 // DICOM CT array sorting functions

@@ -128,6 +128,9 @@ public:
 	
 	// z height (default to NaN, only change if slice height tag is found)
 	double z = std::nan("1");
+	
+	// n is slice count, used for sorting
+	int n = -1;
 
 	// file location for later lookup if needed
 	QString path;

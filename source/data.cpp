@@ -39,6 +39,7 @@
 #include "data.h"
 
 //#define DEBUG_BUILDEGSPHANT // Comment out
+#define ASSUME_PERMANENT_LDR // Used when there is no specification
 
 int Data::loadDefaults() {
 	QProcessEnvironment envVars = QProcessEnvironment::systemEnvironment();
@@ -1024,6 +1025,11 @@ int Data::parsePlan(QString* log) {
 	seedInfo = "UNKNOWN";
 	airKerma = halfLife = -1;
 	
+	#if defined(ASSUME_PERMANENT_LDR)
+		treatmentType = "LDR";
+		treatmentTechnique = "PERMANENT";
+	#endif
+	
 	*log = *log + "----------------------------------------------\n";
 	
 	// Treatment Type
@@ -1035,7 +1041,7 @@ int Data::parsePlan(QString* log) {
 		}
 		treatmentType = temp.trimmed();
 	}
-	else {
+	else if (!treatmentType.compare("UNKNOWN")) {
 		return 101;
 	}
 	*log = *log + "Treatment type: " + treatmentType + "\n";
@@ -1049,7 +1055,7 @@ int Data::parsePlan(QString* log) {
 		}
 		treatmentTechnique = temp.trimmed();
 	}
-	else {
+	else if (!treatmentTechnique.compare("UNKNOWN")) {
 		return 102;
 	}
 	*log = *log + "Treatment technique: " + treatmentTechnique + "\n";

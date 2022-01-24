@@ -46,6 +46,7 @@
 //#define OUTPUT_TAG // Output only tags
 //#define OUTPUT_PARSE_SQ // Output the sequence parsing which happens when loading DICOM
 //#define OUTPUT_READ_SQ // Output the sequence parsing when reading (undefined size) subsequences
+//#define OUTPUT_RAW_SQ // Output the raw data in the sequence when reading (undefined size) subsequences
 #define MAX_DATA_PRINT 100 // 0 means any size
 
 Attribute::Attribute() {
@@ -450,7 +451,25 @@ int DICOM::parse(QString p) {
 						tempS.append(temp->vf[s]);
 					}
 
-					z = tempS.toDouble();
+					n = tempS.toInt();
+				}
+				
+				// Save any z number you can find
+				//if (temp->tag[0] == 0x0020 && temp->tag[1] == 0x1041) { // removed as it wasn't
+				//	QString tempS = "";									  // always correct in all
+				//	for (unsigned int s = 0; s < temp->vl; s++) {		  // datasets
+				//		tempS.append(temp->vf[s]);
+				//	}
+				//	
+				//	z = tempS.toDouble();
+				//}
+				if (temp->tag[0] == 0x0020 && temp->tag[1] == 0x0032) {
+					QString tempS = "";
+					for (unsigned int s = 0; s < temp->vl; s++) { // Image Position Patient
+						tempS.append(temp->vf[s]);
+					}
+
+					z = tempS.split("\\").last().toDouble();
 				}
             }
             else if (nested) {
@@ -549,7 +568,7 @@ int DICOM::readSequence(QDataStream *in, Attribute *att) {
                 }
                 buffer.append(*dat);
 				
-				#if defined(OUTPUT_PARSE_SQ)
+				#if defined(OUTPUT_RAW_SQ)
 					std::cout << "\t\tReading buffer as " << buffer.toStdString() << "\n";
 				#endif
 				
