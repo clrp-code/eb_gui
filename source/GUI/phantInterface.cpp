@@ -78,10 +78,10 @@ void phantInterface::createLayout() {
 	QString ttt = ""; // tool tip text
 	
 	// Select DICOM files
-	dcmImport      = new QLabel     (tr("Import DICOM phantom"));
+	dcmImport      = new QLabel     (tr("Import DICOM virtual patient model"));
 	
-	phantNameLabel = new QLabel     (tr("Phantom name"));
-	phantNameEdit  = new QLineEdit  ("DICOM_phantom");
+	phantNameLabel = new QLabel     (tr("VPM name"));
+	phantNameEdit  = new QLineEdit  ("DICOM_VPM");
 	ttt = tr("The name used for the output.");
 	phantNameLabel->setToolTip(ttt);
 	phantNameEdit->setToolTip(ttt);
@@ -124,7 +124,7 @@ void phantInterface::createLayout() {
 	ttt = parent->data->hu_location;
 	structEdit->setToolTip(ttt);
 	
-	create         = new QPushButton(tr("Create egsphant"));
+	create         = new QPushButton(tr("Create virtual patient model"));
 	
 	ttt = tr("Generate egsphant in local directory.");
 	structEdit->setToolTip(ttt);
@@ -168,7 +168,7 @@ void phantInterface::createLayout() {
 	defaultTASBox        = new QComboBox();
 	defaultTASBox->addItems(parent->data->TAS_names);
 	
-	ttt = tr("The default TAS will be used to assign media everywhere in the phantom,\nunless otherwise specified in the contour specific TAS selection below.");
+	ttt = tr("The default TAS will be used to assign media everywhere in the virtual patient,\nunless otherwise specified in the contour specific TAS selection below.");
 	defaultTASLabel->setToolTip(ttt);
 	defaultTASBox->setToolTip(ttt);
 	
@@ -615,7 +615,7 @@ void phantInterface::loadCTFiles() {
 		phantNameEdit->setText(std::string((char*)tempAtt->vf,tempAtt->vl+1).c_str());
 	}
 	else {
-		phantNameEdit->setText("DICOM_phantom");
+		phantNameEdit->setText("DICOM_VPM");
 	}
 	
 	if (failedFiles.size()) {
@@ -690,7 +690,7 @@ void phantInterface::loadCTDir() { // Very similar to CT files with an extra ste
 		phantNameEdit->setText(std::string((char*)tempAtt->vf,tempAtt->vl+1).c_str());
 	}
 	else {
-		phantNameEdit->setText("DICOM_phantom");
+		phantNameEdit->setText("DICOM_VPM");
 	}
 	
 	// Sort all CT slices by z height
@@ -1085,8 +1085,8 @@ void phantInterface::submerge(QVector <DICOM *> &data, int i, int c, int f) {
 	
 	// While we have yet to iterate through either subsection
 	while (l <= c && r <= f) {
-		// If value at r index is smaller then add it to temp and move to next r
-		if (data[l]->z > data[r]->z)
+		// If value at r index is larger then add it to temp and move to next r
+		if (data[l]->n < data[r]->n || (data[l]->n == data[r]->n && data[l]->z > data[r]->z))
 			temp[j++] = data[r++];
 		// If value at l index is smaller then add it to temp and move to next l
 		else
