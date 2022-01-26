@@ -172,10 +172,10 @@ void sourceInterface::createLayout() {
 }
 
 void sourceInterface::connectLayout() {
-	connect(fileLoad, SIGNAL(pressed()),
+	connect(fileLoad, SIGNAL(released()),
 			this, SLOT(loadPlan()));
 	
-	connect(importButton, SIGNAL(pressed()),
+	connect(importButton, SIGNAL(released()),
 			this, SLOT(parsePlan()));
 }
 

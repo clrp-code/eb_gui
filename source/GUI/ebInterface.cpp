@@ -278,17 +278,17 @@ void ebInterface::connectLayout() {
 			this, SLOT(refresh()));
 	
 	// Change files
-	connect(transportLoad, SIGNAL(pressed()),
+	connect(transportLoad, SIGNAL(released()),
 			this, SLOT(loadTransport()));
-	connect(materialLoad, SIGNAL(pressed()),
+	connect(materialLoad, SIGNAL(released()),
 			this, SLOT(loadMaterial()));
-	connect(muenLoad, SIGNAL(pressed()),
+	connect(muenLoad, SIGNAL(released()),
 			this, SLOT(loadMuen()));
 	
 	// Connect console signals
-	connect(runButton, SIGNAL(pressed()),
+	connect(runButton, SIGNAL(released()),
 			this, SLOT(runEB()));
-	connect(console->kill, SIGNAL(pressed()),
+	connect(console->kill, SIGNAL(released()),
 			this, SLOT(killEB()));
 	connect(ebProcess, SIGNAL(finished(int)),
 			this, SLOT(finishEB(int)));
@@ -296,9 +296,9 @@ void ebInterface::connectLayout() {
 			this, SLOT(writeOutputToConsole()));
 			
 	// Other signals
-	connect(saveButton, SIGNAL(pressed()),
+	connect(saveButton, SIGNAL(released()),
 			this, SLOT(saveEB()));
-	connect(egsViewButton, SIGNAL(pressed()),
+	connect(egsViewButton, SIGNAL(released()),
 			this, SLOT(runEV()));
 }
 

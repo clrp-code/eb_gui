@@ -1308,6 +1308,6 @@ void consoleWindow::createLayout() {
 }
 
 void consoleWindow::connectLayout(){
-	connect(close, SIGNAL(pressed()),
+	connect(close, SIGNAL(released()),
 			this, SLOT(hide()));	
 }

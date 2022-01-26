@@ -358,21 +358,21 @@ void phantInterface::connectLayout() {
     connect(marContour, SIGNAL(stateChanged(int)),
 			this, SLOT(refresh()));
 			
-	connect(structLoad, SIGNAL(pressed()),
+	connect(structLoad, SIGNAL(released()),
 			this, SLOT(loadStruct()));
-	connect(calibLoad, SIGNAL(pressed()),
+	connect(calibLoad, SIGNAL(released()),
 			this, SLOT(loadHU2rho()));
 			
-	connect(ctImportFiles, SIGNAL(pressed()),
+	connect(ctImportFiles, SIGNAL(released()),
 			this, SLOT(loadCTFiles()));
-	connect(ctImportDir, SIGNAL(pressed()),
+	connect(ctImportDir, SIGNAL(released()),
 			this, SLOT(loadCTDir()));
-	connect(ctDelete, SIGNAL(pressed()),
+	connect(ctDelete, SIGNAL(released()),
 			this, SLOT(deleteCT()));
-	connect(ctDeleteAll, SIGNAL(pressed()),
+	connect(ctDeleteAll, SIGNAL(released()),
 			this, SLOT(deleteAllCT()));
 			
-	connect(create, SIGNAL(pressed()),
+	connect(create, SIGNAL(released()),
 			this, SLOT(createEGSphant()));
 }
 
@@ -1171,6 +1171,6 @@ void logWindow::createLayout() {
 }
 
 void logWindow::connectLayout(){
-	connect(close, SIGNAL(pressed()),
+	connect(close, SIGNAL(released()),
 			this, SLOT(hide()));	
 }
