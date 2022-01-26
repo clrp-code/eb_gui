@@ -152,13 +152,13 @@ void appInterface::createLayout() {
 }
 
 void appInterface::connectLayout() {
-	connect(outputRT, SIGNAL(pressed()),
+	connect(outputRT, SIGNAL(released()),
 			this, SLOT(outputRTdose()));
 			
 	connect(egsphant, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(loadStructs()));
 	
-	connect(outputFullDataCSV, SIGNAL(pressed()),
+	connect(outputFullDataCSV, SIGNAL(released()),
 			this, SLOT(outputCSV()));
 }
 
@@ -327,7 +327,7 @@ void appInterface::outputCSV() {
 	Dose doseData; // Hold dose in memory for computations
 	
 	// Get output directory
-	QString path = QFileDialog::getExistingDirectory(this, tr("Select DICOM CT directory"));
+	QString path = QFileDialog::getExistingDirectory(this, tr("Select DICOM CT directory")), line;
 	
 	if (path.length() < 1)
 		return;
@@ -369,13 +369,13 @@ void appInterface::outputCSV() {
 		return;		
 	}
 	
-	// Get egsinp file dose scaling if one exists
-	QString doseScaling = "", line;
-	
 	if (doseFile.endsWith(".phantom.3ddose"))
 		doseFile = doseFile.left(doseFile.length()-15);
 	else if (doseFile.endsWith(".phantom.b3ddose"))
 		doseFile = doseFile.left(doseFile.length()-16);
+	
+	// Get egsinp file dose scaling if one exists
+	QString doseScaling = "";
 	
 	QFile egsinp(doseFile+".egsinp");
 	QTextStream egsinpinp(&egsinp);
@@ -387,9 +387,6 @@ void appInterface::outputCSV() {
 				break;
 			}
 		} while (!egsinpinp.atEnd());
-	
-	// Now save RT Dose
-	parent->data->outputRTDose(rtFile, rtFile2, &doseData, doseScaling, 3.0);
 		
 	// Copy all additional files associated with dose
 	QString tempPath, tempName;
@@ -399,7 +396,6 @@ void appInterface::outputCSV() {
 	tempName = parent->data->localNamePhants[iP];
 	
 	QFile(tempPath+tempName).copy(path+"/phantom/"+tempName);
-	qDebug() << "Loaded" << tempPath+tempName;
 	
 	if (tempName.endsWith(".gz"))
 		tempName = tempName.left(tempName.size()-3);
@@ -418,7 +414,6 @@ void appInterface::outputCSV() {
 	tempName = parent->data->localNameTransforms[iT];
 	
 	QFile(tempPath+tempName).copy(path+"/plan/"+tempName);
-	qDebug() << "Loaded" << tempPath+tempName;
 		
 	QFile(tempPath+tempName+".log").copy(path+"/plan/"+tempName+".log"); // Get plan log
 	QFile(tempPath+tempName+".dwell").copy(path+"/plan/"+tempName+".dwell"); // Get dwell times if they exist
@@ -428,7 +423,6 @@ void appInterface::outputCSV() {
 	tempName = parent->data->localNameDoses[iD];
 	
 	QFile(tempPath+tempName).copy(path+"/simulation/"+tempName);
-	qDebug() << "Loaded" << tempPath+tempName;
 	
 	if (tempName.endsWith("phantom.b3ddose"))
 		tempName = tempName.left(tempName.size()-16);
@@ -516,7 +510,7 @@ void appInterface::outputCSV() {
 	for (int i = 0; i < structCount; i++) {
 		if (saveDVHBox[i]->isChecked()) {
 			csvText  = contourNameLabel[i]->text()+",\n";
-			csvText += "dose / Gy, Volume / %\n";
+			csvText += "dose / Gy, volume / %\n";
 			
 			int sInc = 1;
 			// Drop every (n-1)th point, where n is the multiple of full 200s in the data set
@@ -583,6 +577,9 @@ void appInterface::outputCSV() {
 			parent->updateProgress(increment);
 		}
 	}
+	
+	// Finally saved RT Dose
+	parent->data->outputRTDose(rtFile, rtFile2, &doseData, doseScaling, 3.0);
 	
 	// Finish with progress bar
 	parent->finishedProgress();

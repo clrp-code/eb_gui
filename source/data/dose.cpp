@@ -1206,7 +1206,7 @@ void Dose::getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSP
 }
 
 void Dose::getDVs(QVector <QVector <DV> > *data, QVector <EGSPhant*> *masks, QVector <double> *volume) {
-	emit nameProgress("Sorting (bar does not update)"); // Change progress bar name
+	emit nameProgress("Filtering data"); // Change progress bar name
 	
 	if (data->size() != masks->size() && data->size() != volume->size())
 		return; // Quit if mask and data array size do not align
@@ -1265,7 +1265,6 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		}
 		std::sort(xD.begin(), xD.end());
 	}
-	qDebug() << xD;
 	
 	if (VxStr.length()) {
 		temp = VxStr.replace(' ',',').split(',');
@@ -1275,7 +1274,6 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		}
 		std::sort(xV.begin(), xV.end());
 	}
-	qDebug() << xV;
 	
 	if (DccStr.length()) {
 		temp = DccStr.replace(' ',',').split(',');
@@ -1285,19 +1283,13 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		}
 		std::sort(ccD.begin(), ccD.end());
 	}
-	qDebug() << ccD;
 	
 	pD = pDStr.toDouble();
-	qDebug() << pD;
 	
 	// Generate metric data
 	double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
 	int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
-	for (int j = 0; j < data->size(); j++) {
-		if (j)
-			if (data->at(j).dose < data->at(j-1).dose )
-				qDebug() << "Not sorted!";
-		
+	for (int j = 0; j < data->size(); j++) {		
 		countTally    += 1.0;
 		volumeTally   += data->at(j).vol;
 		doseTally     += data->at(j).dose;
@@ -1313,8 +1305,6 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		if (vIndex < xV.size()) {
 			if (data->at(j).dose > (xV[vIndex]*pD/100.0) && j) {
 				Vx[vIndex] += QString::number(volume-volumeTally+data->at(j).vol)+",,";
-				qDebug() << "Found V metric" << QString::number(volume-volumeTally+data->at(j).vol);
-				qDebug() << data->at(j).dose << ">" << (xV[vIndex]*pD/100.0) << "at index" << j << "for metric value" << xV[vIndex] << "for";;
 				vIndex++;
 			}
 		}
@@ -1323,8 +1313,6 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		if (dIndex >= 0) {
 			if ((volume-volumeTally)/volume*100.0 < xD[dIndex] && j) {
 				Dx[dIndex] += QString::number(data->at(j-1).dose)+","+QString::number(data->at(j-1).dose*data->at(j-1).err)+",";
-				qDebug() << "Found Dx metric" << QString::number(data->at(j-1).dose) << "for";
-				qDebug() << (volume-volumeTally)/volume*100.0 << "<" << xD[dIndex] << "at index" << j << "for metric value" << xD[dIndex];
 				dIndex--;
 			}
 		}
@@ -1333,8 +1321,6 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		if (ccIndex >= 0) {
 			if ((volume-volumeTally) < ccD[ccIndex] && j) {
 				Dcc[ccIndex] += QString::number(data->at(j-1).dose)+","+QString::number(data->at(j-1).dose*data->at(j-1).err)+",";
-				qDebug() << "Found Dcc metric" << QString::number(data->at(j-1).dose) << "for";
-				qDebug() << (volume-volumeTally) << "<" << ccD[ccIndex] << "at index" << j << "for metric value" << ccD[ccIndex];
 				ccIndex--;
 			}
 		}

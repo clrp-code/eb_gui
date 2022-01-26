@@ -797,16 +797,16 @@ void doseInterface::connectLayout() {
 			this, SLOT(refresh()));
 	connect(renderCheckBox, SIGNAL(stateChanged(int)),
 			this, SLOT(refresh()));
-	connect(renderButton, SIGNAL(pressed()),
+	connect(renderButton, SIGNAL(released()),
 			this, SLOT(render()));
 	
 	// Preview ~~~~~~~~~~~~~~
 	connect(resolutionScale, SIGNAL(textEdited(QString)),
 			this, SLOT(previewCanvasRenderLive()));
 	
-	connect(saveImageButton, SIGNAL(pressed()),
+	connect(saveImageButton, SIGNAL(released()),
 			this, SLOT(saveImage()));
-	connect(saveDataButton, SIGNAL(pressed()),
+	connect(saveDataButton, SIGNAL(released()),
 			this, SLOT(saveData()));
 			
 	// Dimensions
@@ -832,12 +832,12 @@ void doseInterface::connectLayout() {
 	connect(unitsEdit, SIGNAL(textEdited(QString)),
 			this, SLOT(previewCanvasRenderLive()));
 	
-	connect(expandToBounds, SIGNAL(pressed()),
+	connect(expandToBounds, SIGNAL(released()),
 			this, SLOT(previewResetBounds()));
 			
-	connect(depthPlusButton, SIGNAL(pressed()),
+	connect(depthPlusButton, SIGNAL(released()),
 			this, SLOT(previewSliceUp()));
-	connect(depthMinusButton, SIGNAL(pressed()),
+	connect(depthMinusButton, SIGNAL(released()),
 			this, SLOT(previewSliceDown()));
 	
 	// Egsphant
@@ -881,14 +881,14 @@ void doseInterface::connectLayout() {
 			
 	// Change all colours
 	sigMap = new QSignalMapper(this); // Should get deleted as a child of this
-	connect(mapMinButton, SIGNAL(pressed()),
+	connect(mapMinButton, SIGNAL(released()),
 			sigMap, SLOT(map()));
-	connect(mapMidButton, SIGNAL(pressed()),
+	connect(mapMidButton, SIGNAL(released()),
 			sigMap, SLOT(map()));
-	connect(mapMaxButton, SIGNAL(pressed()),
+	connect(mapMaxButton, SIGNAL(released()),
 			sigMap, SLOT(map()));
 	for (int i = 0; i < 5; i++)
-		connect(isoColourButton[i], SIGNAL(pressed()),
+		connect(isoColourButton[i], SIGNAL(released()),
 				sigMap, SLOT(map()));
 				
 	sigMap->setMapping(mapMinButton, 0);
@@ -907,31 +907,31 @@ void doseInterface::connectLayout() {
 	connect(histMaskSelect, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(loadMaskEgsphant()));
 	
-	connect(histLoadButton, SIGNAL(pressed()),
+	connect(histLoadButton, SIGNAL(released()),
 			this, SLOT(loadHistoDose()));
-	connect(histDeleteButton, SIGNAL(pressed()),
+	connect(histDeleteButton, SIGNAL(released()),
 			this, SLOT(deleteHistoDose()));
 			
 	connect(histOutputBox, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(loadMetrics()));
-	connect(histCalcButton, SIGNAL(pressed()),
+	connect(histCalcButton, SIGNAL(released()),
 			this, SLOT(calcMetrics()));
-	connect(histSaveButton, SIGNAL(pressed()),
+	connect(histSaveButton, SIGNAL(released()),
 			this, SLOT(outputMetrics()));
-	connect(histRawButton, SIGNAL(pressed()),
+	connect(histRawButton, SIGNAL(released()),
 			this, SLOT(outputRawData()));
 	
 	// Profile ~~~~~~~~~~~~~~
 	connect(profPhantSelect, SIGNAL(currentIndexChanged(int)),
 			this, SLOT(loadPreviewEgsphant()));
-	connect(renderProfPreview, SIGNAL(pressed()),
+	connect(renderProfPreview, SIGNAL(released()),
 			this, SLOT(showPreviewEgsphant()));
-	connect(saveProfPreview, SIGNAL(pressed()),
+	connect(saveProfPreview, SIGNAL(released()),
 			this, SLOT(savePreviewEgsphant()));
 			
-	connect(profLoadButton, SIGNAL(pressed()),
+	connect(profLoadButton, SIGNAL(released()),
 			this, SLOT(loadProfDose()));
-	connect(profDeleteButton, SIGNAL(pressed()),
+	connect(profDeleteButton, SIGNAL(released()),
 			this, SLOT(deleteProfDose()));
 }
 
@@ -1772,7 +1772,6 @@ void doseInterface::previewSliceDown() {
 	for (int i = 0; i < depths.size(); i++) {
 		if (depth > depths[i]->last()) {// If below, go to first slice
 			tempDepth = (depths[i]->at(sizes[i]-1)+depths[i]->at(sizes[i]))/2.0;
-			qDebug() << "Setting to top slice center " << tempDepth;
 		} // And if we aren't already at the final slice
 		else if ((depth-0.05) > ((depths[i]->at(0)+depths[i]->at(1))/2.0)) { 
 			// Get index
@@ -1962,12 +1961,10 @@ void doseInterface::loadHistoDose() {
 		
 	if (file.endsWith(".b3ddose")) {
 		histDoses.last()->readBIn(file, 1);
-		qDebug() << "Loaded" << file;
 		file = file.left(file.size()-10).split("/").last();
 	}
 	else if (file.endsWith(".3ddose")) {
 		histDoses.last()->readIn(file, 1);
-		qDebug() << "Loaded" << file;
 		file = file.left(file.size()-9).split("/").last();
 	}
 	else {
@@ -2449,7 +2446,6 @@ void doseInterface::outputMetrics() {
 		}
 		std::sort(xD.begin(), xD.end());
 	}
-	qDebug() << xD;
 	
 	if (histVxEdit->text().length()) {
 		temp = histVxEdit->text().replace(' ',',').split(',');
@@ -2459,7 +2455,6 @@ void doseInterface::outputMetrics() {
 		}
 		std::sort(xV.begin(), xV.end());
 	}
-	qDebug() << xV;
 	
 	if (histDccEdit->text().length()) {
 		temp = histDccEdit->text().replace(' ',',').split(',');
@@ -2469,10 +2464,8 @@ void doseInterface::outputMetrics() {
 		}
 		std::sort(ccD.begin(), ccD.end());
 	}
-	qDebug() << ccD;
 	
 	pD = histDpEdit->text().toDouble();
-	qDebug() << pD;
 	
 	// Get dose values	
 	for (int i = 0; i < count; i++) {
@@ -2510,10 +2503,7 @@ void doseInterface::outputMetrics() {
 		// Generate metric data
 		double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
 		int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
-		for (int j = 0; j < data.size(); j++) {
-			if (j)
-				if (data[j].dose  < data[j-1].dose)
-					qDebug() << "Not sorted!";
+		for (int j = 0; j < data.size(); j++) {			
 			countTally    += 1.0;
 			volumeTally   += data[j].vol;
 			doseTally     += data[j].dose;
@@ -2529,8 +2519,6 @@ void doseInterface::outputMetrics() {
 			if (vIndex < xV.size()) {
 				if (data[j].dose > (xV[vIndex]*pD/100.0) && j) {
 					Vx[vIndex] += QString::number(volume-volumeTally+data[j].vol)+",,";
-					qDebug() << "Found V metric" << QString::number(volume-volumeTally+data[j].vol) << "for";
-					qDebug() << data[j].dose << ">" << (xV[vIndex]*pD/100.0) << "at index" << j << "for metric value" << xV[vIndex];
 					vIndex++;
 				}
 			}
@@ -2539,8 +2527,6 @@ void doseInterface::outputMetrics() {
 			if (dIndex >= 0) {
 				if ((volume-volumeTally)/volume*100.0 < xD[dIndex] && j) {
 					Dx[dIndex] += QString::number(data[j-1].dose)+","+QString::number(data[j-1].dose*data[j-1].err)+",";
-					qDebug() << "Found Dx metric" << QString::number(data[j-1].dose);
-					qDebug() << (volume-volumeTally)/volume*100.0 << "<" << xD[dIndex] << "at index" << j << "for metric value" << xD[dIndex];
 					dIndex--;
 				}
 			}
@@ -2549,8 +2535,6 @@ void doseInterface::outputMetrics() {
 			if (ccIndex >= 0) {
 				if ((volume-volumeTally) < ccD[ccIndex] && j) {
 					Dcc[ccIndex] += QString::number(data[j-1].dose)+","+QString::number(data[j-1].dose*data[j-1].err)+",";
-					qDebug() << "Found Dcc metric" << QString::number(data[j-1].dose);
-					qDebug() << (volume-volumeTally) << "<" << ccD[ccIndex] << "at index" << j << "for metric value" << ccD[ccIndex];
 					ccIndex--;
 				}
 			}
