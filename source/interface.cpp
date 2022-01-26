@@ -91,7 +91,7 @@ Interface::~Interface() {
 // Global widgets
 void Interface::createGlobalWidgets() {
 	// Phantom list
-	phantomLabel     = new QLabel(tr("<b>Phantoms</b>")); 
+	phantomLabel     = new QLabel(tr("<b>Virtual Patient Models</b>")); 
 	phantomOnlyLocal = new QCheckBox(tr("only local"));
 	phantomOnlyLocal->setChecked(true);
 	phantomListView  = new QListWidget();
@@ -261,9 +261,9 @@ void Interface::createLayout() {
 	
 	tabWidget->addTab(ebInt    ,tr("Run egs_brachy"));
 	tabWidget->addTab(sourceInt,tr("Import DICOM plan"));
-	tabWidget->addTab(phantInt ,tr("Import DICOM phantom"));
+	tabWidget->addTab(phantInt ,tr("Import DICOM Virtual Patient Model"));
 	tabWidget->addTab(doseInt  ,tr("Analyze results"));
-	tabWidget->addTab(appInt   ,tr("Output DICOM dose"));
+	tabWidget->addTab(appInt   ,tr("Export results"));
 	
 	mainLayout->addWidget(tabWidget  ,0,0,1,2);
 	mainLayout->addWidget(closeButton,1,1,1,1);
@@ -443,8 +443,8 @@ void Interface::phantomViewLog() {
 	QList <QListWidgetItem*> matchingNames = phantomListView->selectedItems();
 	
 	if (!matchingNames.size()) {
-		QMessageBox::warning(0, "Load phantom log error",
-		tr("No phantom file selected."));
+		QMessageBox::warning(0, "Load VPM log error",
+		tr("No virtual patient model file selected."));
 		return;		
 	}
 	

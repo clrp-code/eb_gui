@@ -39,6 +39,11 @@
 
 #include "dose.h"
 
+// Comparison function for std containers
+bool DV_sorter(const DV& a, const DV& b) {
+	return a.dose < b.dose;
+}
+
 Dose::Dose(const Dose &d)
     : QObject(0) {
     // Set the number of coordinates the same
@@ -1210,6 +1215,7 @@ void Dose::getDVs(QVector <QVector <DV> > *data, QVector <EGSPhant*> *masks, QVe
 	double xVal, yVal, zVal;
 	double xLen, yLen, zLen;
 	double vol;
+	DV dataPoint;
 	
 	for (int i = 0; i < volume->size(); i++) {
 		(*volume)[i] = 0;
@@ -1227,10 +1233,11 @@ void Dose::getDVs(QVector <QVector <DV> > *data, QVector <EGSPhant*> *masks, QVe
 				xVal = (cx[i]+cx[i+1])/2.0;
 				xLen = (cx[i+1]-cx[i]);
 				vol = xLen*yLen*zLen;
+				dataPoint = {val[i][j][k], err[i][j][k], vol};
 				for (int n = 0; n < masks->size(); n++) {
 					if ((*masks)[n]->getMedia(xVal, yVal, zVal) == 50) {
 						(*volume)[n] += vol;
-						(*data)[n].append({val[i][j][k], err[i][j][k], vol});
+						(*data)[n].append(dataPoint);
 					}
 				}
 			}
@@ -1258,6 +1265,7 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		}
 		std::sort(xD.begin(), xD.end());
 	}
+	qDebug() << xD;
 	
 	if (VxStr.length()) {
 		temp = VxStr.replace(' ',',').split(',');
@@ -1267,6 +1275,7 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		}
 		std::sort(xV.begin(), xV.end());
 	}
+	qDebug() << xV;
 	
 	if (DccStr.length()) {
 		temp = DccStr.replace(' ',',').split(',');
@@ -1276,13 +1285,19 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		}
 		std::sort(ccD.begin(), ccD.end());
 	}
+	qDebug() << ccD;
 	
 	pD = pDStr.toDouble();
+	qDebug() << pD;
 	
 	// Generate metric data
 	double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
 	int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
 	for (int j = 0; j < data->size(); j++) {
+		if (j)
+			if (data->at(j).dose < data->at(j-1).dose )
+				qDebug() << "Not sorted!";
+		
 		countTally    += 1.0;
 		volumeTally   += data->at(j).vol;
 		doseTally     += data->at(j).dose;
@@ -1298,6 +1313,8 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		if (vIndex < xV.size()) {
 			if (data->at(j).dose > (xV[vIndex]*pD/100.0) && j) {
 				Vx[vIndex] += QString::number(volume-volumeTally+data->at(j).vol)+",,";
+				qDebug() << "Found V metric" << QString::number(volume-volumeTally+data->at(j).vol);
+				qDebug() << data->at(j).dose << ">" << (xV[vIndex]*pD/100.0) << "at index" << j << "for metric value" << xV[vIndex] << "for";;
 				vIndex++;
 			}
 		}
@@ -1306,6 +1323,8 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		if (dIndex >= 0) {
 			if ((volume-volumeTally)/volume*100.0 < xD[dIndex] && j) {
 				Dx[dIndex] += QString::number(data->at(j-1).dose)+","+QString::number(data->at(j-1).dose*data->at(j-1).err)+",";
+				qDebug() << "Found Dx metric" << QString::number(data->at(j-1).dose) << "for";
+				qDebug() << (volume-volumeTally)/volume*100.0 << "<" << xD[dIndex] << "at index" << j << "for metric value" << xD[dIndex];
 				dIndex--;
 			}
 		}
@@ -1314,6 +1333,8 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		if (ccIndex >= 0) {
 			if ((volume-volumeTally) < ccD[ccIndex] && j) {
 				Dcc[ccIndex] += QString::number(data->at(j-1).dose)+","+QString::number(data->at(j-1).dose*data->at(j-1).err)+",";
+				qDebug() << "Found Dcc metric" << QString::number(data->at(j-1).dose) << "for";
+				qDebug() << (volume-volumeTally) << "<" << ccD[ccIndex] << "at index" << j << "for metric value" << ccD[ccIndex];
 				ccIndex--;
 			}
 		}
@@ -1361,9 +1382,4 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		text += QString("V")+QString::number(xV[i])+" / cm^3,"+Vx[i]+"\n";
 	
 	return text;
-}
-
-// Comparison function for std containers
-bool DV_sorter(const DV& a, const DV& b) {
-	return a.dose < b.dose;
 }

@@ -74,10 +74,10 @@
 // 2) (\\d)?) - Allow a second decimal character
 // 3) | - Or
 // 4) 100 - Look for 100
-#define REGEX_PERCENT "((\\d(\\d)?)|100)"
+#define REGEX_PERCENT "((\\d(\\d)?)|100)([.]\\d*)"
 
 // Same as above, but add a space or comma afterwards and allow repetition
-#define REGEX_PERCENT_ARR "(((\\d(\\d)?)|100)[ ,])*"
+#define REGEX_PERCENT_ARR "(((\\d(\\d)?)|100)([.]\\d*)[ ,])*"
 
 // Forward declare the EGS_geom class defined at the bottom so that they can
 // be included in the layout

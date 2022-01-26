@@ -1085,8 +1085,8 @@ void phantInterface::submerge(QVector <DICOM *> &data, int i, int c, int f) {
 	
 	// While we have yet to iterate through either subsection
 	while (l <= c && r <= f) {
-		// If value at r index is larger then add it to temp and move to next r
-		if (data[l]->n < data[r]->n || (data[l]->n == data[r]->n && data[l]->z > data[r]->z))
+		// If value at r index is smaller then add it to temp and move to next r
+		if (data[l]->z > data[r]->z)
 			temp[j++] = data[r++];
 		// If value at l index is smaller then add it to temp and move to next l
 		else
