@@ -2302,7 +2302,7 @@ void doseInterface::calcMetrics() {
 			// Append Vx values as we go
 			if (vIndex < xV.size()) {
 				if (data[j].dose > (xV[vIndex]*pD/100.0) && j) {
-					Vx[vIndex] += QString::number(volume-volumeTally+data[j].vol).left(11).rightJustified(11,' ')+" "
+					Vx[vIndex] += QString::number((volume-volumeTally+data[j].vol)/volume*100.0).left(11).rightJustified(11,' ')+" "
 							   +  "            |";
 					vIndex++;
 				}
@@ -2361,7 +2361,7 @@ void doseInterface::calcMetrics() {
 	text        += QString("Average dose / Gy").left(24).rightJustified(24,' ')+"|"+average+"\n";
 	text        += QString("Average uncertainty / Gy").left(24).rightJustified(24,' ')+"|"+uncertainty+"\n";
 	text        += QString("Number of voxels").left(24).rightJustified(24,' ')+"|"+voxels+"\n";
-	text        += QString("Total volume / cm^3").left(24).rightJustified(24,' ')+"|"+volumes+"\n";
+	text        += QString("Total volume / %").left(24).rightJustified(24,' ')+"|"+volumes+"\n";
 	
 	for (int i = 0; i < Dx.size(); i++)
 		text += (QString("D")+QString::number(xD[i])+" (%) / Gy").left(24).rightJustified(24,' ')+"|"+Dx[i]+"\n";
@@ -2518,7 +2518,7 @@ void doseInterface::outputMetrics() {
 			// Append Vx values as we go
 			if (vIndex < xV.size()) {
 				if (data[j].dose > (xV[vIndex]*pD/100.0) && j) {
-					Vx[vIndex] += QString::number(volume-volumeTally+data[j].vol)+",,";
+					Vx[vIndex] += QString::number((volume-volumeTally+data[j].vol)/volume*100.0)+",,";
 					vIndex++;
 				}
 			}
@@ -2580,7 +2580,7 @@ void doseInterface::outputMetrics() {
 		text += QString("D")+QString::number(ccD[i])+" (cc) / Gy,"+Dcc[i]+"\n";
 	
 	for (int i = 0; i < Vx.size(); i++)
-		text += QString("V")+QString::number(xV[i])+" / cm^3,"+Vx[i]+"\n";
+		text += QString("V")+QString::number(xV[i])+" / %,"+Vx[i]+"\n";
 	
 	QFile metricFile(filePath);
 	

@@ -1304,7 +1304,7 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		// Append Vx values as we go
 		if (vIndex < xV.size()) {
 			if (data->at(j).dose > (xV[vIndex]*pD/100.0) && j) {
-				Vx[vIndex] += QString::number(volume-volumeTally+data->at(j).vol)+",,";
+				Vx[vIndex] += QString::number((volume-volumeTally+data->at(j).vol)/volume*100.0)+",,";
 				vIndex++;
 			}
 		}
@@ -1365,7 +1365,7 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		text += QString("D")+QString::number(ccD[i])+" (cc) / Gy,"+Dcc[i]+"\n";
 	
 	for (int i = 0; i < Vx.size(); i++)
-		text += QString("V")+QString::number(xV[i])+" / cm^3,"+Vx[i]+"\n";
+		text += QString("V")+QString::number(xV[i])+" / %,"+Vx[i]+"\n";
 	
 	return text;
 }
