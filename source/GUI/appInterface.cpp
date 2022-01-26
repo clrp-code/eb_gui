@@ -88,6 +88,7 @@ void appInterface::createLayout() {
 		contourNameLabel.append(new QLabel(tr("no contour loaded")));
 		loadMetricBox.append(new QComboBox());
 		loadMetricBox.last()->addItems(parent->data->metricNames);
+		loadMetricBox.last()->removeItem(parent->data->metricNames.size()-1);
 		saveDVHBox.append(new QCheckBox());
 		saveDiffBox.append(new QCheckBox());
 		
@@ -398,6 +399,7 @@ void appInterface::outputCSV() {
 	tempName = parent->data->localNamePhants[iP];
 	
 	QFile(tempPath+tempName).copy(path+"/phantom/"+tempName);
+	qDebug() << "Loaded" << tempPath+tempName;
 	
 	if (tempName.endsWith(".gz"))
 		tempName = tempName.left(tempName.size()-3);
@@ -416,6 +418,7 @@ void appInterface::outputCSV() {
 	tempName = parent->data->localNameTransforms[iT];
 	
 	QFile(tempPath+tempName).copy(path+"/plan/"+tempName);
+	qDebug() << "Loaded" << tempPath+tempName;
 		
 	QFile(tempPath+tempName+".log").copy(path+"/plan/"+tempName+".log"); // Get plan log
 	QFile(tempPath+tempName+".dwell").copy(path+"/plan/"+tempName+".dwell"); // Get dwell times if they exist
@@ -425,6 +428,7 @@ void appInterface::outputCSV() {
 	tempName = parent->data->localNameDoses[iD];
 	
 	QFile(tempPath+tempName).copy(path+"/simulation/"+tempName);
+	qDebug() << "Loaded" << tempPath+tempName;
 	
 	if (tempName.endsWith("phantom.b3ddose"))
 		tempName = tempName.left(tempName.size()-16);
