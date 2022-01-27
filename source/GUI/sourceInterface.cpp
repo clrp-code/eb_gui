@@ -187,8 +187,10 @@ void sourceInterface::loadPlan() {
 	DICOM* planFile = parent->data->plan_data; // temporary pointer
 	Attribute* tempAtt;
 	
-	if (parent->data->plan_loaded)
+	if (parent->data->plan_loaded) {
+		parent->data->plan_loaded = false;
 		delete planFile;
+	}
 	
 	planFile = new DICOM(&parent->data->tag_data);
 	
@@ -200,10 +202,23 @@ void sourceInterface::loadPlan() {
 		return;
 	}
 	
-	tempAtt = planFile->getEntry(0x300A, 0x0002); // Get att closest to (300A,0002)
-	if (tempAtt->tag[0] != 0x300A && tempAtt->tag[1] != 0x0002) {// See if it is (300A,0002)
+	tempAtt = planFile->getEntry(0x0008, 0x0060); // Get att closest to (0008,0060)
+	if (tempAtt->tag[0] == 0x0008 && tempAtt->tag[1] == 0x0060) {// See if it is (0008,0060)
+		QString temp = "";
+		for (unsigned int s = 0; s < tempAtt->vl; s++) {
+			temp.append(tempAtt->vf[s]);
+		}
+		
+		if (temp.trimmed().compare("RTPLAN")) {
+			QMessageBox::warning(0, "DICOM error",
+			tr("DICOM modality (0008,0060) is not of type \"RTPLAN\"."));
+			delete planFile;
+			return;
+		}
+	}
+	else {
 		QMessageBox::warning(0, "DICOM error",
-        tr("Did not find field \"RT Plan Label\" in DICOM file."));
+		tr("DICOM modality (0008,0060) field not found."));
 		delete planFile;
 		return;
 	}
@@ -211,7 +226,12 @@ void sourceInterface::loadPlan() {
 	// Get patient name for the transformation label
 	tempAtt = planFile->getEntry(0x0010, 0x0010); // Get att closest to (0010,0010)
 	if (tempAtt->tag[0] == 0x0010 && tempAtt->tag[1] == 0x0010) {
-		tagEdit->setText(std::string((char*)tempAtt->vf,tempAtt->vl+1).c_str());
+		QString temp = "";
+		for (unsigned int s = 0; s < tempAtt->vl; s++) {
+			temp.append(tempAtt->vf[s]);
+		}
+		
+		tagEdit->setText(temp);
 	}
 	else {
 		tagEdit->setText("DICOM_plan");

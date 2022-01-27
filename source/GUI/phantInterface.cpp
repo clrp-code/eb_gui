@@ -641,7 +641,7 @@ void phantInterface::loadCTDir() { // Very similar to CT files with an extra ste
 	QStringList paths;
 	QStringList failedFiles;
 	
-	double increment = 100.0/paths.size();
+	double increment = 60.0/paths.size();
     parent->resetProgress("Loading DICOM files");
 	
 	// Get all files in subdirectories
@@ -668,16 +668,23 @@ void phantInterface::loadCTDir() { // Very similar to CT files with an extra ste
 		else {
 			Attribute* tempAtt;
 			
-			tempAtt = parent->data->CT_data.last()->getEntry(0x0008, 0x0008); // Get att closest to (0008,0008)
-			if (tempAtt->tag[0] != 0x0008 && tempAtt->tag[1] != 0x0008) { // See if it is (0008,0008)
-				if (!QString(tempAtt->vf[tempAtt->vl]).contains("AXIAL")) { // See if the field contains AXIAL
-					failedFiles.append(paths[i].split("/").last() + tr(" is not AXIAL CT format"));
+			tempAtt = parent->data->CT_data.last()->getEntry(0x0008, 0x0060); // Get att closest to (0008,0060)
+			if (tempAtt->tag[0] != 0x0008 && tempAtt->tag[1] != 0x0060) { // See if it is (0008,0060)
+				failedFiles.append(paths[i].split("/").last() + tr(" did not have DICOM modality field (0008,0060)"));
+				delete parent->data->CT_data.last();
+				parent->data->CT_data.removeLast();
+			}
+			else {
+				QString temp = "";
+				for (unsigned int s = 0; s < tempAtt->vl; s++) {
+					temp.append(tempAtt->vf[s]);
+				}
+				
+				if (temp.trimmed().compare("CT")) { // See if the field contains CT
+					failedFiles.append(paths[i].split("/").last() + tr(" is not CT modality"));
 					delete parent->data->CT_data.last();
 					parent->data->CT_data.removeLast();
 				}
-			}
-			else {
-				ctListView->addItem(paths[i].split("/").last());
 			}
 		}
 		parent->updateProgress(increment);
@@ -686,8 +693,13 @@ void phantInterface::loadCTDir() { // Very similar to CT files with an extra ste
 	// Get patient name for the egsphant label
 	Attribute* tempAtt;
 	tempAtt = parent->data->CT_data.first()->getEntry(0x0010, 0x0010); // Get att closest to (0010,0010)
-	if (tempAtt->tag[0] == 0x0010 && tempAtt->tag[1] == 0x0010) {
-		phantNameEdit->setText(std::string((char*)tempAtt->vf,tempAtt->vl+1).c_str());
+	if (tempAtt->tag[0] == 0x0010 && tempAtt->tag[1] == 0x0010 && tempAtt->vl) {
+		QString temp = "";
+		for (unsigned int s = 0; s < tempAtt->vl; s++) {
+			temp.append(tempAtt->vf[s]);
+		}
+		
+		phantNameEdit->setText(temp);
 	}
 	else {
 		phantNameEdit->setText("DICOM_VPM");
@@ -695,6 +707,7 @@ void phantInterface::loadCTDir() { // Very similar to CT files with an extra ste
 	
 	// Sort all CT slices by z height
 	mergeSort(parent->data->CT_data,parent->data->CT_data.size());
+	parent->updateProgress(40);
 	
 	parent->finishedProgress();
 	if (failedFiles.size()) {
@@ -756,8 +769,11 @@ void phantInterface::loadStruct() {
 	DICOM* structFile = parent->data->struct_data; // temporary pointer
 	Attribute* tempAtt;
 	
-	if (parent->data->struct_loaded)
+	if (parent->data->struct_loaded) {
+		parent->data->struct_loaded = false;
 		delete structFile;
+	}
+	
 	structFile = new DICOM(&parent->data->tag_data);
 	
 	// Quit if you can't parse the file
