@@ -92,7 +92,7 @@ void phantInterface::createLayout() {
 	ctListView->setSelectionMode(QAbstractItemView::MultiSelection);
 	ctDelete       = new QPushButton(tr("Delete"));
 	ctDeleteAll    = new QPushButton(tr("Delete all"));
-	ttt = tr("Select CT data files to use to make the egsphant.\nDisplayed in ascending z order.");
+	ttt = tr("Select CT data files to use to make the egsphant.  Displayed in ascending z order.");
 	ctImportFiles->setToolTip(ttt);
 	ctImportDir->setToolTip(ttt);
 	ctListView->setToolTip(ttt);
@@ -159,8 +159,8 @@ void phantInterface::createLayout() {
 	// Tissue assignment scheme
 	contourAssign        = new QLabel(tr("Tissue Assignment Schemes"));
 	
-	ttt = tr("This section uses Tissue Assignment Schemes (TASes) to assign media using CT density.\n"
-	         "Additionally, using the mask output creates additional egsphant data to be used with\n"
+	ttt = tr("This section uses Tissue Assignment Schemes (TASes) to assign media using CT density.  "
+	         "Additionally, using the mask output creates additional egsphant data to be used with "
 			 "3ddose_tools analysis.");
 	contourAssign->setToolTip(ttt);
 	
@@ -168,7 +168,7 @@ void phantInterface::createLayout() {
 	defaultTASBox        = new QComboBox();
 	defaultTASBox->addItems(parent->data->TAS_names);
 	
-	ttt = tr("The default TAS will be used to assign media everywhere in the virtual patient,\nunless otherwise specified in the contour specific TAS selection below.");
+	ttt = tr("The default TAS will be used to assign media everywhere in the virtual patient, unless otherwise specified in the contour specific TAS selection below.");
 	defaultTASLabel->setToolTip(ttt);
 	defaultTASBox->setToolTip(ttt);
 	
@@ -229,7 +229,7 @@ void phantInterface::createLayout() {
 	prioView    = new QListWidget();
 	prioView->setDragDropMode(QAbstractItemView::InternalMove);
 	
-	ttt = tr("This priority list is used when determining which TAS to use when two contours overlap.\n"
+	ttt = tr("This priority list is used when determining which TAS to use when two contours overlap.  "
 			 "Drag and drop to move items up and down the list.");
 	prioContour->setToolTip(ttt);
 	prioView->setToolTip(ttt);
@@ -249,7 +249,7 @@ void phantInterface::createLayout() {
 	marEnable         = new QCheckBox(tr("Enable"));
 	marEnable->setChecked(true);
 	
-	ttt = tr("Metallic Artifact Reduction (MAR) is a feature used to remove the high density\n"
+	ttt = tr("Metallic Artifact Reduction (MAR) is a feature used to remove the high density "
 			 "volume in the CT scan caused by brachytherapy seeds and artifact streaking.");
 	marLabel->setToolTip(ttt);
 	marEnable->setToolTip(ttt);
@@ -273,7 +273,7 @@ void phantInterface::createLayout() {
 	marUTLabel        = new QLabel(tr("Upper threshold"));
 	marUTEdit         = new QLineEdit("");
 	
-	ttt = tr("Correction will be applied to any voxel with density <i>not</i> within the thresholds.");
+	ttt = tr("Correction will be applied to any voxel with density not within the thresholds.");
 	marLTLabel->setToolTip(ttt);
 	marLTEdit->setToolTip(ttt);
 	marUTLabel->setToolTip(ttt);

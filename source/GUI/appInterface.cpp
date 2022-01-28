@@ -125,7 +125,7 @@ void appInterface::createLayout() {
 	
 	outputFullDataCSV   = new QPushButton("Output all data (csv metrics)");
 	outputFullDataDICOM = new QPushButton("Output all data (DICOM metrics)");
-	ttt = tr("Output egsphant, transformation, dose, input files, and associated logs to a patient folder.\n"
+	ttt = tr("Output egsphant, transformation, dose, input files, and associated logs to a patient folder.  "
 			 "Additional metrics selected above can also be output.");
 	outputFullDataCSV->setToolTip(ttt);
 	outputFullDataDICOM->setToolTip(ttt);

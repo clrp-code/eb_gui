@@ -106,9 +106,9 @@ void ebInterface::createLayout() {
 	ncaseLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 	ncaseEdit         = new QLineEdit(parent->data->def_ncase);
 	
-	ttt = tr("Number of histories (h) for simulation:\n"
-			 "simulation time is linearly proportional to h and\n"
-			 "dose uncertainty is inversely proportional to the square root of h.");
+	ttt = tr("Number of histories (ncase) for simulation; "
+			 "simulation time is linearly proportional to ncase and "
+			 "dose uncertainty is inversely proportional to the square root of ncase.");
 	ncaseLabel->setToolTip(ttt);
 	ncaseEdit->setToolTip(ttt);
 	
@@ -120,7 +120,7 @@ void ebInterface::createLayout() {
 	volCorLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 	volCorDen         = new QLineEdit(parent->data->def_volDen);
 	
-	ttt = tr("Corrects dose to voxels containing sources, by removing the fraction\n"
+	ttt = tr("Corrects dose to voxels containing sources, by removing the fraction "
 			 "of the volume occupied by the source.");
 	volCorBox->setToolTip(ttt);
 	
@@ -165,15 +165,15 @@ void ebInterface::createLayout() {
 	// Simulation parameters
 	edepBox = new QCheckBox(tr("Score edep"));
 	
-	ttt = tr("Output additional 3ddose file where track length scoring\n"
-	         "is not used for scoring, instead using the classical\n"
+	ttt = tr("Output additional 3ddose file where track length scoring "
+	         "is not used for scoring, instead using the classical "
 			 "interaction scoring scheme.");
 	edepBox->setToolTip(ttt);
 	
 	waterBox = new QCheckBox(tr("TG-43"));
 	
-	ttt = tr("Replace phantom geometry with pure nominal density water\n"
-	         "and use superposition mode for seeds to create a TG-43\n"
+	ttt = tr("Replace phantom geometry with pure nominal density water "
+	         "and use superposition mode for seeds to create a TG-43 "
 			 "equivalent simulation.");
 	waterBox->setToolTip(ttt);
 	
@@ -183,8 +183,8 @@ void ebInterface::createLayout() {
 	runModeBox->addItem("normal");
 	runModeBox->addItem("superposition");
 	
-	ttt = tr("Run a normal simulation where sources are present at all locations\n"
-			 "or a superposition simulation where only the source in which a particle\n"
+	ttt = tr("Run a normal simulation where sources are present at all locations "
+			 "or a superposition simulation where only the source in which a particle "
 			 "is generated is present for that particle's history, useful for TG-43.");
 	runModeLabel->setToolTip(ttt);
 	runModeBox->setToolTip(ttt);
@@ -197,8 +197,8 @@ void ebInterface::createLayout() {
 	for (int i = 2; i <= QThread::idealThreadCount(); i++)
 		njobBox->addItem(QString::number(i));
 	
-	ttt = tr("Run a simulation interactively (1 core) where all simulation information is\n"
-			 "output to the console (useful for debugging), or run a simulation on n\n"
+	ttt = tr("Run a simulation interactively (1 core) where all simulation information is "
+			 "output to the console (useful for debugging), or run a simulation on n "
 			 "separate cores.");
 	njobLabel->setToolTip(ttt);
 	njobBox->setToolTip(ttt);
@@ -312,10 +312,14 @@ void ebInterface::refresh() {
 	parent->transformationRefresh();
 	mainLayout->addWidget(parent->geometryFrame,      1, 0, 1, 2);
 	
-	if (volCorBox->isChecked())
+	if (volCorBox->isChecked()) {
 		volCorDen->setEnabled(true);
-	else
+		volCorLabel->setEnabled(true);
+	}
+	else {
 		volCorDen->setEnabled(false);
+		volCorLabel->setEnabled(false);
+	}
 	
 	if (waterBox->isChecked()) {
 		runModeLabel->setEnabled(false);

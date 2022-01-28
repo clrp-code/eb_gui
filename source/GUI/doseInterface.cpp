@@ -196,7 +196,7 @@ void doseInterface::createLayout() {
 	depthMinusButton->setToolTip(ttt);
 	
 	expandToBounds    = new QPushButton("reset");
-	ttt = tr("Find the nearest depth at which any egsphant or 3ddose data is found, then scale vertical\n"
+	ttt = tr("Find the nearest depth at which any egsphant or 3ddose data is found, then scale vertical "
 			 "and horizontal bounds to maximum size for all 3D arrays.");
 	expandToBounds->setToolTip(ttt);
 	
@@ -332,7 +332,7 @@ void doseInterface::createLayout() {
 	mapMinButton->setStyleSheet("QPushButton {background-color: rgb(0,0,255)}");
 	mapMidButton->setStyleSheet("QPushButton {background-color: rgb(0,255,0)}");
 	mapMaxButton->setStyleSheet("QPushButton {background-color: rgb(255,0,0)}");
-	ttt = tr("The minimum and maximum colours used for the colour map, as well as a midpoint colour\n"
+	ttt = tr("The minimum and maximum colours used for the colour map, as well as a midpoint colour "
 			 "for a richer colour spectrum and potentially closer comparisons to isodose contours.");
 	mapMinButton->setToolTip(ttt);
 	mapMidButton->setToolTip(ttt);
@@ -442,7 +442,7 @@ void doseInterface::createLayout() {
 	histMaskSelect   = new QComboBox();
 	histMaskSelect->addItem("none");
 	histMask         = new EGSPhant();
-	ttt = tr("Ignore all dose data not within the selected structure.  This list\n"
+	ttt = tr("Ignore all dose data not within the selected structure.  This list "
 			 "is populated when generating the egsphant using the metrics option.");
 	histMaskLabel->setToolTip(ttt);
 	histMaskSelect->setToolTip(ttt);
@@ -460,7 +460,7 @@ void doseInterface::createLayout() {
 	histDoseMaxLabel = new QLabel("Max dose (Gy)");
 	histDoseMaxEdit  = new QLineEdit("0");
 	histDoseMaxEdit->setValidator(&allowedPosReals);
-	ttt = tr("Ignore all dose data not within the selected dose thresholds.\n"
+	ttt = tr("Ignore all dose data not within the selected dose thresholds. "
 			 "If max dose is less than or equal to min dose, it is ignored.");
 	histDoseMinLabel->setToolTip(ttt);
 	histDoseMaxLabel->setToolTip(ttt);
@@ -559,7 +559,7 @@ void doseInterface::createLayout() {
 	histDccEdit->setValidator(&allowedPosRealArrs);
 	histVxEdit->setValidator(&allowedPosRealArrs);
 	histDpEdit->setValidator(&allowedPosReals);
-	ttt = tr("Calculate Dx (in cc or % of total volume) and Vx (in % of prescription) values, the dose deposited within\n"
+	ttt = tr("Calculate Dx (in cc or % of total volume) and Vx (in % of prescription) values, the dose deposited within "
 			 " at least x percent of the volume and total volume with at least x dose, respectively.");
 	histDxLabel->setToolTip(ttt);
 	histDxEdit->setToolTip(ttt);
@@ -579,7 +579,7 @@ void doseInterface::createLayout() {
 	ttt = tr("Calculate and save data metrics in csv file.");
 	histSaveButton->setToolTip(ttt);
 	histRawButton    = new QPushButton("Output raw data");
-	ttt = tr("Save the sorted data of all voxels that were not filtered out in csv format.\nFile sizes may become very large.");
+	ttt = tr("Save the sorted data of all voxels that were not filtered out in csv format.  File sizes may become very large.");
 	histRawButton->setToolTip(ttt);
 	
 	histOutputFrame  = new QFrame();

@@ -90,15 +90,29 @@ Interface::~Interface() {
 	
 // Global widgets
 void Interface::createGlobalWidgets() {
+	QString ttt = "";
+	
 	// Phantom list
 	phantomLabel     = new QLabel(tr("<b>Virtual Patient Models</b>")); 
 	phantomOnlyLocal = new QCheckBox(tr("only local"));
 	phantomOnlyLocal->setChecked(true);
+	ttt = "Only show the models saved in the local eb_gui database or "
+	      "include the default phantoms distributed with egs_brachy.";
+	phantomOnlyLocal->setToolTip(ttt);
+	
 	phantomListView  = new QListWidget();
 	phantomListView->setSelectionMode(QAbstractItemView::SingleSelection);
 	phantomCreate    = new QPushButton(tr("Create")); 
 	phantomView      = new QPushButton(tr("View log")); 
 	phantomDelete    = new QPushButton(tr("Delete"));
+	ttt = "Select the model for the simulation.";
+	phantomListView->setToolTip(ttt);
+	ttt = "Create a new simple phantom.";
+	phantomCreate->setToolTip(ttt);
+	ttt = "View the log file generated when the DICOM data was imported.";
+	phantomView->setToolTip(ttt);
+	ttt = "Delete the file along with associated log and mask (contour) files.";
+	phantomDelete->setToolTip(ttt);
 	
 	phantomCreate->setDisabled(true); // To be implemented
 	
@@ -119,16 +133,31 @@ void Interface::createGlobalWidgets() {
 	// Source list
 	sourceLabel       = new QLabel(tr("<b>Sources</b>")); 
 	sourceChooser     = new QComboBox();
-	sourceShowWrapped = new QCheckBox(tr("wrapped sources"));
-	sourceShowWrapped->setChecked(true);
+	sourceShowWrapped = new QCheckBox(tr("add unwrapped sources"));
+	sourceShowWrapped->setChecked(false);
 	sourceListView    = new QListWidget();
 	sourceListView->setSelectionMode(QAbstractItemView::SingleSelection);
+	
+	ttt = "Select the isotope to filter different seeds (or sources) for the simulation.";
+	sourceChooser->setToolTip(ttt);
+	ttt = "By default, only wrapped sources are used which can avoid common geometry errors.  "
+		  "When checked, this will include all possible sources included with egs_brachy, including "
+		  "the unwrapped version of wrapped seeds.";
+	sourceShowWrapped->setToolTip(ttt);
+	ttt = "Select the seed (or source) for the simulation.";
+	sourceListView->setToolTip(ttt);
 	
 	sourceScaleBox      = new QComboBox();
 	sourceScaleEdit     = new QLineEdit("1");
 	sourceScaleEdit->setValidator(&allowedNums);
 	sourceScaleBox->addItem("Air kerma strength");
 	sourceScaleBox->addItem("Dose scaling factor");
+	
+	ttt = "Select whether to scale simulation dose (Gy per history) by air kerma strength, which is "
+		  "read in from DICOM plan files and can be found in source locations log files, or by a single "
+		  "factor.";
+	sourceScaleEdit->setToolTip(ttt);
+	sourceScaleBox->setToolTip(ttt);
 										
 	sourcePermTime      = new QCheckBox("Permanent implant treatment");
 	sourcePermTime->setChecked(true);
@@ -137,6 +166,14 @@ void Interface::createGlobalWidgets() {
 	sourceTempTimeLabel->setDisabled(true);
 	sourceTempTimeEdit->setDisabled(true);
 	sourceTempTimeEdit->setValidator(&allowedNums);
+	
+	ttt = "When scaling with air kerma strength, selecting permanent is used to determine the final "
+		  "dose (all activity absorbed by the patient).";
+	sourcePermTime->setToolTip(ttt);
+	ttt = "When scaling with air kerma strength and permanent is not selected, the total treatment "
+		  "is required to determine the integral over the activity curve during treatment time.";
+	sourceTempTimeLabel->setToolTip(ttt);
+	sourceTempTimeEdit->setToolTip(ttt);
 	
 	sourceGrid  = new QGridLayout();
 	sourceFrame = new QFrame();
@@ -166,17 +203,38 @@ void Interface::createGlobalWidgets() {
 	transformationLabel      = new QLabel(tr("<b>Source Locations</b>")); 
 	transformationOnlyLocal  = new QCheckBox(tr("only local"));
 	transformationOnlyLocal->setChecked(true);
+	
+	ttt = "Only show the source locations saved in the local eb_gui database or "
+	      "include the default phantoms distributed with egs_brachy.";
+	transformationOnlyLocal->setToolTip(ttt);
+	
 	transformationListView   = new QListWidget();
 	transformationListView->setSelectionMode(QAbstractItemView::SingleSelection);
 	transformationCreate     = new QPushButton(tr("Create"));
 	transformationView       = new QPushButton(tr("View log"));
 	transformationDelete     = new QPushButton(tr("Delete"));
 	
-	transformationDwell       = new QCheckBox("Variable activity/dwell times");
-	transformationDwellLabel  = new QLabel("Activity/dwell file");
+	ttt = "When scaling with air kerma strength, selecting permanent is used to determine the final "
+		  "dose (all activity absorbed by the patient).";
+	transformationListView->setToolTip(ttt);
+	ttt = "Create a source location file using a basic cell editor.";
+	transformationCreate->setToolTip(ttt);
+	ttt = "View the log file generated when the DICOM data was imported.";
+	transformationView->setToolTip(ttt);
+	ttt = "Delete the file along with associated log files.";
+	transformationDelete->setToolTip(ttt);
+	
+	transformationDwell       = new QCheckBox("Dwell times");
+	transformationDwellLabel  = new QLabel("Dwell file");
 	transformationDwellButton = new QPushButton(tr("Load"));
 	transformationDwellEdit   = new QLineEdit("none selected");
 	transformationDwellEdit->setDisabled(true);
+	
+	ttt = "Select dwell time (or variable activity) file used to generate relative activity in seeds.";
+	transformationDwell->setToolTip(ttt);
+	transformationDwellLabel->setToolTip(ttt);
+	transformationDwellButton->setToolTip(ttt);
+	transformationDwellEdit->setToolTip(ttt);
 	
 	transformationCreate->setDisabled(true); // To be implemented
 	
@@ -208,6 +266,17 @@ void Interface::createGlobalWidgets() {
 	geometryAdd       = new QPushButton(tr("Add")); 
 	geometryList      = new QTabWidget();
 	
+	ttt = "Select a geometry model filter to view egs_brachy default geometries with.";
+	geometryChooser->setToolTip(ttt);
+	ttt = "Select a type of geometry to add to the simulation.";
+	geometryListView->setToolTip(ttt);
+	ttt = "Create a custom geometry using an editor.";
+	geometryCreate->setToolTip(ttt);
+	ttt = "Add the selected geometry to the simulation.";
+	geometryAdd->setToolTip(ttt);
+	ttt = "Delete a custom geometry.";
+	geometryDelete->setToolTip(ttt);
+	
 	geometryGrid  = new QGridLayout();
 	geometryFrame = new QFrame();
 	
@@ -215,6 +284,7 @@ void Interface::createGlobalWidgets() {
 	geometryChooser->addItem("applicators");
 	
 	geometryCreate->setDisabled(true); // To be implemented
+	geometryDelete->setDisabled(true); // To be implemented
 	
 	geometryList->setTabPosition(QTabWidget::West);
 	
@@ -237,6 +307,15 @@ void Interface::createGlobalWidgets() {
 	doseImport    = new QPushButton(tr("Import"));
 	doseImport->setDisabled(true); // To be implemented
 	doseDelete    = new QPushButton(tr("Delete"));
+	
+	ttt = "Select a geometry model filter to view egs_brachy default geometries with.";
+	geometryChooser->setToolTip(ttt);
+	ttt = "Select a calculated dose file.";
+	doseListView->setToolTip(ttt);
+	ttt = "Import an external 3ddose file to the eb_gui database.";
+	doseImport->setToolTip(ttt);
+	ttt = "Delete selected dose file.";
+	doseDelete->setToolTip(ttt);
 	
 	doseGrid  = new QGridLayout();
 	doseFrame = new QFrame();
@@ -358,9 +437,9 @@ void Interface::sourceRepopulate() {
 	sourceListView->clear();
 	for (int i = 0; i < data->libNameSources.size(); i++) {
 		if (data->libDirSources[i].contains(QString("/")+sourceChooser->currentText()+"_")) {
-			if (data->libNameSources[i].endsWith("_wrapped") && sourceShowWrapped->isChecked())
+			if (data->libNameSources[i].endsWith("_wrapped") && !sourceShowWrapped->isChecked())
 				sourceListView->addItem(data->libNameSources[i]);
-			else if (!data->libNameSources[i].endsWith("_wrapped") && !sourceShowWrapped->isChecked())
+			else if (!data->libNameSources[i].endsWith("_wrapped") && sourceShowWrapped->isChecked())
 				sourceListView->addItem(data->libNameSources[i]);
 		}
 	}
