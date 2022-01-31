@@ -2151,7 +2151,7 @@ void doseInterface::histoRender() {
 	plot->createDefaultAxes();
 	plot->axes()[0]->setTitleText("dose / Gy");
 	savePlotX = "dose / Gy";
-	plot->axes()[0]->setRange(data[0].dose,data.last().dose);
+	plot->axes()[0]->setRange(0,data.last().dose);
 	
 	if (histDiffBox->isChecked()) {
 		plot->setTitle("Dose Differential Histogram");
