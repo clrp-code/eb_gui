@@ -70,14 +70,15 @@
 #define REGEX_NATURAL "[-]?\\d*"
 #define REGEX_NATURAL_POS "\\d*"
 
-// 1) (\\d - Look for one decimal character
-// 2) (\\d)?) - Allow a second decimal character
+// 1) \\d - Look for one decimal character
+// 2) (\\d)? - Allow a second decimal character
+// 3) ([.]\\d*)? - Allow a period followed by up to five decimal characters afterwards
 // 3) | - Or
 // 4) 100 - Look for 100
-#define REGEX_PERCENT "((\\d(\\d)?)|100)([.]\\d*)"
+#define REGEX_PERCENT "((\\d(\\d)?([.]\\d{1,5})?)|100)"
 
 // Same as above, but add a space or comma afterwards and allow repetition
-#define REGEX_PERCENT_ARR "(((\\d(\\d)?)|100)([.]\\d*)[ ,])*"
+#define REGEX_PERCENT_ARR "(((\\d(\\d)?([.]\\d{1,5})?)|100)[ ,])*"
 
 // Forward declare the EGS_geom class defined at the bottom so that they can
 // be included in the layout
