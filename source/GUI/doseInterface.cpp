@@ -203,10 +203,10 @@ void doseInterface::createLayout() {
 	legendLabel       = new QLabel("legend");
 	legendBox         = new QComboBox();
 	legendBox->addItem("none");
-	legendBox->addItem("phantom");
+	legendBox->addItem("VPM");
 	legendBox->addItem("colour map");
 	legendBox->addItem("isodose");
-	ttt = tr("Add legend to image, and select whether it displays phantom, colour map, or isodose data.");
+	ttt = tr("Add legend to image, and select whether it displays VPM, colour map, or isodose data.");
 	legendLabel->setToolTip(ttt);
 	legendBox->setToolTip(ttt);
 	
@@ -258,7 +258,7 @@ void doseInterface::createLayout() {
 	
 	phantFrame    = new QFrame();
 	phantLayout   = new QGridLayout();
-	phantLabel    = new QLabel("Phantom");
+	phantLabel    = new QLabel("VPM");
 	
 	mediaButton   = new QRadioButton("media");
 	densityButton = new QRadioButton("density");
@@ -417,11 +417,11 @@ void doseInterface::createLayout() {
 	
 	// Histogram ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 	// Phantom selection
-	histPhantLabel  = new QLabel("Phantom");
+	histPhantLabel  = new QLabel("VPM");
 	histPhant       = new EGSPhant();
 	histPhantSelect = new QComboBox();
 	histPhantSelect->addItem("none");
-	ttt = tr("The phantom used to select structures and media for filtering dose data.");
+	ttt = tr("The VPM used to select structures and media for filtering dose data.");
 	histPhantLabel->setToolTip(ttt);
 	histPhantSelect->setToolTip(ttt);
 	
@@ -717,7 +717,7 @@ void doseInterface::createLayout() {
 	profPhant         = new EGSPhant();
 	profPhantSelect   = new QComboBox();
 	profPhantPreview  = new QLabel();
-	ttt = tr("Load an egsphant file to create an image showing the profile within the phantom.");
+	ttt = tr("Load an egsphant file to create an image showing the profile within the VPM.");
 	profPhantLabel->setToolTip(ttt);
 	profPhantSelect->setToolTip(ttt);
 	profPhantPreview->setToolTip(ttt);
@@ -744,7 +744,7 @@ void doseInterface::createLayout() {
 	profMediaButton   = new QRadioButton("Media");
 	profDensityButton = new QRadioButton("Density");
 	profMediaButton->setChecked(true);
-	ttt = tr("Select phantom media or density to generate image.");
+	ttt = tr("Select VPM media or density to generate image.");
 	profMediaButton->setToolTip(ttt);
 	profDensityButton->setToolTip(ttt);
 	
@@ -1394,7 +1394,7 @@ void doseInterface::loadEgsphant() {
 	
 	if (i >= parent->data->localDirPhants.size()) {
 		QMessageBox::warning(0, "Index error",
-		tr("Somehow the selected egsphant index is larger than the local phantom count.  Aborting"));		
+		tr("Somehow the selected egsphant index is larger than the local VPM count.  Aborting"));		
 		return;
 	}
 	
@@ -1846,7 +1846,7 @@ void doseInterface::loadFilterEgsphant() {
 	
 	if (i >= parent->data->localDirPhants.size()) {
 		QMessageBox::warning(0, "Index error",
-		tr("Somehow the selected egsphant index is larger than the local phantom count.  Aborting"));		
+		tr("Somehow the selected egsphant index is larger than the local VPM count.  Aborting"));		
 		return;
 	}
 	
@@ -1907,7 +1907,7 @@ void doseInterface::loadMaskEgsphant() {
 	
 	if (i >= localDirMasks.size()) {
 		QMessageBox::warning(0, "Index error",
-		tr("Somehow the selected mask index is larger than the local phantom count.  Aborting"));		
+		tr("Somehow the selected mask index is larger than the local VPM count.  Aborting"));		
 		return;
 	}
 	
@@ -2407,7 +2407,7 @@ void doseInterface::outputMetrics() {
 	QString allowedMedia = "", allMedia = EGSPHANT_CHARS;
 	if (selectedMedia.size()) {
 		filterInfo += 2;
-		text += QString("Data filtered to only include doses within ")+histPhantSelect->currentText()+" phantom voxels containing:,";
+		text += QString("Data filtered to only include doses within ")+histPhantSelect->currentText()+" VPM voxels containing:,";
 		for (int i = 0; i < selectedMedia.size(); i++) {
 			allowedMedia += allMedia[histMediumView->row(selectedMedia[i])];
 			text += selectedMedia[i]->text()+",";
@@ -2623,7 +2623,7 @@ void doseInterface::outputRawData() {// Return
 	QString allowedMedia = "", allMedia = EGSPHANT_CHARS;
 	if (selectedMedia.size()) {
 		filterInfo += 2;
-		text += QString("Data filtered to only include doses within ")+histPhantSelect->currentText()+" phantom voxels containing:,";
+		text += QString("Data filtered to only include doses within ")+histPhantSelect->currentText()+" VPM voxels containing:,";
 		for (int i = 0; i < selectedMedia.size(); i++) {
 			allowedMedia += allMedia[histMediumView->row(selectedMedia[i])];
 			text += selectedMedia[i]->text()+",";
@@ -2841,7 +2841,7 @@ void doseInterface::loadPreviewEgsphant() {
 	
 	if (i >= parent->data->localDirPhants.size()) {
 		QMessageBox::warning(0, "Index error",
-		tr("Somehow the selected egsphant index is larger than the local phantom count.  Aborting"));		
+		tr("Somehow the selected egsphant index is larger than the local VPM count.  Aborting"));		
 		return;
 	}
 	
