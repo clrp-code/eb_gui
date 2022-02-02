@@ -40,10 +40,6 @@
 
 // Constructors
 ebInterface::ebInterface()
-// [\d*] one digit followed by:
-// 1) some number of digits
-// 2) (e|E)[+]?\d{1,2} character e or E, an optional +, then 1-2 digits 
-// 3) .\d*(e|E)[+]?\d{1,2} dot ., some number of digits, character e or E, an optional +, then 1-2 digits 
 	: allowedNums(QRegExp(REGEX_REAL_POS)) {
 	parent = (Interface*)parentWidget();
 	
@@ -57,10 +53,6 @@ ebInterface::ebInterface()
 }
 
 ebInterface::ebInterface(Interface* p)
-// [\d*] one digit followed by:
-// 1) some number of digits
-// 2) (e|E)[+]?\d{1,2} character e or E, an optional +, then 1-2 digits 
-// 3) .\d*(e|E)[+]?\d{1,2} dot ., some number of digits, character e or E, an optional +, then 1-2 digits
 	: allowedNums(QRegExp(REGEX_REAL_POS)) {
 	parent = p;
 	
@@ -204,19 +196,18 @@ void ebInterface::createLayout() {
 	njobBox->setToolTip(ttt);
 	
 	// Run egs_brachy
-	runButton         = new QPushButton(tr("Run egs_brachy"));
-	
+	runButton = new QPushButton(tr("Run egs_brachy"));
 	ttt = tr("Start egs_brachy simulation and create 3ddose files.");
 	runButton->setToolTip(ttt);
 	
 	// Other options
 	saveButton = new QPushButton("Save egsinp");
 	ttt = tr("Save egsinp file for use outside of eb_gui.");
-	runButton->setToolTip(ttt);
+	saveButton->setToolTip(ttt);
 	
 	egsViewButton = new QPushButton("Run egs_view");
 	ttt = tr("Launch egs_view with current egsinp geometry.  Loading large egsphants may take a while.");
-	runButton->setToolTip(ttt);
+	egsViewButton->setToolTip(ttt);
 	
 	// Only allow ints
 	ncaseEdit->setValidator(&allowedNums);
@@ -335,6 +326,10 @@ void ebInterface::refresh() {
 void ebInterface::loadTransport() {
 	QString path = QFileDialog::getOpenFileName(this, tr("Load transportation file"), parent->data->eb_location+"/lib/transport", tr("Transportation file (*)"));
 	
+	// Check to see if path is empty
+	if (path.length() < 1)
+		return;
+	
 	// Check if it works
 	QFile file(path);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -372,6 +367,10 @@ void ebInterface::loadTransport() {
 void ebInterface::loadMaterial() {
 	QString path = QFileDialog::getOpenFileName(this, tr("Load material file"), parent->data->eb_location+"/lib/media", tr("Material file (*.dat)"));
 	
+	// Check to see if path is empty
+	if (path.length() < 1)
+		return;
+	
 	// Check if it works
 	QFile file(path);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -401,6 +400,10 @@ void ebInterface::loadMaterial() {
 
 void ebInterface::loadMuen() {
 	QString path = QFileDialog::getOpenFileName(this, tr("Load material file"), parent->data->eb_location+"/lib/muen", tr("Material file (*.muendat)"));
+	
+	// Check to see if path is empty
+	if (path.length() < 1)
+		return;
 	
 	// Check if it works
 	QFile file(path);
@@ -433,8 +436,8 @@ void ebInterface::loadMuen() {
 void ebInterface::runEB() {
 	// Is there currently a selected phantom, source, and transformation file
 	if (parent->phantomListView->selectedItems().size() != 1) {
-		QMessageBox::information(0, "phantom error",
-        tr("No phantom selected."));
+		QMessageBox::information(0, "VPM error",
+        tr("No virtual patient model selected."));
 		return;
 	}
 	if (parent->sourceListView->selectedItems().size() != 1) {
@@ -443,8 +446,8 @@ void ebInterface::runEB() {
 		return;
 	}
 	if (parent->transformationListView->selectedItems().size() != 1) {
-		QMessageBox::information(0, "transformation error",
-        tr("No transformation file selected."));
+		QMessageBox::information(0, "source location error",
+        tr("No source location file selected."));
 		return;
 	}
 	
@@ -488,7 +491,7 @@ void ebInterface::runEB() {
 	QTextStream output(&egsinp);
 	output << parent->egsinp->buildInput();
 	
-	ebKillFlag = false; // Reset kill flag
+	ebKillFlag = false; // Reset kill flag, tells user if job failed or was killed
 	ebProcess->setWorkingDirectory(parent->data->eb_location); // Go to eb directory
 	
 	if (njobBox->currentIndex() == 0) // Interactive
