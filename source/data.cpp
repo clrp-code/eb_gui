@@ -40,6 +40,7 @@
 
 //#define DEBUG_BUILDEGSPHANT // Comment out
 #define ASSUME_PERMANENT_LDR // Used when there is no specification
+#define INTERPOLATE_CONTOURS // Used to create a new contour on slices between two contours from the same structure
 
 int Data::loadDefaults() {
 	QProcessEnvironment envVars = QProcessEnvironment::systemEnvironment();
@@ -180,7 +181,7 @@ int Data::loadDefaults() {
 	if (!QDir(gui_location+"/database/egsphant/").exists())
 		QDir().mkdir(gui_location+"/database/egsphant/");
 	
-	files = new QDirIterator(gui_location+"/database/egsphant/", {"*.egsphant","*.egsphant.gz","*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories); // #nofilter #nomakeup //
+	files = new QDirIterator(gui_location+"/database/egsphant/", {"*.egsphant","*.egsphant.gz"}, QDir::NoFilter, QDirIterator::Subdirectories); // #nofilter #nomakeup //
 	while(files->hasNext()) {
 		files->next();
 		localNamePhants << files->fileName();
@@ -374,13 +375,11 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 			std::cout << phant->media[i].toStdString() << " - " << mediaIndex[phant->media[i]].toLatin1() << "\n";
 	#endif
 	
-	
 	*log = *log + "\nFinal media array:\n";
 	for (int i = 0; i < phant->media.size(); i++)
 		*log = *log + "  " + mediaIndex[phant->media[i]] + " - " + phant->media[i] + "\n";
 	
 	*log = *log + "----------------------------------\n";
-	
 	
 	// Fetch HU units map from the file
 	*log = *log + "--- HU to density conversion data ---\n";
@@ -859,7 +858,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 	increment = 30.0/double(phant->nz); // 30%
 	
 	*log = *log + "Added slices z heights:\n\n";
-	
+		
 	for (int k = 0; k < phant->nz; k++) { // Z //
 		emit madeProgress(increment);
 		zMid = (phant->z[k]+phant->z[k+1])/2.0;
@@ -869,12 +868,49 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 		if (contourNum > 0) {
 			zIndex.clear(); // Reset lookup
 			for (int l = 0; l < contourNum; l++) {
+					// Either find a struct defined within a voxel z
+					#if defined(INTERPOLATE_CONTOURS)
+					bool foundFlag = false;
+					for (int m = 0; m < structZ[structIndex->at(l)].size(); m++) {
+						// If slice j of struct i on the same plane as slice k of the phantom
+						if (abs(structZ[structIndex->at(l)][m] - zMid) < (phant->z[k+1]-phant->z[k])/2.0) { // && tasIndex->at(l) != -1) { // Don't filter non-default to be able to tally
+							zIndex << QPoint(structIndex->at(l),m); // Add it to lookup
+							foundFlag = true;
+						}
+					}
+					// Or, if the struct has a z above and below it, transpose the nearest struct in z
+					if (!foundFlag) {
+						double below = -1000000, above = 1000000, diff; // Hopefully huge lower/upper bounds
+						int iBelow = -1, iAbove = -1;
+						for (int m = 0; m < structZ[structIndex->at(l)].size(); m++) {
+							diff = structZ[structIndex->at(l)][m] - zMid;
+							if (diff > 0 && diff < above) {
+								above = diff;
+								iAbove = m;
+							}
+							if (diff < 0 && diff > below) {
+								below = diff;
+								iBelow = m;
+							}
+						}
+						
+						// If there is a contour above and below this slice, assign the closest contour
+						if (below != -1000000 && above != 1000000) {
+							if (above < -below)
+								zIndex << QPoint(structIndex->at(l),iAbove); // Add it to lookup
+							else
+								zIndex << QPoint(structIndex->at(l),iBelow); // Add it to lookup
+						}
+					}
+					#elif
+					// Find the first struct within the voxel
 					for (int m = 0; m < structZ[structIndex->at(l)].size(); m++) {
 						// If slice j of struct i on the same plane as slice k of the phantom
 						if (abs(structZ[structIndex->at(l)][m] - zMid) < (phant->z[k+1]-phant->z[k])/2.0) { // && tasIndex->at(l) != -1) { // Don't filter non-default to be able to tally
 							zIndex << QPoint(structIndex->at(l),m); // Add it to lookup
 						}
 					}
+					#endif
 				}
 		}
 		

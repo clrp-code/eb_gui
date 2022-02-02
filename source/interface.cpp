@@ -952,10 +952,13 @@ int Interface::populateEgsinp() {
 			fileName += ".tg43.geom";
 			
 			QFile geomFile (data->gui_location+"/database/egsphant/"+fileName);
-			if (!geomFile.remove()) { // If it exists, delete it and if it doesn't, add the location
-				data->localDirPhants << data->gui_location+"/database/egsphant/";
-				data->localNamePhants << fileName;
-			}
+			//if (!geomFile.remove()) { // If it exists, delete it and if it doesn't, add the location
+			//	data->localDirPhants << data->gui_location+"/database/egsphant/";
+			//	data->localNamePhants << fileName;
+			//}
+			
+			if (geomFile.exists())
+				geomFile.remove();
 			
 			if (geomFile.open(QFile::WriteOnly | QFile::Truncate)) {
 				QTextStream out(&geomFile);
@@ -964,7 +967,7 @@ int Interface::populateEgsinp() {
 			geomFile.close();
 			
 			egsinp->phantomFile = data->gui_location+"/database/egsphant/"+fileName;
-			phantomRepopulate();
+			//phantomRepopulate();
 		}
 		else {
 			QMessageBox::warning(0, "TG-43 error",
@@ -1100,6 +1103,8 @@ int Interface::populateEgsinp() {
 			else { // Assume I-125 otherwise
 				half_life = 59.49; // Pre-set parameter
 			}
+
+			// Note, the tempScale in not permanent needs a scaling factor of the highest seed weight
 
 			double tau = (half_life/log(2))*24.0; // go from half-life in days to mean lifetime in hours
 			if (!sourcePermTime->isChecked())
