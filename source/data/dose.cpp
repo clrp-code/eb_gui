@@ -1063,8 +1063,20 @@ void Dose::getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSP
 			yLen = (cy[j+1]-cy[j]);
             for (int i = 0; i < x; i++) {
 				xVal = (cx[i]+cx[i+1])/2.0;
+				
+				if (allowedChars.contains(media->getMedia(xVal, yVal, zVal)) ||
+					mask->getMedia(xVal, yVal, zVal) == 50)
+					qDebug() << "Phantom media" << media->getMedia(xVal, yVal, zVal)
+							 << "- Mask media" << mask->getMedia(xVal, yVal, zVal);
+						 
+				if (allowedChars.contains(media->getMedia(xVal, yVal, zVal)))
+					qDebug() << "\tProstate media";
+				if (mask->getMedia(xVal, yVal, zVal) == 50)
+					qDebug() << "\tMask satisfaction";
+						 
 				if (allowedChars.contains(media->getMedia(xVal, yVal, zVal)) &&
 					mask->getMedia(xVal, yVal, zVal) == 50) {
+					qDebug() << "\t\tWe are in";
 					xLen = (cx[i+1]-cx[i]);
 					vol = xLen*yLen*zLen;
 					(*volume) += vol;

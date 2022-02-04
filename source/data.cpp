@@ -706,7 +706,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 	QList<QPoint> zIndex, yIndex;
 	QList<QPoint>::iterator p;
 	double zMid, yMid, xMid, temp;
-	int tempHU = 0, n = 0, q = 0, inStruct = 0, nj = 0;
+	int tempHU = 0, n = 0, q = 0, inStruct = 0;
 	
 	// Convert HU to density and media
     increment = 15.0/double(phant->nz); // 45% is making the egsphant (15 for density, 30 for media)
@@ -1000,8 +1000,8 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 								// Count structure volume
 								structVol[structName[p->x()]]++;
 								
-								// Setup mask
-								(*makeMasks)[p->x()]->m[i][nj][k] = 50;
+								// Setup mask (revert structIndex to global index)
+								(*makeMasks)[p->x()]->m[i][j][k] = 50;
 							}
 					}
 				}
@@ -1010,7 +1010,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 					
 				if (inStruct > -1) { // Change TAS if we are in structure
 					// Check to see if a TAS is assigned
-					if (structToTas.contains(inStruct)) 
+					if (structToTas.contains(inStruct))
 						q = structToTas[inStruct];
 				}		
 

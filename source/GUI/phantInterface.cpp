@@ -546,7 +546,7 @@ void phantInterface::createEGSphant() {
 		parent->phantomRepopulate();
 		
 		// Output and delete masks
-		for (int i = 0; i < makeMasks.size(); i++) {
+		for (int i = 0; i < structIndex.size(); i++) {
 			if (contourTASMask[i]->isChecked())
 				makeMasks[i]->savegzEGSPhantFile(parent->data->gui_location+"/database/mask/"+fileName+"."+contourTASLabel[i]->text()+".mask.egsphant.gz");
 			delete makeMasks[i];
