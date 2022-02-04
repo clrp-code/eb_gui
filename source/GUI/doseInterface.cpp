@@ -2361,7 +2361,7 @@ void doseInterface::calcMetrics() {
 	text        += QString("Average dose / Gy").left(24).rightJustified(24,' ')+"|"+average+"\n";
 	text        += QString("Average uncertainty / Gy").left(24).rightJustified(24,' ')+"|"+uncertainty+"\n";
 	text        += QString("Number of voxels").left(24).rightJustified(24,' ')+"|"+voxels+"\n";
-	text        += QString("Total volume / %").left(24).rightJustified(24,' ')+"|"+volumes+"\n";
+	text        += QString("Total volume / cc").left(24).rightJustified(24,' ')+"|"+volumes+"\n";
 	
 	for (int i = 0; i < Dx.size(); i++)
 		text += (QString("D")+QString::number(xD[i])+" (%) / Gy").left(24).rightJustified(24,' ')+"|"+Dx[i]+"\n";
@@ -2370,7 +2370,7 @@ void doseInterface::calcMetrics() {
 		text += (QString("D")+QString::number(ccD[i])+" (cc) / Gy").left(24).rightJustified(24,' ')+"|"+Dcc[i]+"\n";
 	
 	for (int i = 0; i < Vx.size(); i++)
-		text += (QString("V")+QString::number(xV[i])+" ("+QString::number(pD)+" Gy) / cm^3").left(24).rightJustified(24,' ')+"|"+Vx[i]+"\n";
+		text += (QString("V")+QString::number(xV[i])+" ("+QString::number(pD)+" Gy) / %").left(24).rightJustified(24,' ')+"|"+Vx[i]+"\n";
 	
 	parent->finishedProgress();
 	
