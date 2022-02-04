@@ -103,7 +103,7 @@ class database : public QObject {
 public:
     // Contains a list of known attribute entries
     QVector <Reference *> lib;
-    // Contains all the accepteable value representations
+    // Contains all the acceptable value representations
     QStringList validVR;
     QStringList implicitVR;
 	

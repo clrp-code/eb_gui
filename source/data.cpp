@@ -37,6 +37,7 @@
 ################################################################################
 */
 #include "data.h"
+#include "interface.h" // Needed for some compiler variables
 
 //#define DEBUG_BUILDEGSPHANT // Comment out
 #define ASSUME_PERMANENT_LDR // Used when there is no specification
@@ -128,8 +129,6 @@ int Data::loadDefaults() {
 			transport_location.replace(QString("$")+envNames[i],envVars.value(envNames[i]));
 	}
 	
-	// Check TAS list against TAS_library	
-	
 	// egs_brachy library data
 	QDirIterator* files;
 	files = new QDirIterator(eb_location+"/lib/geometry/sources/", {"*.geom"}, QDir::NoFilter, QDirIterator::Subdirectories); // #nofilter #nomakeup
@@ -181,6 +180,12 @@ int Data::loadDefaults() {
 	if (!QDir(gui_location+"/database/egsphant/").exists())
 		QDir().mkdir(gui_location+"/database/egsphant/");
 	
+	if (!QDir(gui_location+"/database/transformation/").exists())
+		QDir().mkdir(gui_location+"/database/transformation/");
+	
+	if (!QDir(gui_location+"/database/dose/").exists())
+		QDir().mkdir(gui_location+"/database/dose/");
+	
 	files = new QDirIterator(gui_location+"/database/egsphant/", {"*.egsphant","*.egsphant.gz"}, QDir::NoFilter, QDirIterator::Subdirectories); // #nofilter #nomakeup //
 	while(files->hasNext()) {
 		files->next();
@@ -188,9 +193,6 @@ int Data::loadDefaults() {
 		localDirPhants << files->path();
 	}
 	delete files;
-	
-	if (!QDir(gui_location+"/database/transformation/").exists())
-		QDir().mkdir(gui_location+"/database/transformation/");
 	
 	files = new QDirIterator(gui_location+"/database/transformation/", QDirIterator::Subdirectories);
 	while(files->hasNext()) {
@@ -203,9 +205,6 @@ int Data::loadDefaults() {
 		}
 	}
 	delete files;
-	
-	if (!QDir(gui_location+"/database/dose/").exists())
-		QDir().mkdir(gui_location+"/database/dose/");
 	
 	files = new QDirIterator(gui_location+"/database/dose/", {"*.3ddose","*.3ddose.gz"}, QDir::NoFilter, QDirIterator::Subdirectories);  // #nofilter #nomakeup
 	while(files->hasNext()) {
@@ -300,16 +299,24 @@ Data::~Data(){
 
 int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defaultTAS,
 					    QVector <int>* structIndex, QVector <int>* tasIndex,
-					    QVector <EGSPhant*>* makeMasks) {							
+					    QVector <EGSPhant*>* makeMasks, double buffer) {
 	#if defined(DEBUG_BUILDEGSPHANT)
 		std::cout << "Building egsphant\n"; std::cout.flush();
 	#endif
 	
 	newProgress("Building egsphant");
 	
-	QString medIdx = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	QString medIdx = EGSPHANT_CHARS;
 	QMap <QString, QChar> mediaIndex;
 	QMap <int, int> structToTas;
+	
+	// Set min-max indices to highest or lowest possible values
+	double xminBound = std::numeric_limits<double>::max();
+	double yminBound = std::numeric_limits<double>::max();
+	double zminBound = std::numeric_limits<double>::max();
+	double xmaxBound = std::numeric_limits<double>::lowest();
+	double ymaxBound = std::numeric_limits<double>::lowest();
+	double zmaxBound = std::numeric_limits<double>::lowest();
 	
 	// Create a mapping from struct indices to non-default TAS indices for later
 	for (int i = 0; i < contourNum; i++) {
@@ -523,9 +530,6 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 			rescaleM = temp.toDouble();
 			rescaleFlag++;
 		}
-		//else
-		//	return 206;
-		// If not found, just don't rescale HU
 		
 		// Rescale HU intercept (assuming type is HU)
 		tempAtt = CT_data[i]->getEntry(0x0028,0x1052);
@@ -538,9 +542,6 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 			rescaleB = temp.toDouble();
 			rescaleFlag++;
 		}
-		//else
-		//	return 207;
-		// If not found, just don't rescale HU
 		
 		// HU values
 		tempAtt = CT_data[i]->getEntry(0x7FE0,0x0010);
@@ -583,7 +584,6 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 	*log = *log + "-----------------------------\n";
 	
 	// Build the actual egsphant
-	
 	#if defined(DEBUG_BUILDEGSPHANT)
 		std::cout << "Constructing egsphant dimensions from "
 		<< CT_data.size() << " (" << xPix[0] << "x" << yPix[0] << ") slices\n";  std::cout.flush();
@@ -613,7 +613,6 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 		phant->y[i] = (imagePos[0][1]+(i-0.5)*xySpacing[0][1])/10.0;
 
 	// Define z bound values
-	
 	#if defined(DEBUG_BUILDEGSPHANT)
 		std::cout << "  Assigning slice z bounds\n"; std::cout.flush();
 	#endif
@@ -627,24 +626,12 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 	}
 	phant->z.last() = nextZ/10.0;
 		
-	// Setup media array
+	// Set up media array
 	{
 		QVector <char> mz(phant->nz, 0);
 		QVector <QVector <char> > my(phant->ny, mz);
 		QVector <QVector <QVector <char> > > mx(phant->nx, my);
 		phant->m = mx;
-	}
-	
-	// Setup masks before allocating density array to save space
-	
-	#if defined(DEBUG_BUILDEGSPHANT)
-		std::cout << "Making masks\n"; std::cout.flush();
-	#endif
-	
-	for (int i = 0; i < contourNum; i++) {
-		EGSPhant* temp = new EGSPhant;
-		temp->makeMask(phant);
-		makeMasks->append(temp);
 	}
 		
 	// Setup density array
@@ -656,7 +643,6 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 	}
 		
 	// Get bounding rectangles over each struct
-	
 	#if defined(DEBUG_BUILDEGSPHANT)
 		std::cout << "Constructing bounds around the structs\n"; std::cout.flush();
 	#endif
@@ -685,13 +671,36 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 				std::cout << structRect[i][j].bottom() << ",";
 				std::cout << structRect[i][j].right() << ")\n"; std::cout.flush();
 			#endif
+			
+			// Track the exact boundaries of all the structures, remember y is flipped
+			if (buffer != -1) {
+				if (xminBound > structRect[i][j].left())
+					xminBound = structRect[i][j].left();
+				if (yminBound > structRect[i][j].top())
+					yminBound = structRect[i][j].top();
+				if (zminBound > structZ[i][j])
+					zminBound = structZ[i][j];
+				if (xmaxBound < structRect[i][j].right())
+					xmaxBound = structRect[i][j].right();
+				if (ymaxBound < structRect[i][j].bottom())
+					ymaxBound = structRect[i][j].bottom();
+				if (zmaxBound < structZ[i][j])
+					zmaxBound = structZ[i][j];
+			}
 		}
 	}
+		
+	// Push the limits by the boundary buffer
+	xminBound -= buffer;
+	yminBound -= buffer;
+	zminBound -= buffer;
+	xmaxBound += buffer;
+	ymaxBound += buffer;
+	zmaxBound += buffer;
 	
 	// Arrays that hold the struct numbers and center voxel values to be used
-	
 	#if defined(DEBUG_BUILDEGSPHANT)
-		std::cout << "Assigning density and media using HU\n"; std::cout.flush();
+		std::cout << "Assigning density using HU\n"; std::cout.flush();
 	#endif
 	
 	QList<QPoint> zIndex, yIndex;
@@ -705,13 +714,8 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 	
 	for (int k = 0; k < phant->nz; k++) { // Z //
 		emit madeProgress(increment);
-		zMid = (phant->z[k]+phant->z[k+1])/2.0;
-		
 		for (int j = 0; j < phant->ny; j++) { // Y //
-			yMid = (phant->y[j]+phant->y[j+1])/2.0;
-			
 			for (int i = 0; i < phant->nx; i++) { // X //
-				xMid = (phant->x[i]+phant->x[i+1])/2.0;
 				
 				tempHU = HU[k][j][i];
 				
@@ -720,6 +724,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 				for (n = 0; n < HUMap.size()-1; n++)
 					if (HUMap[n] <= tempHU && tempHU < HUMap[n+1])
 						break;
+					
 				if (tempHU < HUMap[0])
 					n = 0;
 				
@@ -852,12 +857,44 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 	
 	*log = *log + "-----------------------------------\n";
 		
+	// Truncate phantom to new boundaries if requested
+	if (buffer != -1) {
+		*log = *log + "--- Truncating the phantom limits ---\n";
+		
+		*log = *log + "Initial phantom specifications:\n";
+		*log = *log + QString::number(phant->nz) + " z slices ranging from " + QString::number(phant->z[0]) + " to " + QString::number(phant->z.last()) + "\n";
+		*log = *log + QString::number(phant->nx) + " x voxels ranging from " + QString::number(phant->x[0]) + " to " + QString::number(phant->x.last()) + "\n";
+		*log = *log + QString::number(phant->ny) + " y voxels ranging from " + QString::number(phant->y[0]) + " to " + QString::number(phant->y.last()) + "\n\n";
+		
+		phant->redefineBounds(xminBound, yminBound, zminBound, xmaxBound, ymaxBound, zmaxBound);
+		*log = *log + "Truncated phantom boundaries to contain all structures with a buffer of " + QString::number(buffer) + " cm.\n\n";
+				
+		*log = *log + "Final phantom specifications:\n";
+		*log = *log + QString::number(phant->nz) + " z slices ranging from " + QString::number(phant->z[0]) + " to " + QString::number(phant->z.last()) + "\n";
+		*log = *log + QString::number(phant->nx) + " x voxels ranging from " + QString::number(phant->x[0]) + " to " + QString::number(phant->x.last()) + "\n";
+		*log = *log + QString::number(phant->ny) + " y voxels ranging from " + QString::number(phant->y[0]) + " to " + QString::number(phant->y.last()) + "\n";
+		
+		*log = *log + "-----------------------------------\n";
+	}
+	
+	// Set up masks
+	#if defined(DEBUG_BUILDEGSPHANT)
+		std::cout << "Making masks\n"; std::cout.flush();
+	#endif
+	
+	for (int i = 0; i < contourNum; i++) {
+		EGSPhant* temp = new EGSPhant;
+		temp->makeMask(phant);
+		makeMasks->append(temp);
+	}
+		
 	// Convert density to media
 	*log = *log + "--- Assigning the egsphant media ---\n";
 	emit newProgressName("Building media arrays");
 	increment = 30.0/double(phant->nz); // 30%
+	bool structAssigned = false;
 	
-	*log = *log + "Added slices z heights:\n\n";
+	*log = *log + "Added slices z midpoints:\n\n";
 		
 	for (int k = 0; k < phant->nz; k++) { // Z //
 		emit madeProgress(increment);
@@ -870,46 +907,46 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 			for (int l = 0; l < contourNum; l++) {
 					// Either find a struct defined within a voxel z
 					#if defined(INTERPOLATE_CONTOURS)
-					bool foundFlag = false;
-					for (int m = 0; m < structZ[structIndex->at(l)].size(); m++) {
-						// If slice j of struct i on the same plane as slice k of the phantom
-						if (abs(structZ[structIndex->at(l)][m] - zMid) < (phant->z[k+1]-phant->z[k])/2.0) { // && tasIndex->at(l) != -1) { // Don't filter non-default to be able to tally
-							zIndex << QPoint(structIndex->at(l),m); // Add it to lookup
-							foundFlag = true;
-						}
-					}
-					// Or, if the struct has a z above and below it, transpose the nearest struct in z
-					if (!foundFlag) {
-						double below = -1000000, above = 1000000, diff; // Hopefully huge lower/upper bounds
-						int iBelow = -1, iAbove = -1;
+						bool foundFlag = false;
 						for (int m = 0; m < structZ[structIndex->at(l)].size(); m++) {
-							diff = structZ[structIndex->at(l)][m] - zMid;
-							if (diff > 0 && diff < above) {
-								above = diff;
-								iAbove = m;
-							}
-							if (diff < 0 && diff > below) {
-								below = diff;
-								iBelow = m;
+							// If slice j of struct i on the same plane as slice k of the phantom
+							if (abs(structZ[structIndex->at(l)][m] - zMid) < (phant->z[k+1]-phant->z[k])/2.0) { // && tasIndex->at(l) != -1) { // Don't filter non-default to be able to tally
+								zIndex << QPoint(structIndex->at(l),m); // Add it to lookup
+								foundFlag = true;
 							}
 						}
-						
-						// If there is a contour above and below this slice, assign the closest contour
-						if (below != -1000000 && above != 1000000) {
-							if (above < -below)
-								zIndex << QPoint(structIndex->at(l),iAbove); // Add it to lookup
-							else
-								zIndex << QPoint(structIndex->at(l),iBelow); // Add it to lookup
+						// Or, if the struct has a z above and below it, transpose the nearest struct in z
+						if (!foundFlag) {
+							double below = -1000000, above = 1000000, diff; // Hopefully huge lower/upper bounds
+							int iBelow = -1, iAbove = -1;
+							for (int m = 0; m < structZ[structIndex->at(l)].size(); m++) {
+								diff = structZ[structIndex->at(l)][m] - zMid;
+								if (diff > 0 && diff < above) {
+									above = diff;
+									iAbove = m;
+								}
+								if (diff < 0 && diff > below) {
+									below = diff;
+									iBelow = m;
+								}
+							}
+							
+							// If there is a contour above and below this slice, assign the closest contour
+							if (below != -1000000 && above != 1000000) {
+								if (above < -below)
+									zIndex << QPoint(structIndex->at(l),iAbove); // Add it to lookup
+								else
+									zIndex << QPoint(structIndex->at(l),iBelow); // Add it to lookup
+							}
 						}
-					}
 					#elif
-					// Find the first struct within the voxel
-					for (int m = 0; m < structZ[structIndex->at(l)].size(); m++) {
-						// If slice j of struct i on the same plane as slice k of the phantom
-						if (abs(structZ[structIndex->at(l)][m] - zMid) < (phant->z[k+1]-phant->z[k])/2.0) { // && tasIndex->at(l) != -1) { // Don't filter non-default to be able to tally
-							zIndex << QPoint(structIndex->at(l),m); // Add it to lookup
+						// Find the first struct within the voxel
+						for (int m = 0; m < structZ[structIndex->at(l)].size(); m++) {
+							// If slice j of struct i on the same plane as slice k of the phantom
+							if (abs(structZ[structIndex->at(l)][m] - zMid) < (phant->z[k+1]-phant->z[k])/2.0) { // && tasIndex->at(l) != -1) { // Don't filter non-default to be able to tally
+								zIndex << QPoint(structIndex->at(l),m); // Add it to lookup
+							}
 						}
-					}
 					#endif
 				}
 		}
@@ -923,7 +960,6 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 		
 		for (int j = 0; j < phant->ny; j++) { // Y //
 			yMid = (phant->y[j]+phant->y[j+1])/2.0;
-			nj = phant->ny-1-j;
 		
 			// Preprocess step to check which structs to look up on this pixel column\n
 			// yIndex is going to have all indices of structPos that we need to look up
@@ -946,8 +982,8 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 			
 			for (int i = 0; i < phant->nx; i++) { // X //
 				xMid = (phant->x[i]+phant->x[i+1])/2.0;
-				
 				temp = phant->d[i][j][k];
+				structAssigned = false;
 				
 				// Check if we are in a structure
 				inStruct = -1;
@@ -956,8 +992,16 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 					// If row p->y() of struct p->x() on the same row as slice k,j,i of the phantom
 						if (structRect[p->x()][p->y()].left() <= xMid && xMid <= structRect[p->x()][p->y()].right())
 							if (structPos[p->x()][p->y()].containsPoint(QPointF(xMid,yMid), Qt::OddEvenFill)) {
-								inStruct = p->x();
-								break; // Assign first struct found and quit, assumed highest priority
+								if (!structAssigned) {
+									inStruct = p->x();
+									structAssigned = true; // Assign first struct found and quit, assumed highest priority
+								}
+								
+								// Count structure volume
+								structVol[structName[p->x()]]++;
+								
+								// Setup mask
+								(*makeMasks)[p->x()]->m[i][nj][k] = 50;
 							}
 					}
 				}
@@ -965,12 +1009,6 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 				q = defaultTAS; // Default tissue assignment scheme
 					
 				if (inStruct > -1) { // Change TAS if we are in structure
-					// Count structure volume
-					structVol[structName[inStruct]]++;
-					
-					// Setup mask
-					(*makeMasks)[inStruct]->m[i][nj][k] = 50;
-					
 					// Check to see if a TAS is assigned
 					if (structToTas.contains(inStruct)) 
 						q = structToTas[inStruct];

@@ -96,6 +96,10 @@ public:
 	QLabel*              defaultTASLabel;
 	QComboBox*           defaultTASBox;
 	
+	QCheckBox*           truncBox;
+	QLabel*              truncLabel;
+	QLineEdit*           truncEdit;
+	
 	QLabel*              contourTASMaskLabel;
 	QLabel*              contourTASLabelLabel;
 	QLabel*              contourTASBoxLabel;

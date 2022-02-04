@@ -168,6 +168,18 @@ void phantInterface::createLayout() {
 	defaultTASBox        = new QComboBox();
 	defaultTASBox->addItems(parent->data->TAS_names);
 	
+	truncBox   = new QCheckBox(tr("Truncate to structures")); 
+	truncLabel = new QLabel(tr("Truncation buffer (cm)"));  
+	truncEdit  = new QLineEdit("2"); 
+	ttt = tr("The phantom can be truncated to a volume that fully contains all contours with"
+			 " plus a chosen buffer in every direction.");
+	truncBox->setToolTip(ttt);
+	truncLabel->setToolTip(ttt);
+	truncEdit->setToolTip(ttt);
+	truncLabel->setDisabled(true);
+	truncEdit->setDisabled(true);
+	truncEdit->setValidator(&allowedNums);
+	
 	ttt = tr("The default TAS will be used to assign media everywhere in the virtual patient, unless otherwise specified in the contour specific TAS selection below.");
 	defaultTASLabel->setToolTip(ttt);
 	defaultTASBox->setToolTip(ttt);
@@ -196,7 +208,10 @@ void phantInterface::createLayout() {
 	contourGrid->addWidget(contourAssign     , 0, 0, 1, 3);
 	contourGrid->addWidget(defaultTASLabel   , 1, 0, 1, 1);
 	contourGrid->addWidget(defaultTASBox     , 1, 1, 1, 2);
-	contourGrid->addWidget(contourScrollArea , 2, 0, 1, 3);
+	contourGrid->addWidget(truncBox          , 2, 0, 1, 1);
+	contourGrid->addWidget(truncLabel        , 2, 1, 1, 1);
+	contourGrid->addWidget(truncEdit         , 2, 2, 1, 1);
+	contourGrid->addWidget(contourScrollArea , 3, 0, 1, 3);
 	
 	for (int i = 0; i < STRUCT_COUNT; i++) {
 		contourTASMask.append(new QCheckBox());
@@ -363,6 +378,9 @@ void phantInterface::connectLayout() {
 	connect(calibLoad, SIGNAL(released()),
 			this, SLOT(loadHU2rho()));
 			
+	connect(truncBox, SIGNAL(stateChanged(int)),
+			this, SLOT(refresh()));
+			
 	connect(ctImportFiles, SIGNAL(released()),
 			this, SLOT(loadCTFiles()));
 	connect(ctImportDir, SIGNAL(released()),
@@ -505,8 +523,15 @@ void phantInterface::createEGSphant() {
 	EGSPhant phantom;
 	QString textLog;
 	int err;
-	err = parent->data->buildEgsphant(&phantom, &textLog, structIndex.size(), defaultTAS,
-								&structIndex, &tasIndex, &makeMasks);
+	
+	if (truncBox->isChecked()) {
+		err = parent->data->buildEgsphant(&phantom, &textLog, structIndex.size(), defaultTAS,
+										  &structIndex, &tasIndex, &makeMasks, truncEdit->text().toDouble());
+	}
+	else {
+		err = parent->data->buildEgsphant(&phantom, &textLog, structIndex.size(), defaultTAS,
+										  &structIndex, &tasIndex, &makeMasks);
+	}
 	
 	if (err == 0) {
 		// Connect the progress bar
@@ -1023,6 +1048,15 @@ int phantInterface::parseError(int err) {
 // Refresh
 void phantInterface::refresh() {
 	mainLayout->addWidget(parent->phantomFrame, 1, 2, 2, 1);
+	
+	if (truncBox->isChecked()) {
+		truncLabel->setDisabled(false);
+		truncEdit->setDisabled(false);
+	}
+	else {
+		truncLabel->setDisabled(true);
+		truncEdit->setDisabled(true);
+	}
 	
 	if (marEnable->isChecked()) {
 		marLTLabel->setDisabled(false);

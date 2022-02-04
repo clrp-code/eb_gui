@@ -802,6 +802,77 @@ int EGSPhant::getIndex(QString axis, double p) {
     return index; // -1 if we are out of bounds
 }
 
+
+void EGSPhant::redefineBounds(double xi, double yi, double zi, double xf, double yf, double zf) {
+	// Get the new boundary limits
+	int xi2 = getIndex("x axis", xi);
+	int yi2 = getIndex("y axis", yi);
+	int zi2 = getIndex("z axis", zi);
+	int xf2 = getIndex("x axis", xf);
+	int yf2 = getIndex("y axis", yf);
+	int zf2 = getIndex("z axis", zf);
+	
+	// Check f is larger than i
+	if (xf2 <= xi2 || yf2 <= yi2 || zf2 <= zi2)
+		return;
+	
+	// Bring boundaries to within egsphant limits
+	if (xi2 < 0)
+		xi2 = 0;
+	if (yi2 < 0)
+		yi2 = 0;
+	if (zi2 < 0)
+		zi2 = 0;
+	if (xf2 < 0)
+		xf2 = nx;
+	if (yf2 < 0)
+		yf2 = ny;
+	if (zf2 < 0)
+		zf2 = nz;
+	
+	// Create the new data variables
+    int new_nx = xf2-xi2+1, new_ny = yf2-yi2+1, new_nz = zf2-zi2+1;
+    QVector <double> new_x, new_y, new_z;
+    QVector <QVector <QVector <char> > > new_m;
+    QVector <QVector <QVector <double> > > new_d;
+	
+	for (int i = xi2; i <= xf2+1; i++)
+		new_x.append(x[i]);
+	for (int i = yi2; i <= yf2+1; i++)
+		new_y.append(y[i]);
+	for (int i = zi2; i <= zf2+1; i++)
+		new_z.append(z[i]);
+
+	// create the new 3D matrices to hold subdata
+	{
+		QVector <char> mz(new_nz, 0);
+		QVector <QVector <char> > my(new_ny, mz);
+		QVector <QVector <QVector <char> > > mx(new_nx, my);
+		new_m = mx;
+		QVector <double> dz(new_nz, 0);
+		QVector <QVector <double> > dy(new_ny, dz);
+		QVector <QVector <QVector <double> > > dx(new_nx, dy);
+		new_d = dx;
+	}
+	
+	for (int k = zi2; k <= zf2; k++)
+		for (int j = yi2; j <= yf2; j++)
+			for (int i = xi2; i <= xf2; i++) {
+				new_m[i-xi2][j-yi2][k-zi2] = m[i][j][k];
+				new_d[i-xi2][j-yi2][k-zi2] = d[i][j][k];
+			}
+	
+	// Now replace all data with the new indices
+    nx = new_nx;
+	ny = new_ny;
+	nz = new_nz;
+    x = new_x;
+	y = new_y;
+	z = new_z;
+    m = new_m;
+    d = new_d;
+}
+
 QImage EGSPhant::getEGSPhantPicMed(QString axis, double ai, double af,
                                    double bi, double bf, double d, int res) {
     // Create a temporary image

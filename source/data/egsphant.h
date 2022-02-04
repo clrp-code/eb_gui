@@ -52,7 +52,6 @@ signals:
 
 public:
     EGSPhant();
-	void makeMask(EGSPhant* mask); // Useful for later analysis
 
     int nx, ny, nz; // these hold the number of voxels
     QVector <double> x, y, z; // these hold the boundaries of the above voxels
@@ -60,7 +59,7 @@ public:
     QVector <QVector <QVector <double> > > d; // this holds all the densities
     QVector <QString> media; // this holds all the possible media
     double maxDensity;
-
+	
     void loadEGSPhantFile(QString path);
     void loadEGSPhantFilePlus(QString path);
     void loadbEGSPhantFile(QString path);
@@ -72,19 +71,21 @@ public:
 	void savegzEGSPhantFilePlus(QString path);
 	
 	void setDensity(int px, int py, int pz, double density);
+	
+	void redefineBounds(double xi, double yi, double zi, double xf, double yf, double zf);
+	
+	void makeMask(EGSPhant* mask); // Useful for later analysis
 
     char getMedia(double px, double py, double pz);
     double getDensity(double px, double py, double pz);
     double getDensity(int px, int py, int pz);
     int getIndex(QString axis, double p);
+	
     QImage getEGSPhantPicDen(QString axis, double ai, double af,
                              double bi, double bf, double d, int res,
 							 double di, double df);
     QImage getEGSPhantPicMed(QString axis, double ai, double af,
                              double bi, double bf, double d, int res);
-
-    // Image Processing
-    void loadMaps();
 };
 
 #endif

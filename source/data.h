@@ -54,17 +54,19 @@ private:
              // that can notify a change for the GUI
 public:
 	// locations
-	QString hh_location;
-	QString eh_location;
+	QString hh_location; // Hen House
+	QString eh_location; // Egs Home
 	
-	QString eb_location;
-	QString gui_location;
-	QString ep_location;
+	QString eb_location; // egs_brachy
+	QString gui_location; // eb_gui executable
+	QString ep_location; // egs-parallel location
 	
+	// Default egsinp files
 	QString muen_location;
 	QString material_location;
 	QString transport_location;
 	
+	// Default settings
 	QString mar_location;
 	QString metric_location;
 	
@@ -114,7 +116,7 @@ public:
 	int marContourInd;
 	QString marContour, transformFile;
 	
-	// metric extraction
+	// metric extraction (name, prescription, Dx (%), Dx (cc), Vx (%))
 	QStringList metricNames, metricDp, metricDx, metricDcc, metricVx;
 	
 	// functions
@@ -158,7 +160,7 @@ public:
 	// Build egsphant
 	int buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defaultTAS,
 					  QVector <int>* structIndex, QVector <int>* tasIndex,
-					  QVector <EGSPhant*>* makeMasks);
+					  QVector <EGSPhant*>* makeMasks, double buffer = -1);
 	
 	double interp(double x, double x1, double x2, double y1, double y2);
 	

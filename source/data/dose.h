@@ -128,7 +128,7 @@ public:
 	void getDVs(QVector <QVector <DV> > *data, QVector <EGSPhant*> *masks, QVector <double> *volume);
 	
 	// Generate metric outputs
-	QString getMetricCSV (QVector <DV> *data, double volume, QString name, QString DxStr, QString DccStr, QString VxStr, QString pDStr);
+	QString getMetricCSV(QVector <DV> *data, double volume, QString name, QString DxStr, QString DccStr, QString VxStr, QString pDStr);
 };
 
 #endif
