@@ -454,10 +454,20 @@ void phantInterface::createEGSphant() {
 			// Delete all associated files
 			QFile(parent->data->localDirPhants[i]+fileName+".egsphant.gz").remove();
 			QFile(parent->data->localDirPhants[i]+fileName+".log").remove();
+			QFile(parent->data->localDirPhants[i]+fileName+".tg43.geom").remove();
 			
 			// Delete the file references
 			parent->data->localNamePhants.removeAt(i);
 			parent->data->localDirPhants.removeAt(i);
+			
+			// Delete all the masks
+			QDirIterator files (parent->data->gui_location+"/database/mask/", {QString(fileName)+".*.egsphant.gz"},
+								QDir::NoFilter, QDirIterator::Subdirectories);
+			
+			while(files.hasNext()) {
+				files.next();
+				QFile (parent->data->gui_location+"/database/mask/"+files.fileName()).remove();
+			}
 			
 			// Remove it from the list widget
 			delete matchingNames[0];
@@ -618,16 +628,23 @@ void phantInterface::loadCTFiles() {
 		else {
 			Attribute* tempAtt;
 			
-			tempAtt = parent->data->CT_data.last()->getEntry(0x0008, 0x0008); // Get att closest to (0008,0008)
-			if (tempAtt->tag[0] != 0x0008 && tempAtt->tag[1] != 0x0008) { // See if it is (0008,0008)
-				if (!QString(std::string((char*)tempAtt->vf,tempAtt->vl+1).c_str()).contains("AXIAL")) { // See if the field contains AXIAL
-					failedFiles.append(paths[i].split("/").last() + tr(" is not AXIAL CT format"));
+			tempAtt = parent->data->CT_data.last()->getEntry(0x0008, 0x0060); // Get att closest to (0008,0060)
+			if (tempAtt->tag[0] != 0x0008 && tempAtt->tag[1] != 0x0060) { // See if it is (0008,0060)
+				failedFiles.append(paths[i].split("/").last() + tr(" did not have DICOM modality field (0008,0060)"));
+				delete parent->data->CT_data.last();
+				parent->data->CT_data.removeLast();
+			}
+			else {
+				QString temp = "";
+				for (unsigned int s = 0; s < tempAtt->vl; s++) {
+					temp.append(tempAtt->vf[s]);
+				}
+				
+				if (temp.trimmed().compare("CT")) { // See if the field contains CT
+					failedFiles.append(paths[i].split("/").last() + tr(" is not CT modality"));
 					delete parent->data->CT_data.last();
 					parent->data->CT_data.removeLast();
 				}
-			}
-			else {
-				ctListView->addItem(paths[i].split("/").last());
 			}
 		}
 		parent->updateProgress(increment);
@@ -637,7 +654,12 @@ void phantInterface::loadCTFiles() {
 	Attribute* tempAtt;
 	tempAtt = parent->data->CT_data.first()->getEntry(0x0010, 0x0010); // Get att closest to (0010,0010)
 	if (tempAtt->tag[0] == 0x0010 && tempAtt->tag[1] == 0x0010) {
-		phantNameEdit->setText(std::string((char*)tempAtt->vf,tempAtt->vl+1).c_str());
+		QString temp = "";
+		for (unsigned int s = 0; s < tempAtt->vl; s++) {
+			temp.append(tempAtt->vf[s]);
+		}
+		
+		phantNameEdit->setText(temp);
 	}
 	else {
 		phantNameEdit->setText("DICOM_VPM");
@@ -645,8 +667,8 @@ void phantInterface::loadCTFiles() {
 	
 	if (failedFiles.size()) {
 		QMessageBox::information(0, "DICOM CT import complete",
-		tr("All selected DICOM data successfully imported, except as noted below:\n    ") +
-		failedFiles.join("\n    "));
+		tr("All selected DICOM data successfully imported, except as noted below:\n - ") +
+		failedFiles.join("\n - "));
 	}
 	else {
 		QMessageBox::information(0, "DICOM CT import complete",
@@ -1111,6 +1133,9 @@ void phantInterface::refresh() {
 
 void phantInterface::loadHU2rho() {
 	QString path = QFileDialog::getOpenFileName(this, tr("Load HU to density conversion table"), parent->data->gui_location+"/database/HU_conversion", tr("HU2RHO file (*.HU2RHO)"));
+	
+	if (path < 1)
+		return;
 	
 	// Check if it opens as a text file (at the very least)
 	QFile file(path);

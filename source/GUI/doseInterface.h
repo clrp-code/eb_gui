@@ -47,6 +47,7 @@
 
 // Forward declaration of Interface to pass to the tab windows
 class Interface;
+class HoverLabel;
 
 // Declaration of the Main Window class, its variables and its methods
 class doseInterface : public QWidget {
@@ -69,7 +70,7 @@ public:
 	
 	// Shared objects
 	QScrollArea *canvasArea;
-	QLabel      *canvas;
+	HoverLabel  *canvas;
 	QChartView  *canvasChart;
 	QImage      *canvasPic;
 	QPushButton *saveDataButton;
@@ -342,6 +343,9 @@ public slots:
 	void loadMapDose();
 	void loadIsoDose(int i);
 	
+	void writePreviewLabel(int i, int j); // Write canvas label with data at point i and j
+	QImage createLegend();
+	
 	// Histogram
     void histoRenderLive();
     void histoRender();
@@ -391,6 +395,27 @@ public slots:
 
 public:
 	logWindow* log; // log window
+};
+
+
+/*******************************************************************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Hover Label Class~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*******************************************************************************/
+// This class is created to overwrite one of the QWidget functions to be able to
+// keep track of the position of the mouse, and to know whether it is over the
+// widget or not, so as to be able to give the coordinates of the seed
+
+class HoverLabel : public QLabel { // It inherits QLabel publicly
+private:
+    Q_OBJECT // This line is necessary to create custom SLOTs, ie, functions
+    // that define what happens when you click on buttons
+public:
+    void mousePressEvent(QMouseEvent *event); // Overwrite mouseMoveEvent to send a signal
+    void wheelEvent(QWheelEvent *event); // Overwrite wheelEvent to send a signal
+signals:
+    void mouseClicked(int width, int height); // This is the signal to be sent in mousePressEvent
+    void mouseWheelUp();   // Detect the wheel being scrolled over the image
+    void mouseWheelDown(); // to shift depth appropriately
 };
 
 #endif

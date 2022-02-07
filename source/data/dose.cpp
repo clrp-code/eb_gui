@@ -766,78 +766,23 @@ void Dose::getContour(QVector <QVector <QLineF> > *con,
                 if (cases == 1) { // We have 1 vertex within contour, use linear
                     // interpolation to determine line
                     if (bl) {
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j], d[i+1][j],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i][j], d[i][j+1],
-                                    doses[p]);
+                        fa = interp(px[i], px[i+1], d[i][j], d[i+1][j], doses[p]);
+                        fb = interp(py[j], py[j+1], d[i][j], d[i][j+1], doses[p]);
                         (*con)[p].append(QLineF(fa, py[j], px[i], fb));
                     }
                     else if (br) {
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j], d[i+1][j],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i+1][j], d[i+1][j+1],
-                                    doses[p]);
+                        fa = interp(px[i], px[i+1], d[i][j], d[i+1][j], doses[p]);
+                        fb = interp(py[j], py[j+1], d[i+1][j], d[i+1][j+1], doses[p]);
                         (*con)[p].append(QLineF(fa, py[j], px[i+1], fb));
                     }
                     else if (tl) {
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j+1], d[i+1][j+1],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i][j], d[i][j+1],
-                                    doses[p]);
+                        fa = interp(px[i], px[i+1], d[i][j+1], d[i+1][j+1], doses[p]);
+                        fb = interp(py[j], py[j+1], d[i][j], d[i][j+1], doses[p]);
                         (*con)[p].append(QLineF(fa, py[j+1], px[i], fb));
                     }
                     else if (tr) {
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j+1], d[i+1][j+1],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i+1][j], d[i+1][j+1],
-                                    doses[p]);
-                        (*con)[p].append(QLineF(fa, py[j+1], px[i+1], fb));
-                    }
-                }
-                else if (cases == 3) { // We have 3 vertices within contour, use
-                    // linear interpolation to determine line
-                    if (!bl) {
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j], d[i+1][j],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i][j], d[i][j+1],
-                                    doses[p]);
-                        (*con)[p].append(QLineF(fa, py[j], px[i], fb));
-                    }
-                    else if (!br) {
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j], d[i+1][j],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i+1][j], d[i+1][j+1],
-                                    doses[p]);
-                        (*con)[p].append(QLineF(fa, py[j], px[i+1], fb));
-                    }
-                    else if (!tl) {
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j+1], d[i+1][j+1],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i][j], d[i][j+1],
-                                    doses[p]);
-                        (*con)[p].append(QLineF(fa, py[j+1], px[i], fb));
-                    }
-                    else if (!tr) {
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j+1], d[i+1][j+1],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i+1][j], d[i+1][j+1],
-                                    doses[p]);
+                        fa = interp(px[i], px[i+1], d[i][j+1], d[i+1][j+1], doses[p]);
+                        fb = interp(py[j], py[j+1], d[i+1][j], d[i+1][j+1], doses[p]);
                         (*con)[p].append(QLineF(fa, py[j+1], px[i+1], fb));
                     }
                 }
@@ -845,56 +790,55 @@ void Dose::getContour(QVector <QVector <QLineF> > *con,
                     // linear interpolation to determine line
                     // The first two are simple single line cases
                     if ((bl && br) || (tl && tr)) { // Horizontal line
-                        fa = interp(py[j], py[j+1],
-                                    d[i][j], d[i][j+1],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i+1][j], d[i+1][j+1],
-                                    doses[p]);
+                        fa = interp(py[j], py[j+1], d[i][j], d[i][j+1], doses[p]);
+                        fb = interp(py[j], py[j+1], d[i+1][j], d[i+1][j+1], doses[p]);
                         (*con)[p].append(QLineF(px[i], fa, px[i+1], fb));
                     }
                     else if ((bl && tl) || (br && tr)) { // Vertical line
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j], d[i+1][j],
-                                    doses[p]);
-                        fb = interp(px[i], px[i+1],
-                                    d[i][j+1], d[i+1][j+1],
-                                    doses[p]);
+                        fa = interp(px[i], px[i+1], d[i][j], d[i+1][j], doses[p]);
+                        fb = interp(px[i], px[i+1], d[i][j+1], d[i+1][j+1], doses[p]);
                         (*con)[p].append(QLineF(fa, py[j], fb, py[j+1]));
                     }
                     else if ((bl && tr)) { // First ambiguous case
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j], d[i+1][j],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i][j], d[i][j+1],
-                                    doses[p]);
+                        fa = interp(px[i], px[i+1], d[i][j], d[i+1][j], doses[p]);
+                        fb = interp(py[j], py[j+1], d[i][j], d[i][j+1], doses[p]);
                         (*con)[p].append(QLineF(fa, py[j], px[i], fb));
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j+1], d[i+1][j+1],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i+1][j], d[i+1][j+1],
-                                    doses[p]);
+                        fa = interp(px[i], px[i+1], d[i][j+1], d[i+1][j+1], doses[p]);
+                        fb = interp(py[j], py[j+1], d[i+1][j], d[i+1][j+1], doses[p]);
                         (*con)[p].append(QLineF(fa, py[j+1], px[i+1], fb));
                     }
                     else if ((br && tl)) { // Second ambiguous case
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j], d[i+1][j],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i+1][j], d[i+1][j+1],
-                                    doses[p]);
+                        fa = interp(px[i], px[i+1], d[i][j], d[i+1][j], doses[p]);
+                        fb = interp(py[j], py[j+1], d[i+1][j], d[i+1][j+1], doses[p]);
                         (*con)[p].append(QLineF(fa, py[j], px[i+1], fb));
-                        fa = interp(px[i], px[i+1],
-                                    d[i][j+1], d[i+1][j+1],
-                                    doses[p]);
-                        fb = interp(py[j], py[j+1],
-                                    d[i][j], d[i][j+1],
-                                    doses[p]);
+                        fa = interp(px[i], px[i+1], d[i][j+1], d[i+1][j+1], doses[p]);
+                        fb = interp(py[j], py[j+1], d[i][j], d[i][j+1], doses[p]);
                         (*con)[p].append(QLineF(fa, py[j+1], px[i], fb));
                     }
                 }
+                else if (cases == 3) { // We have 3 vertices within contour, use
+                    // linear interpolation to determine line
+                    if (!bl) {
+                        fa = interp(px[i], px[i+1], d[i][j], d[i+1][j], doses[p]);
+                        fb = interp(py[j], py[j+1], d[i][j], d[i][j+1], doses[p]);
+                        (*con)[p].append(QLineF(fa, py[j], px[i], fb));
+                    }
+                    else if (!br) {
+                        fa = interp(px[i], px[i+1], d[i][j], d[i+1][j], doses[p]);
+                        fb = interp(py[j], py[j+1], d[i+1][j], d[i+1][j+1], doses[p]);
+                        (*con)[p].append(QLineF(fa, py[j], px[i+1], fb));
+                    }
+                    else if (!tl) {
+                        fa = interp(px[i], px[i+1], d[i][j+1], d[i+1][j+1], doses[p]);
+                        fb = interp(py[j], py[j+1], d[i][j], d[i][j+1], doses[p]);
+                        (*con)[p].append(QLineF(fa, py[j+1], px[i], fb));
+                    }
+                    else if (!tr) {
+                        fa = interp(px[i], px[i+1], d[i][j+1], d[i+1][j+1],  doses[p]);
+                        fb = interp(py[j], py[j+1], d[i+1][j], d[i+1][j+1], doses[p]);
+                        (*con)[p].append(QLineF(fa, py[j+1], px[i+1], fb));
+                    }
+                } // If we have zero or four, we are either fully inside or outside a contour
             }
 }
 

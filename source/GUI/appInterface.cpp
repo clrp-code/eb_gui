@@ -324,13 +324,13 @@ void appInterface::outputCSV() {
 		return;
 	}
 	
-	Dose doseData; // Hold dose in memory for computations
-	
 	// Get output directory
 	QString path = QFileDialog::getExistingDirectory(this, tr("Select DICOM CT directory")), line;
 	
 	if (path.length() < 1)
 		return;
+	
+	Dose doseData; // Hold dose in memory for computations
 	
 	// Make subdirectories
 	if (!QDir(path+"/phantom").exists())
@@ -341,10 +341,10 @@ void appInterface::outputCSV() {
 		QDir().mkdir(path+"/simulation");
 	
 	// Get RT file save location
-	QString rtFile = path+"/"+parent->data->localNamePhants[iP];
-	if (rtFile.endsWith("phantom.b3ddose"))
+	QString rtFile = path+"/"+parent->data->localDirDoses[iD];
+	if (rtFile.endsWith(".phantom.b3ddose"))
 		rtFile = rtFile.left(rtFile.size()-16);
-	else if (rtFile.endsWith("phantom.3ddose"))
+	else if (rtFile.endsWith(".phantom.3ddose"))
 		rtFile = rtFile.left(rtFile.size()-15);
 	
 	QString rtFile2 = rtFile+".error.dcm";
@@ -417,6 +417,7 @@ void appInterface::outputCSV() {
 		
 	QFile(tempPath+tempName+".log").copy(path+"/plan/"+tempName+".log"); // Get plan log
 	QFile(tempPath+tempName+".dwell").copy(path+"/plan/"+tempName+".dwell"); // Get dwell times if they exist
+	QFile(tempPath+tempName+".activity").copy(path+"/plan/"+tempName+".activity"); // Get activity times if they exist
 	
 	// Copy dose
 	tempPath = parent->data->localDirDoses[iD];

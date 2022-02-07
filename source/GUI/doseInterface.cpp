@@ -103,7 +103,7 @@ void doseInterface::createLayout() {
 	
 	// Shared objects ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //				    
 	canvasArea      = new QScrollArea();
-	canvas          = new QLabel();
+	canvas          = new HoverLabel();
 	canvasChart     = new QChartView();
 	canvasPic       = new QImage();
 	saveDataButton  = new QPushButton("Save data");
@@ -205,7 +205,7 @@ void doseInterface::createLayout() {
 	legendBox->addItem("none");
 	legendBox->addItem("VPM");
 	legendBox->addItem("colour map");
-	legendBox->addItem("isodose");
+	//legendBox->addItem("isodose"); // not implemented
 	ttt = tr("Add legend to image, and select whether it displays VPM, colour map, or isodose data.");
 	legendLabel->setToolTip(ttt);
 	legendBox->setToolTip(ttt);
@@ -216,10 +216,10 @@ void doseInterface::createLayout() {
 	unitsLabel->setToolTip(ttt);
 	unitsEdit->setToolTip(ttt);
 	
-	legendLabel->setDisabled(true); // To be implemented
-	legendBox->setDisabled(true); // To be implemented
-	unitsLabel->setDisabled(true); // To be implemented
-	unitsEdit->setDisabled(true); // To be implemented
+	//legendLabel->setDisabled(true); // To be implemented
+	//legendBox->setDisabled(true); // To be implemented
+	//unitsLabel->setDisabled(true); // To be implemented
+	//unitsEdit->setDisabled(true); // To be implemented
 	
 	int width  = abs(horBoundaryMax->text().toDouble()-horBoundaryMin->text().toDouble())*resolutionScale->text().toInt();
 	int height = abs(vertBoundaryMax->text().toDouble()-vertBoundaryMin->text().toDouble())*resolutionScale->text().toInt();
@@ -527,7 +527,7 @@ void doseInterface::createLayout() {
 	
 	// Added data
 	histOutputLabel  = new QLabel("Metrics");
-	histOutputBox    = new QComboBox(); // to be implemented
+	histOutputBox    = new QComboBox();
 	for (int i = 0; i < parent->data->metricNames.size(); i++)
 		histOutputBox->addItem(parent->data->metricNames[i]);
 				
@@ -803,6 +803,9 @@ void doseInterface::connectLayout() {
 	// Preview ~~~~~~~~~~~~~~
 	connect(resolutionScale, SIGNAL(textEdited(QString)),
 			this, SLOT(previewCanvasRenderLive()));
+			
+    connect(canvas, SIGNAL(mouseClicked(int, int)),
+            this, SLOT(writePreviewLabel(int, int)));
 	
 	connect(saveImageButton, SIGNAL(released()),
 			this, SLOT(saveImage()));
@@ -838,6 +841,11 @@ void doseInterface::connectLayout() {
 	connect(depthPlusButton, SIGNAL(released()),
 			this, SLOT(previewSliceUp()));
 	connect(depthMinusButton, SIGNAL(released()),
+			this, SLOT(previewSliceDown()));
+			
+	connect(canvas, SIGNAL(mouseWheelUp()),
+			this, SLOT(previewSliceUp()));
+	connect(canvas, SIGNAL(mouseWheelDown()),
 			this, SLOT(previewSliceDown()));
 	
 	// Egsphant
@@ -1204,7 +1212,7 @@ void doseInterface::previewCanvasRenderLive() {if(renderCheckBox->isChecked()) p
 void doseInterface::previewCanvasRender() {
 	int width  = abs(horBoundaryMax->text().toDouble() - horBoundaryMin->text().toDouble())*resolutionScale->text().toInt();
 	int height = abs(vertBoundaryMax->text().toDouble() - vertBoundaryMin->text().toDouble())*resolutionScale->text().toInt();
-	*blackPic = blackPic->scaled(width,height);
+	*blackPic = blackPic->scaled(height,width);
 	
 	// Invoke all subrenders to reflect the change to the axes
 	previewPhantRender();
@@ -1318,12 +1326,12 @@ void doseInterface::previewIsoRender() {
 		doses.append(isoColourDose[j]->text().toDouble());
 	
 	if (isoDoseBox[0]->currentIndex())
-		isoDoses[0]->getContour(&solid,  doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
-	if (isoDoseBox[1]->currentIndex())
-		isoDoses[1]->getContour(&dashed, doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
-	if (isoDoseBox[2]->currentIndex())
-		isoDoses[2]->getContour(&dotted, doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
-	
+		isoDoses[0]->getContour(&solid,  doses, axis, depth, horMin, horMax, vertMin, vertMax,res);
+	if (isoDoseBox[1]->currentIndex())                                                        
+		isoDoses[1]->getContour(&dashed, doses, axis, depth, horMin, horMax, vertMin, vertMax,res);
+	if (isoDoseBox[2]->currentIndex())                                                        
+		isoDoses[2]->getContour(&dotted, doses, axis, depth, horMin, horMax, vertMin, vertMax,res);
+		
 	previewRenderLive();
 }
 
@@ -1380,6 +1388,14 @@ void doseInterface::previewRender() {
 					break;
 			}
 		}
+		
+	// Legend
+	if (legendBox->currentIndex()) {
+		QImage legend = createLegend();
+		paint.drawImage(canvasPic->width()-legend.width()-11,
+						canvasPic->height()-legend.height()-11,
+						legend);
+	}
 		
     paint.end();	
 		
@@ -1661,7 +1677,6 @@ void doseInterface::previewSliceUp() {
 			}
 	}
 	
-	
 	for (int i = 0; i < depths.size(); i++) {
 		if (depth < depths[i]->at(0)) {// If below, go to first slice
 			tempDepth = (depths[i]->at(0)+depths[i]->at(1))/2.0;
@@ -1806,12 +1821,228 @@ void doseInterface::previewSliceDown() {
 	previewCanvasRenderLive();
 }
 
+void doseInterface::writePreviewLabel(int i, int j) {	
+	QString temp = "";
+	
+	QString axis = xAxisButton->isChecked()?"X":(yAxisButton->isChecked()?"Y":"Z");
+	double horMin = horBoundaryMin->text().toDouble(), horMax = horBoundaryMax->text().toDouble();
+	double vertMin = vertBoundaryMin->text().toDouble(), vertMax = vertBoundaryMax->text().toDouble();
+	double depth, res;
+	
+	if (horMin > horMax) {
+		depth  = horMin;
+		horMin = horMax;
+		horMax = depth;
+	}
+	
+	if (vertMin > vertMax) {
+		depth   = vertMin;
+		vertMin = vertMax;
+		vertMax = depth;
+	}
+	
+	depth = depthMin->text().toDouble();
+	res   = resolutionScale->text().toDouble();
+	
+	double x = 0, y = 0, z = 0;
+
+    // Get the appropriate point
+    if (!axis.compare("X")) {
+		x = depth;
+		y = horMin+i/res;
+		z = vertMin+j/res;
+    }
+    else if (!axis.compare("Y")) {
+		x = horMin+i/res;
+		y = depth;
+		z = vertMin+j/res;
+    }
+    else if (!axis.compare("Z")) {
+		x = vertMin+i/res;
+		y = horMin+j/res;
+		z = depth;
+    }
+	
+	temp += "Position: ("+QString::number(x,'g',3)+",";
+	temp += QString::number(y,'g',3)+","+QString::number(z,'g',3)+")";
+	
+	// Phantom
+	if (phantSelect->currentIndex()) {
+		temp += " , VPM: ";
+		temp += phant->media[QString(EGSPHANT_CHARS).indexOf(phant->getMedia(x,y,z))];
+		temp += " ("+QString::number(phant->getDensity(x,y,z),'g',3)+" g/cm^3)";
+	}
+	
+	// Colour map
+	if (mapDoseBox->currentIndex()) {
+		temp += ", Map dose: ";
+		temp += QString::number(mapDose->getDose(x,y,z),'g',3)+"+/-";
+		temp += QString::number(mapDose->getDose(x,y,z)*mapDose->getError(x,y,z),'g',4)+" Gy";
+	}
+
+    canvasInfo->setText(temp);
+    canvasInfo->repaint();
+}
+
+QImage doseInterface::createLegend() {
+	QStringList labels;
+	QVector <QColor> colours;
+	int longest = 0;
+	int spacing = 12, buffer = 10, textWidth = 10;
+	
+	if ((legendBox->currentIndex() == 0) ||
+		(legendBox->currentIndex() == 1 && !phantSelect->currentIndex()) ||
+		(legendBox->currentIndex() == 2 && !mapDoseBox->currentIndex()))
+		return QImage(); // appropriate legend data isn't loaded, so quit
+	
+	if (legendBox->currentIndex() == 1) {
+		if (mediaButton->isChecked()) {
+			double c = 0;
+			for (int i = 0; i < phant->media.size(); i++) {
+				labels.append(phant->media[i]);
+				c = i*255.0/double(phant->media.size()+1);
+				colours.append(QColor(qRgb(c,c,c)));
+				longest = int(longest<labels.last().length()?labels.last().length():longest);
+			}
+		}
+		else {
+			labels.append(densityMin->text()+" g/cm^3");
+			longest = int(longest<labels.last().length()?labels.last().length():longest);
+			labels.append(densityMax->text()+" g/cm^3");
+			longest = int(longest<labels.last().length()?labels.last().length():longest);
+			colours.append(QColor(qRgb(0,0,0)));
+			colours.append(QColor(qRgb(255,255,255)));
+		}
+	}
+	else if (legendBox->currentIndex() == 2) {
+		labels.append(mapMinDose->text()+" "+unitsEdit->text());
+		longest = int(longest<labels.last().length()?labels.last().length():longest);
+		labels.append(mapMaxDose->text()+" "+unitsEdit->text());
+		longest = int(longest<labels.last().length()?labels.last().length():longest);
+		colours.append(QColor(mapMinButton->palette().color(QPalette::Button)));
+		colours.append(QColor(mapMidButton->palette().color(QPalette::Button)));
+		colours.append(QColor(mapMaxButton->palette().color(QPalette::Button)));
+	}
+	
+	QImage legend(buffer+spacing+buffer+longest*textWidth+buffer,
+				  buffer+(labels.size())*(spacing+buffer),
+				  QImage::Format_ARGB32_Premultiplied);
+	legend.fill(qRgb(255,255,255)); // Paint white
+	
+	QPainter painter;
+	
+	QPen pen;
+	pen.setWidth(1);
+	pen.setColor(Qt::black);
+	
+	QFont font;
+	font.setWeight(75);
+	font.setPointSize(10);
+	
+	painter.begin(&legend);
+	painter.setPen(pen);
+	painter.setFont(font);
+	
+	// Draw outer outline
+	painter.drawRect(0, 0, legend.width()-1, legend.height()-1);
+	
+	if (legendBox->currentIndex() == 1) {
+		if (mediaButton->isChecked()) {
+			// Draw each box
+			for (int i = 0; i < colours.size(); i++) {
+				painter.fillRect(buffer, buffer+i*(buffer+spacing), spacing, spacing, colours[i]);
+				painter.drawRect(buffer, buffer+i*(buffer+spacing), spacing, spacing);
+				painter.drawText(2*buffer+spacing, (i+1)*(buffer+spacing), labels[i]);
+			}
+		}
+		else {
+			// Draw labels
+			painter.drawText(2*buffer+spacing, buffer+spacing, labels[0]);
+			painter.drawText(2*buffer+spacing, 2*(buffer+spacing), labels[1]);
+			
+			double weight = 0, invWeight = 0, red = 0, green = 0, blue = 0;
+			
+			// Draw grey values line by line
+			for (int i = buffer; i < 2*(buffer+spacing); i++) {
+				weight = double(i-buffer)/double(2*(buffer+spacing));
+				invWeight = 1.0 - weight;
+				red   = (colours[0].red()  * weight) +
+						(colours[1].red()  * invWeight);
+				green = (colours[0].green()* weight) +
+						(colours[1].green()* invWeight);
+				blue  = (colours[0].blue() * weight) +
+						(colours[1].blue() * invWeight);
+				
+				pen.setColor(qRgb(red,green,blue));
+				painter.setPen(pen);
+				painter.drawLine(buffer, i, buffer+spacing, i);
+			}
+			
+			// Draw outline
+			pen.setWidth(1);
+			pen.setColor(Qt::black);
+			painter.setPen(pen);
+			painter.drawRect(buffer, buffer, spacing, buffer+2*spacing);
+		}
+	}
+	else if (legendBox->currentIndex() == 2) {
+		painter.drawText(2*buffer+spacing, (buffer+spacing), labels[0]);
+		painter.drawText(2*buffer+spacing, 2*(buffer+spacing), labels[1]);
+				
+		double weight = 0, invWeight = 0, red = 0, green = 0, blue = 0;
+		for (int i = buffer; i < buffer+spacing+buffer/2; i++) {
+			weight = double(i-buffer)/double(buffer+spacing+buffer/2);
+			invWeight = 1.0 - weight;
+			red   = (colours[1].red()  * weight) +
+					(colours[0].red()  * invWeight);
+			green = (colours[1].green()* weight) +
+					(colours[0].green()* invWeight);
+			blue  = (colours[1].blue() * weight) +
+					(colours[0].blue() * invWeight);
+					
+			weight = red>blue?red:blue;
+			weight = weight>green?weight:green;
+			weight = 255.0/weight;
+			
+			pen.setColor(qRgb(red*weight,green*weight,blue*weight));
+			painter.setPen(pen);
+			painter.drawLine(buffer, i, buffer+spacing, i);
+		}
+		
+		for (int i = buffer+spacing+buffer/2; i < 2*(buffer+spacing); i++) {
+			weight = double(i-(buffer+spacing+buffer/2))/double(2*(buffer+spacing));
+			invWeight = 1.0 - weight;
+			red   = (colours[2].red()  * weight) +
+					(colours[1].red()  * invWeight);
+			green = (colours[2].green()* weight) +
+					(colours[1].green()* invWeight);
+			blue  = (colours[2].blue() * weight) +
+					(colours[1].blue() * invWeight);
+					
+			weight = red>blue?red:blue;
+			weight = weight>green?weight:green;
+			weight = 255.0/weight;
+			
+			pen.setColor(qRgb(red*weight,green*weight,blue*weight));
+			painter.setPen(pen);
+			painter.drawLine(buffer, i, buffer+spacing, i);
+		}
+		
+		// Draw outline
+		pen.setWidth(1);
+		pen.setColor(Qt::black);
+		painter.setPen(pen);
+		painter.drawRect(buffer, buffer, spacing, buffer+2*spacing);
+	}
+	
+	return legend;
+}
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 //                               Histogram                             //
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
-
 void doseInterface::histoRefresh() {
-	// Enable the metrics boxes is Custom is selected
+	// Enable the metrics boxes if Custom is selected
 	if (histOutputBox->currentText().compare("Custom")) {
 		histDxLabel->setDisabled(true);
 		histDxEdit->setDisabled(true);
@@ -3046,4 +3277,24 @@ void doseInterface::showPreviewEgsphant() {
 
 void doseInterface::savePreviewEgsphant() {
 	
+}
+
+/*******************************************************************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Hover Label Class~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*******************************************************************************/
+void HoverLabel::mousePressEvent(QMouseEvent *event) {
+    if (event->x() > 0 && event->x() < width() && event->y() > 0 && event->y() < height()) {
+        emit mouseClicked(event->x(),event->y());
+    }
+    event->accept();
+}
+
+void HoverLabel::wheelEvent(QWheelEvent *event) {
+    if (event->delta() > 0 && event->x() > 0 && event->x() < width() && event->y() > 0 && event->y() < height()) {
+        emit mouseWheelUp();
+    }
+    else if (event->x() > 0 && event->x() < width() && event->y() > 0 && event->y() < height()) {
+        emit mouseWheelDown();
+    }
+    event->accept();
 }
