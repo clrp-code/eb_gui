@@ -205,7 +205,7 @@ void doseInterface::createLayout() {
 	legendBox->addItem("none");
 	legendBox->addItem("VPM");
 	legendBox->addItem("colour map");
-	//legendBox->addItem("isodose"); // not implemented
+	legendBox->addItem("isodose");
 	ttt = tr("Add legend to image, and select whether it displays VPM, colour map, or isodose data.");
 	legendLabel->setToolTip(ttt);
 	legendBox->setToolTip(ttt);
@@ -215,11 +215,6 @@ void doseInterface::createLayout() {
 	ttt = tr("Units to display on legend.");
 	unitsLabel->setToolTip(ttt);
 	unitsEdit->setToolTip(ttt);
-	
-	//legendLabel->setDisabled(true); // To be implemented
-	//legendBox->setDisabled(true); // To be implemented
-	//unitsLabel->setDisabled(true); // To be implemented
-	//unitsEdit->setDisabled(true); // To be implemented
 	
 	int width  = abs(horBoundaryMax->text().toDouble()-horBoundaryMin->text().toDouble())*resolutionScale->text().toInt();
 	int height = abs(vertBoundaryMax->text().toDouble()-vertBoundaryMin->text().toDouble())*resolutionScale->text().toInt();
@@ -366,7 +361,8 @@ void doseInterface::createLayout() {
 	isoColourLabel = new QLabel("Colours");
 	
 	// Lines 1 - 3
-	ttt = tr("The 3ddose files used to generate the solid, dashed, or dotted lines.");
+	ttt = tr("The 3ddose files used to generate the solid, dashed, or dotted lines."
+			 "  Different line types are much easier to distinguish at higher resolutions.");
 	isoDoseLabel.append(new QLabel("solid line")); isoDoseBox.append(new QComboBox());
 	isoDoseLabel.last()->setToolTip(ttt); isoDoseBox.last()->setToolTip(ttt);
 	isoDoseBox.last()->addItem("none"); isoDoses.append(new Dose());
@@ -412,7 +408,7 @@ void doseInterface::createLayout() {
 	
 	isoFrame->setLayout(isoLayout);
 	isoFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
-	isoFrame->setDisabled(true); // Fix/reimplement getContour in dose class
+	//isoFrame->setDisabled(true); // Fix/reimplement getContour in dose class
 	previewLayout->addWidget(isoFrame);
 	
 	// Histogram ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
@@ -1326,11 +1322,11 @@ void doseInterface::previewIsoRender() {
 		doses.append(isoColourDose[j]->text().toDouble());
 	
 	if (isoDoseBox[0]->currentIndex())
-		isoDoses[0]->getContour(&solid,  doses, axis, depth, horMin, horMax, vertMin, vertMax,res);
-	if (isoDoseBox[1]->currentIndex())                                                        
-		isoDoses[1]->getContour(&dashed, doses, axis, depth, horMin, horMax, vertMin, vertMax,res);
-	if (isoDoseBox[2]->currentIndex())                                                        
-		isoDoses[2]->getContour(&dotted, doses, axis, depth, horMin, horMax, vertMin, vertMax,res);
+		isoDoses[0]->getContour(&solid,  doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
+	if (isoDoseBox[1]->currentIndex())
+		isoDoses[1]->getContour(&dashed, doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
+	if (isoDoseBox[2]->currentIndex())
+		isoDoses[2]->getContour(&dotted, doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
 		
 	previewRenderLive();
 }
@@ -1868,16 +1864,20 @@ void doseInterface::writePreviewLabel(int i, int j) {
 	
 	// Phantom
 	if (phantSelect->currentIndex()) {
-		temp += " , VPM: ";
-		temp += phant->media[QString(EGSPHANT_CHARS).indexOf(phant->getMedia(x,y,z))];
-		temp += " ("+QString::number(phant->getDensity(x,y,z),'g',3)+" g/cm^3)";
+		if (phant->getMedia(x,y,z) != -1) {
+			temp += " , VPM: ";
+			temp += phant->media[QString(EGSPHANT_CHARS).indexOf(phant->getMedia(x,y,z))];
+			temp += " ("+QString::number(phant->getDensity(x,y,z),'g',3)+" g/cm^3)";
+		}
 	}
 	
 	// Colour map
 	if (mapDoseBox->currentIndex()) {
-		temp += ", Map dose: ";
-		temp += QString::number(mapDose->getDose(x,y,z),'g',3)+"+/-";
-		temp += QString::number(mapDose->getDose(x,y,z)*mapDose->getError(x,y,z),'g',4)+" Gy";
+		if (mapDose->getDose(x,y,z) != -1) {
+			temp += ", Map dose: ";
+			temp += QString::number(mapDose->getDose(x,y,z),'g',3)+"+/-";
+			temp += QString::number(mapDose->getDose(x,y,z)*mapDose->getError(x,y,z),'g',4)+" Gy";
+		}
 	}
 
     canvasInfo->setText(temp);
@@ -1892,7 +1892,9 @@ QImage doseInterface::createLegend() {
 	
 	if ((legendBox->currentIndex() == 0) ||
 		(legendBox->currentIndex() == 1 && !phantSelect->currentIndex()) ||
-		(legendBox->currentIndex() == 2 && !mapDoseBox->currentIndex()))
+		(legendBox->currentIndex() == 2 && !mapDoseBox->currentIndex()) ||
+		(legendBox->currentIndex() == 3 && !(isoDoseBox[0]->currentIndex() ||
+		isoDoseBox[1]->currentIndex() || isoDoseBox[2]->currentIndex())))
 		return QImage(); // appropriate legend data isn't loaded, so quit
 	
 	if (legendBox->currentIndex() == 1) {
@@ -1922,6 +1924,13 @@ QImage doseInterface::createLegend() {
 		colours.append(QColor(mapMinButton->palette().color(QPalette::Button)));
 		colours.append(QColor(mapMidButton->palette().color(QPalette::Button)));
 		colours.append(QColor(mapMaxButton->palette().color(QPalette::Button)));
+	}
+	else if (legendBox->currentIndex() == 3) {
+		for (int i = 0; i < isoColourDose.size(); i++) {
+			labels.append(isoColourDose[i]->text()+" "+unitsEdit->text());
+			longest = int(longest<labels.last().length()?labels.last().length():longest);
+			colours.append(QColor(isoColourButton[i]->palette().color(QPalette::Button)));
+		}
 	}
 	
 	QImage legend(buffer+spacing+buffer+longest*textWidth+buffer,
@@ -1991,7 +2000,7 @@ QImage doseInterface::createLegend() {
 				
 		double weight = 0, invWeight = 0, red = 0, green = 0, blue = 0;
 		for (int i = buffer; i < buffer+spacing+buffer/2; i++) {
-			weight = double(i-buffer)/double(buffer+spacing+buffer/2);
+			weight = double(i-buffer)/double(spacing+buffer/2);
 			invWeight = 1.0 - weight;
 			red   = (colours[1].red()  * weight) +
 					(colours[0].red()  * invWeight);
@@ -2010,7 +2019,7 @@ QImage doseInterface::createLegend() {
 		}
 		
 		for (int i = buffer+spacing+buffer/2; i < 2*(buffer+spacing); i++) {
-			weight = double(i-(buffer+spacing+buffer/2))/double(2*(buffer+spacing));
+			weight = double(i-(buffer+spacing+buffer/2))/double(spacing+buffer/2);
 			invWeight = 1.0 - weight;
 			red   = (colours[2].red()  * weight) +
 					(colours[1].red()  * invWeight);
@@ -2033,6 +2042,14 @@ QImage doseInterface::createLegend() {
 		pen.setColor(Qt::black);
 		painter.setPen(pen);
 		painter.drawRect(buffer, buffer, spacing, buffer+2*spacing);
+	}
+	else if (legendBox->currentIndex() == 3) {
+		// Draw each box
+		for (int i = 0; i < colours.size(); i++) {
+			painter.fillRect(buffer, buffer+i*(buffer+spacing), spacing, spacing, colours[i]);
+			painter.drawRect(buffer, buffer+i*(buffer+spacing), spacing, spacing);
+			painter.drawText(2*buffer+spacing, (i+1)*(buffer+spacing), labels[i]);
+		}
 	}
 	
 	return legend;

@@ -695,7 +695,7 @@ void Dose::getContour(QVector <QVector <QLineF> > *con,
 	
     int cases = 0, tl = 0, tr = 0, bl = 0, br = 0;
     int fa, fb, flag = false;
-    QVector <int> px, py;
+    QVector <int> px, py; // Hold voxel midpoint values
     QVector <QVector <double> > d;
     QVector <double> temp;
 

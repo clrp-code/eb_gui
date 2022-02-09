@@ -672,6 +672,12 @@ void EGSPhant::loadgzEGSPhantFilePlus(QString path) {
 char EGSPhant::getMedia(double px, double py, double pz) {
     int ix, iy, iz;
     ix = iy = iz = -1;
+	
+	// Check and exit if outside of the bounds
+	if (px < x[0] || px > x.last() ||
+		py < y[0] || py > y.last() ||
+		pz < z[0] || pz > z.last())
+		return -1;
 
     // Find the index of the boundary that is less than px, py and pz
     for (int i = 0; i < nx; i++)
@@ -706,12 +712,18 @@ char EGSPhant::getMedia(double px, double py, double pz) {
         return m[ix][iy][iz];
     }
 
-    return 0; // We are not within our bounds
+    return -1; // We are not within our bounds
 }
 
 double EGSPhant::getDensity(double px, double py, double pz) {
     int ix, iy, iz;
     ix = iy = iz = -1;
+
+	// Check and exit if outside of the bounds
+	if (px < x[0] || px > x.last() ||
+		py < y[0] || py > y.last() ||
+		pz < z[0] || pz > z.last())
+		return -1;
 
     // Find the index of the boundary that is less than px, py and pz
     for (int i = 0; i < nx; i++)
