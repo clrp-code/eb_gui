@@ -5,7 +5,7 @@ Installation:
 
 Ensure Qt5 is installed, along with an appropriate version of qmake along with it.  Navigate to the source code directory, and invoke the following commands:
 
-> qmake
+> qmake;
 > make
     
 which will first create a Makefile using the appropriate Qt libraries on your computer qmake finds, then compile the actual program.  The program is fairly robust and takes a while to compile, especially the database.cpp file which contains tag data for every DICOM tag.  After compilation is complete, there should be an eb_gui file that is executeable in the parent directory.
