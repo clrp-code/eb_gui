@@ -413,7 +413,7 @@ void doseInterface::createLayout() {
 	
 	// Histogram ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
 	// Phantom selection
-	histPhantLabel  = new QLabel("VPM");
+	histPhantLabel  = new QLabel("Virtual patient model");
 	histPhant       = new EGSPhant();
 	histPhantSelect = new QComboBox();
 	histPhantSelect->addItem("none");
@@ -1218,7 +1218,13 @@ void doseInterface::previewCanvasRender() {
 	previewRender();
 }
 
-void doseInterface::previewPhantRenderLive() {if(renderCheckBox->isChecked()) previewPhantRender();}
+void doseInterface::previewPhantRenderLive() {
+	if(renderCheckBox->isChecked()) {
+		previewPhantRender();
+		previewRender();
+	}
+}
+
 void doseInterface::previewPhantRender() {
 	if (phantSelect->currentIndex() < 1) 
 		return;
@@ -1251,11 +1257,15 @@ void doseInterface::previewPhantRender() {
 											 densityMin->text().toDouble(),
 											 densityMax->text().toDouble());
 	}
-	
-	previewRenderLive();
 }
 
-void doseInterface::previewMapRenderLive() {if(renderCheckBox->isChecked()) previewMapRender();}
+void doseInterface::previewMapRenderLive() {
+	if(renderCheckBox->isChecked()) {
+		previewMapRender();
+		previewRender();
+	}
+}
+
 void doseInterface::previewMapRender() {
 	if (mapDoseBox->currentIndex() < 1)
 		return;
@@ -1285,11 +1295,15 @@ void doseInterface::previewMapRender() {
 									mapMinButton->palette().color(QPalette::Button),
 									mapMidButton->palette().color(QPalette::Button),
 									mapMaxButton->palette().color(QPalette::Button));
-	
-	previewRenderLive();
 }
 
-void doseInterface::previewIsoRenderLive() {if(renderCheckBox->isChecked()) previewIsoRender();}
+void doseInterface::previewIsoRenderLive() {
+	if(renderCheckBox->isChecked()) {
+		previewIsoRender();
+		previewRender();
+	}
+}
+
 void doseInterface::previewIsoRender() {
 	if ((isoDoseBox[0]->currentIndex()+isoDoseBox[1]->currentIndex()+isoDoseBox[2]->currentIndex()) < 1)
 		return;
@@ -1315,7 +1329,6 @@ void doseInterface::previewIsoRender() {
 	res   = resolutionScale->text().toDouble();
 	
 	// Fetch the contours
-	QVector <QVector <QLineF> > contour;
 	QVector <double> doses;
 	
 	for (int j = 0; j < 5; j++)
@@ -1327,8 +1340,6 @@ void doseInterface::previewIsoRender() {
 		isoDoses[1]->getContour(&dashed, doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
 	if (isoDoseBox[2]->currentIndex())
 		isoDoses[2]->getContour(&dotted, doses, axis, depth, horMin, horMax, vertMin, vertMax, res);
-		
-	previewRenderLive();
 }
 
 void doseInterface::previewRenderLive() {if(renderCheckBox->isChecked()) previewRender();}
@@ -1364,7 +1375,7 @@ void doseInterface::previewRender() {
 					}
 					break;
 				case 1:
-					pen.setStyle(Qt::DotLine);
+					pen.setStyle(Qt::DashLine);
 					for (int j = 0; j < 5; j++) {
 						pen.setColor(isoColourButton[j]->palette().color(QPalette::Button));
 						paint.setPen(pen);
@@ -1372,7 +1383,7 @@ void doseInterface::previewRender() {
 					}
 					break;
 				case 2:
-					pen.setStyle(Qt::DashLine);
+					pen.setStyle(Qt::DotLine);
 					for (int j = 0; j < 5; j++) {
 						pen.setColor(isoColourButton[j]->palette().color(QPalette::Button));
 						paint.setPen(pen);
@@ -1388,9 +1399,7 @@ void doseInterface::previewRender() {
 	// Legend
 	if (legendBox->currentIndex()) {
 		QImage legend = createLegend();
-		paint.drawImage(canvasPic->width()-legend.width()-11,
-						canvasPic->height()-legend.height()-11,
-						legend);
+		paint.drawImage(canvasPic->width()-legend.width()-11, 11, legend);
 	}
 		
     paint.end();	
@@ -1431,7 +1440,7 @@ void doseInterface::loadEgsphant() {
 	}
 	
 	parent->finishedProgress();
-	previewCanvasRenderLive();
+	previewPhantRenderLive();
 }
 
 void doseInterface::loadMapDose() {
@@ -1463,7 +1472,7 @@ void doseInterface::loadMapDose() {
 	}
 	
 	parent->finishedProgress();
-	previewCanvasRenderLive();
+	previewMapRenderLive();
 }
 
 void doseInterface::loadIsoDose(int i) {
@@ -1495,7 +1504,7 @@ void doseInterface::loadIsoDose(int i) {
 	}
 	
 	parent->finishedProgress();
-	previewCanvasRenderLive();
+	previewIsoRenderLive();
 }
 
 void doseInterface::previewResetBounds() {
@@ -1876,7 +1885,7 @@ void doseInterface::writePreviewLabel(int i, int j) {
 		if (mapDose->getDose(x,y,z) != -1) {
 			temp += ", Map dose: ";
 			temp += QString::number(mapDose->getDose(x,y,z),'g',3)+"+/-";
-			temp += QString::number(mapDose->getDose(x,y,z)*mapDose->getError(x,y,z),'g',4)+" Gy";
+			temp += QString::number(mapDose->getDose(x,y,z)*mapDose->getError(x,y,z),'g',3)+" Gy";
 		}
 	}
 
@@ -1902,7 +1911,7 @@ QImage doseInterface::createLegend() {
 			double c = 0;
 			for (int i = 0; i < phant->media.size(); i++) {
 				labels.append(phant->media[i]);
-				c = i*255.0/double(phant->media.size()+1);
+				c = (i+1)*255.0/double(phant->media.size()+1);
 				colours.append(QColor(qRgb(c,c,c)));
 				longest = int(longest<labels.last().length()?labels.last().length():longest);
 			}
@@ -2399,14 +2408,15 @@ void doseInterface::histoRender() {
 	plot->createDefaultAxes();
 	plot->axes()[0]->setTitleText("dose / Gy");
 	savePlotX = "dose / Gy";
-	plot->axes()[0]->setRange(0,data.last().dose);
 	
 	if (histDiffBox->isChecked()) {
+		plot->axes()[0]->setRange(data[0].dose,data.last().dose);
 		plot->setTitle("Dose Differential Histogram");
 		plot->axes()[1]->setTitleText("voxel count");
 		savePlotY = "voxel count";
 	}
 	else {
+		plot->axes()[0]->setRange(0,data.last().dose);
 		plot->setTitle("Dose Volume Histogram");
 		plot->axes()[1]->setTitleText("% of total volume");
 		plot->axes()[1]->setRange(0,100);

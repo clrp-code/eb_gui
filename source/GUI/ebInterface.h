@@ -130,6 +130,7 @@ public slots:
     void killEB(); // End interactive and parallel jobs;
 	void writeOutputToConsole();
     void runEV(); // Run egs_view
+	void saveLogEB(); // Save console output after simulation (egslog format)
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

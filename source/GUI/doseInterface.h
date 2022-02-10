@@ -70,8 +70,8 @@ public:
 	
 	// Shared objects
 	QScrollArea *canvasArea;
-	HoverLabel  *canvas;
-	QChartView  *canvasChart;
+	HoverLabel  *canvas; // For preview images
+	QChartView  *canvasChart; // For plots
 	QImage      *canvasPic;
 	QPushButton *saveDataButton;
 	QPushButton *saveImageButton;
@@ -322,8 +322,8 @@ public slots:
 	void saveData();
 	
 	// Preview
-    void previewRenderLive();
     void previewRender();
+    void previewRenderLive();
     void previewCanvasRender(); // Change of dimensions
     void previewCanvasRenderLive();
     void previewPhantRender(); // Change of egsphant, change of media/density, change of density range

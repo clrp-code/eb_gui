@@ -281,6 +281,8 @@ void ebInterface::connectLayout() {
 			this, SLOT(runEB()));
 	connect(console->kill, SIGNAL(released()),
 			this, SLOT(killEB()));
+	connect(console->save, SIGNAL(released()),
+			this, SLOT(saveLogEB()));
 	connect(ebProcess, SIGNAL(finished(int)),
 			this, SLOT(finishEB(int)));
 	connect(ebProcess, SIGNAL(readyReadStandardOutput()),
@@ -552,6 +554,28 @@ void ebInterface::saveEB() {
 	
 	QTextStream output(&egsinpFile);
 	output << parent->egsinp->buildInput();
+}
+
+void ebInterface::saveLogEB() {
+	QString filePath = QFileDialog::getSaveFileName(this, tr("Save File"), ".", tr("egs_brachy log file (*.egslog)"));
+	
+	if (filePath.length() < 1) // No name selected
+		return;
+	
+	if (!filePath.endsWith(".egslog")) // Doesn't have the right extension
+		filePath += ".egslog";
+		
+	QFile egslogFile(filePath);
+	
+	if (!egslogFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		QMessageBox::warning(0, "File error",
+		tr("Failed to open the egslog file for saving.  Aborting"));	
+		return;
+	}
+	
+	QTextStream out(&egslogFile);
+	out << console->outputArea->toPlainText();
+	egslogFile.close();
 }
 
 void ebInterface::runEV() {
