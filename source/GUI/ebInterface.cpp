@@ -497,7 +497,7 @@ void ebInterface::runEB() {
 	if (njobBox->currentIndex() == 0) // Interactive
 		ebProcess->start(QString("egs_brachy -i ") + ebName);
 	else                              // Parallel
-		ebProcess->start(parent->data->ep_location + " -n" + njobBox->currentText() + " -d5 -v -c \"egs_brachy -i " + ebName + "\"");
+		ebProcess->start(parent->data->ep_location + " -n" + njobBox->currentText() + " -d5 -f -v -c \"egs_brachy -i " + ebName + "\"");
 }
 
 void ebInterface::saveEB() {
