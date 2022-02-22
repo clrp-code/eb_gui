@@ -68,7 +68,7 @@ void sourceInterface::createLayout() {
 	QString ttt = ""; // tool tip text
 	
 	planFrame           = new QFrame();     
-	planLabel           = new QLabel(tr("<b>Import DICOM RT PLAN data</b>"));
+	planLabel           = new QLabel(tr("<b>Import DICOM RT PLAN Data</b>"));
 	planLayout          = new QGridLayout();
 	
 	fileLabel           = new QLabel(tr("Select DICOM file"));     
@@ -81,7 +81,7 @@ void sourceInterface::createLayout() {
 	fileLoad->setToolTip(ttt);
 	
 	importButton        = new QPushButton(tr("Import"));
-	ttt = tr("Import the fields below from plan file, and generate a source location file.  "
+	ttt = tr("Import the fields below from plan file, and generate a source location file. \n "
 			 "Dwell times, variable activity, eye plaque geometries, and applicators will also be imported.");
 	importButton->setToolTip(ttt);
 	
@@ -249,22 +249,22 @@ void sourceInterface::loadPlan() {
 int sourceInterface::parseError(int err) {
 	if (err == 501) {
 		QMessageBox::warning(0, "file error",
-        tr("Could not open selected file, aborting."));
+        tr("Could not open selected file.Aborting."));
         return 0;
 	}
 	else if (200 > err && err > 100) {
 		QMessageBox::warning(0, "file error",
-        tr("Did not read proper DICOM header, aborting."));
+        tr("Did not read proper DICOM header. Aborting."));
         return 0;
 	}
 	else if (300 > err && err > 200) {
 		QMessageBox::warning(0, "file error",
-        tr("Failed to properly read element tag/size, aborting."));
+        tr("Failed to properly read element tag/size. Aborting."));
         return 0;
 	}
 	else if (400 > err && err > 300) {
 		QMessageBox::warning(0, "file error",
-        tr("Failed to properly read element data, aborting."));
+        tr("Failed to properly read element data. Aborting."));
         return 0;
 	}
 	return 1;
@@ -274,7 +274,7 @@ void sourceInterface::parsePlan() {
 	// Check if plan data is loaded
 	if (!parent->data->plan_loaded) {
 		QMessageBox::warning(0, "Import RT Plan error",
-		tr("No DICOM RT Plan file is loaded, aborting."));
+		tr("No DICOM RT Plan file is loaded. Aborting."));
 		return;		
 	}
 	

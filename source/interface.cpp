@@ -258,7 +258,7 @@ void Interface::createGlobalWidgets() {
 	transformationFrame->setLayout(transformationGrid);
 	
 	// Geometry list
-	geometryLabel     = new QLabel(tr("<b>Additional geometries</b>"));
+	geometryLabel     = new QLabel(tr("<b>Additional Geometries</b>"));
 	geometryChooser   = new QComboBox();
 	geometryListView  = new QListWidget();
 	geometryCreate    = new QPushButton(tr("Create")); 
@@ -301,7 +301,7 @@ void Interface::createGlobalWidgets() {
 	geometryFrame->setLayout(geometryGrid);
 	
 	// Dose list
-	doseLabel     = new QLabel(tr("<b>Dose distributions</b>"));
+	doseLabel     = new QLabel(tr("<b>Dose Distributions</b>"));
 	doseListView  = new QListWidget();
 	doseListView->setSelectionMode(QAbstractItemView::SingleSelection);
 	doseImport    = new QPushButton(tr("Import"));

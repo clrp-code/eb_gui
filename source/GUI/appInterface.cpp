@@ -77,7 +77,7 @@ void appInterface::createLayout() {
 	contourTitleLabel = new QLabel("Contour");
 	loadMetricLabel   = new QLabel("Metrics");
 	saveDVHLabel      = new QLabel("Output DVH");
-	saveDiffLabel     = new QLabel("Output differential");
+	saveDiffLabel     = new QLabel("Output Differential");
 	
 	metricGrid->addWidget(contourTitleLabel, 0, 0, 1, 1);
 	metricGrid->addWidget(loadMetricLabel  , 0, 1, 1, 1);
@@ -120,13 +120,13 @@ void appInterface::createLayout() {
 	metricFrame->setFrameStyle(QFrame::Box | QFrame::Sunken);
 	
 	// Other
-	outputRT = new QPushButton("Output RT dose");
+	outputRT = new QPushButton("Output RT Dose");
 	ttt = tr("Convert selected 3ddose file to RT dose file.");
 	outputRT->setToolTip(ttt);
 	
 	outputFullDataCSV   = new QPushButton("Output all data (csv metrics)");
 	outputFullDataDICOM = new QPushButton("Output all data (DICOM metrics)");
-	ttt = tr("Output egsphant, transformation, dose, input files, and associated logs to a patient folder.  "
+	ttt = tr("Output egsphant, transformation, dose, input files, and associated logs to a patient folder.\n  "
 			 "Additional metrics selected above can also be output.");
 	outputFullDataCSV->setToolTip(ttt);
 	outputFullDataDICOM->setToolTip(ttt);
@@ -176,7 +176,7 @@ void appInterface::outputRTdose() {
 	
 	if (i >= parent->data->localDirDoses.size()) {
 		QMessageBox::warning(0, "Index error",
-		tr("Somehow the selected dose index is larger than the local dose count.  Aborting"));		
+		tr("Somehow the selected dose index is larger than the local dose count. Aborting"));		
 		return;
 	}
 	
@@ -205,7 +205,7 @@ void appInterface::outputRTdose() {
 		toBeRT.readIn(doseFile, 2);
 	else {
 		QMessageBox::warning(0, "File error",
-		tr("Selected dose file is not of type 3ddose or b3ddose.  Aborting"));
+		tr("Selected dose file is not of type 3ddose or b3ddose. Aborting"));
 		parent->finishedProgress();
 		return;		
 	}
@@ -242,7 +242,7 @@ void appInterface::loadStructs() {
 	
 	if (i >= parent->data->localDirPhants.size()) {
 		QMessageBox::warning(0, "Index error",
-		tr("Somehow the selected egsphant index is larger than the local phantom count.  Aborting"));		
+		tr("Somehow the selected egsphant index is larger than the local phantom count. Aborting"));		
 		return;
 	}
 	
@@ -259,7 +259,7 @@ void appInterface::loadStructs() {
 	}
 	else {
 		QMessageBox::warning(0, "File error",
-		tr("Selected file is not of type egsphant.gz, begsphant, or egsphant.  Aborting"));
+		tr("Selected file is not of type egsphant.gz, begsphant, or egsphant. Aborting"));
 		return;
 	}
 	
@@ -303,7 +303,7 @@ void appInterface::outputCSV() {
 		
 	if (iD >= parent->data->localDirDoses.size()) {
 		QMessageBox::warning(0, "Index error",
-		tr("Somehow the selected dose index is larger than the local dose count.  Aborting"));		
+		tr("Somehow the selected dose index is larger than the local dose count. Aborting"));		
 		return;
 	}
 	
@@ -312,7 +312,7 @@ void appInterface::outputCSV() {
 		
 	if (iP >= parent->data->localDirPhants.size()) {
 		QMessageBox::warning(0, "Index error",
-		tr("Somehow the selected egsphant index is larger than the local dose count.  Aborting"));		
+		tr("Somehow the selected egsphant index is larger than the local dose count. Aborting"));		
 		return;
 	}
 	
@@ -321,7 +321,7 @@ void appInterface::outputCSV() {
 		
 	if (iT >= parent->data->localDirTransforms.size()) {
 		QMessageBox::warning(0, "Index error",
-		tr("Somehow the selected dose index is larger than the local dose count.  Aborting"));		
+		tr("Somehow the selected dose index is larger than the local dose count. Aborting"));		
 		return;
 	}
 	
@@ -365,7 +365,7 @@ void appInterface::outputCSV() {
 		doseData.readIn(doseFile, 4);
 	else {
 		QMessageBox::warning(0, "File error",
-		tr("Selected dose file is not of type 3ddose or b3ddose.  Aborting"));
+		tr("Selected dose file is not of type 3ddose or b3ddose. Aborting"));
 		parent->finishedProgress();
 		return;		
 	}

@@ -78,9 +78,9 @@ void phantInterface::createLayout() {
 	QString ttt = ""; // tool tip text
 	
 	// Select DICOM files
-	dcmImport      = new QLabel     (tr("Import DICOM virtual patient model"));
+	dcmImport      = new QLabel     (tr("<b>Import DICOM virtual patient model </b>"));
 	
-	phantNameLabel = new QLabel     (tr("VPM name"));
+	phantNameLabel = new QLabel     (tr("<b>VPM name</b>"));
 	phantNameEdit  = new QLineEdit  ("DICOM_VPM");
 	ttt = tr("The name used for the output.");
 	phantNameLabel->setToolTip(ttt);
@@ -92,14 +92,14 @@ void phantInterface::createLayout() {
 	ctListView->setSelectionMode(QAbstractItemView::MultiSelection);
 	ctDelete       = new QPushButton(tr("Delete"));
 	ctDeleteAll    = new QPushButton(tr("Delete all"));
-	ttt = tr("Select CT data files to use to make the egsphant.  Displayed in ascending z order.");
+	ttt = tr("Select CT data files to use to make the egsphant. Displayed in ascending z order.");
 	ctImportFiles->setToolTip(ttt);
 	ctImportDir->setToolTip(ttt);
 	ctListView->setToolTip(ttt);
 	ctDelete->setToolTip(ttt);
 	ctDeleteAll->setToolTip(ttt);
 	
-	structLabel    = new QLabel     (tr("Import struct data"));
+	structLabel    = new QLabel     (tr("<b>Import struct data</b>"));
 	structLoad     = new QPushButton(tr("Load"));
 	structEdit     = new QLineEdit  ("none selected");
 	structEdit->setDisabled(true);
@@ -111,7 +111,7 @@ void phantInterface::createLayout() {
 	ttt = tr("none selected");
 	structEdit->setToolTip(ttt);
 	
-	calibLabel     = new QLabel     (tr("HU to density table"));
+	calibLabel     = new QLabel     (tr("<b>HU to density table<b>"));
 	calibLoad      = new QPushButton(tr("Load"));
 	calibEdit      = new QLineEdit  (parent->data->hu_location);
 	calibEdit->setToolTip(parent->data->hu_location);
@@ -157,11 +157,11 @@ void phantInterface::createLayout() {
 	dcmFrame->setFrameStyle(QFrame::Box | QFrame::Sunken);
 	
 	// Tissue assignment scheme
-	contourAssign        = new QLabel(tr("Tissue Assignment Schemes"));
+	contourAssign        = new QLabel(tr("<b>Tissue Assignment Schemes</b>"));
 	
-	ttt = tr("This section uses Tissue Assignment Schemes (TASes) to assign media using CT density.  "
-	         "Additionally, using the mask output creates additional egsphant data to be used with "
-			 "3ddose_tools analysis.");
+	ttt = tr("This section uses Tissue Assignment Schemes (TASes) to assign media using CT density.\n  "
+	         "Additionally, using the mask output creates additional egsphant data \n"
+			 "to be used with 3ddose_tools analysis.");
 	contourAssign->setToolTip(ttt);
 	
 	defaultTASLabel      = new QLabel(tr("Default TAS"));
@@ -170,7 +170,7 @@ void phantInterface::createLayout() {
 	
 	truncBox   = new QCheckBox(tr("Truncate to structures")); 
 	truncLabel = new QLabel(tr("Truncation buffer (cm)"));  
-	truncEdit  = new QLineEdit("2"); 
+	truncEdit  = new QLineEdit("5"); 
 	ttt = tr("The phantom can be truncated to a volume that fully contains all contours with"
 			 " plus a chosen buffer in every direction.");
 	truncBox->setToolTip(ttt);
@@ -180,7 +180,8 @@ void phantInterface::createLayout() {
 	truncEdit->setDisabled(true);
 	truncEdit->setValidator(&allowedNums);
 	
-	ttt = tr("The default TAS will be used to assign media everywhere in the virtual patient, unless otherwise specified in the contour specific TAS selection below.");
+	ttt = tr("The default TAS will be used to assign media everywhere in the virtual patient,\n"
+             "unless otherwise specified in the contour specific TAS selection below.");
 	defaultTASLabel->setToolTip(ttt);
 	defaultTASBox->setToolTip(ttt);
 	
@@ -240,11 +241,11 @@ void phantInterface::createLayout() {
 	contourFrame->setFrameStyle(QFrame::Box | QFrame::Sunken);
 	
 	// Contour priority
-	prioContour = new QLabel("Contour priority (higher position overrules)");
+	prioContour = new QLabel("<b>Contour priority </b>(higher position overrules)");
 	prioView    = new QListWidget();
 	prioView->setDragDropMode(QAbstractItemView::InternalMove);
 	
-	ttt = tr("This priority list is used when determining which TAS to use when two contours overlap.  "
+	ttt = tr("This priority list is used when determining which TAS to use when two contours overlap.\n "
 			 "Drag and drop to move items up and down the list.");
 	prioContour->setToolTip(ttt);
 	prioView->setToolTip(ttt);
@@ -259,12 +260,12 @@ void phantInterface::createLayout() {
 	prioFrame->setFrameStyle(QFrame::Box | QFrame::Sunken);
 	
 	// Metallic artifact reduction
-	marLabel          = new QLabel(tr("Metallic artifact reduction"));
+	marLabel          = new QLabel(tr("<b>Metallic artifact reduction<b>"));
 	
 	marEnable         = new QCheckBox(tr("Enable"));
 	marEnable->setChecked(true);
 	
-	ttt = tr("Metallic Artifact Reduction (MAR) is a feature used to remove the high density "
+	ttt = tr("Metallic Artifact Reduction (MAR) is a feature used to remove the high density \n "
 			 "volume in the CT scan caused by brachytherapy seeds and artifact streaking.");
 	marLabel->setToolTip(ttt);
 	marEnable->setToolTip(ttt);
@@ -438,7 +439,7 @@ void phantInterface::createEGSphant() {
 	// Check if CT data is loaded
 	if (parent->data->CT_data.isEmpty()) {
 		QMessageBox::warning(0, "Creating egsphant error",
-		tr("No CT data is loaded, aborting."));
+		tr("No CT data is loaded. Aborting."));
 		return;		
 	}
 	
@@ -501,7 +502,7 @@ void phantInterface::createEGSphant() {
 			defaultTAS = i;
 	}
 	if (defaultTAS < 0) {
-		QMessageBox::warning(0, "Creating egsphant error",
+		QMessageBox::warning(0, "Creating VPM error",
 		tr("Problem collecting default TAS, aborting."));
 		return;
 	}
@@ -524,7 +525,7 @@ void phantInterface::createEGSphant() {
 	
 	for (int i = 0; i < structIndex.size(); i++)
 		if (structIndex[i] < 0) {
-			QMessageBox::warning(0, "Creating egsphant error",
+			QMessageBox::warning(0, "Creating VPM error",
 			tr("Problem assigning contour TASes, aborting."));
 			return;
 		}
@@ -582,7 +583,7 @@ void phantInterface::createEGSphant() {
         tr("Could not open ") + parent->data->hu_location + tr(" file.  Aborting"));
 	else if (err == 102)
 		QMessageBox::warning(0, "HU to density error",
-        tr("Could not parse the hu2rho file.  Aborting"));
+        tr("Could not parse the hu2rho file. Aborting"));
 	else if (err == 201)
 		QMessageBox::warning(0, "DICOM error",
         tr("Could not find field ") + "Pixel Spacing (0028,0030)" + tr (" in CT DICOM file.  Aborting"));
@@ -1046,22 +1047,22 @@ void phantInterface::loadStruct() {
 int phantInterface::parseError(int err) {
 	if (err == 501) {
 		QMessageBox::warning(0, "file error",
-        tr("Could not open selected file, aborting."));
+        tr("Could not open selected file. Aborting."));
         return 0;		
 	}
 	else if (200 > err && err > 100) {
 		QMessageBox::warning(0, "file error",
-        tr("Did not read proper DICOM header, aborting."));
+        tr("Did not read proper DICOM header. Aborting."));
         return 0;		
 	}
 	else if (300 > err && err > 200) {
 		QMessageBox::warning(0, "file error",
-        tr("Failed to properly read element tag/size, aborting."));
+        tr("Failed to properly read element tag/size. Aborting."));
         return 0;			
 	}
 	else if (400 > err && err > 300) {
 		QMessageBox::warning(0, "file error",
-        tr("Failed to properly read element data, aborting."));
+        tr("Failed to properly read element data. Aborting."));
         return 0;			
 	}
 	return 1;
