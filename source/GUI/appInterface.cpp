@@ -62,9 +62,9 @@ void appInterface::createLayout() {
 	QString ttt = "";
 	
 	// Selections
-	egsphantLabel  = new QLabel("Patient geometry");
-	transformLabel = new QLabel("Source Positions");
-	doseLabel      = new QLabel("Dose");
+	egsphantLabel  = new QLabel("<b>Patient Geometry</b>");
+	transformLabel = new QLabel("<b>Source Positions</b>");
+	doseLabel      = new QLabel("<b>Dose</b>");
 	
 	egsphant       = new QComboBox();
 	transform      = new QComboBox();
@@ -102,7 +102,8 @@ void appInterface::createLayout() {
 		metricGrid->addWidget(saveDVHBox.last()  , i+1, 2, 1, 1);
 		metricGrid->addWidget(saveDiffBox.last()  , i+1, 3, 1, 1);
 	
-		ttt = tr("Select metrics, DVHs, and differential dose histograms to output along with patient data.");
+		ttt = tr("Select metrics, DVHs, and differential dose \n"
+		"histograms to output along with patient data.");
 		contourNameLabel.last()->setToolTip(ttt);
 		loadMetricBox.last()->setToolTip(ttt);
 		saveDVHBox.last()->setToolTip(ttt);
