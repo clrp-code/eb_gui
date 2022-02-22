@@ -1,6 +1,6 @@
 transport location = $EGS_HOMEegs_brachy/lib/transport/low_energy_default
 
-histories = 1e8
+histories = 1e7
 checkpoints in series = 1
 checkpoints in parallel = 1
 geometry error limit = 250
@@ -20,7 +20,7 @@ seed discovery density = 1e8
 volume correction mode = none
 volume correction density = 1e8
 
-tissue assignment schemes = Muscle_fat_patient Male_tissue_patient Female_tissue_patient Breast Prostate
+tissue assignment schemes = Muscle_fat_patient Male_tissue_patient Female_tissue_patient Air Bladder Breast Chest_wall Heart Lung Prostate Rectum Ribs Skin Urethra Water
 
 isodose line thickness = 2
 histogram bin count = 20
