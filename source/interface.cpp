@@ -339,10 +339,10 @@ void Interface::createLayout() {
     tabWidget   = new QTabWidget();
 	
 	tabWidget->addTab(ebInt    ,tr("Run egs_brachy"));
-	tabWidget->addTab(sourceInt,tr("Import DICOM plan"));
+	tabWidget->addTab(sourceInt,tr("Import DICOM Plan"));
 	tabWidget->addTab(phantInt ,tr("Import DICOM Virtual Patient Model"));
-	tabWidget->addTab(doseInt  ,tr("Analyze results"));
-	tabWidget->addTab(appInt   ,tr("Export results"));
+	tabWidget->addTab(doseInt  ,tr("Analyze Results"));
+	tabWidget->addTab(appInt   ,tr("Export Results"));
 	
 	mainLayout->addWidget(tabWidget  ,0,0,1,2);
 	mainLayout->addWidget(closeButton,1,1,1,1);
@@ -1106,7 +1106,7 @@ int Interface::populateEgsinp() {
 
 			// Note, the tempScale in not permanent needs a scaling factor of the highest seed weight
 
-			double tau = (half_life/log(2))*24.0; // go from half-life in days to mean lifetime in hours
+			double tau = (half_life/0.6931471805)*24.0; // go from half-life in days to mean lifetime in hours
 			if (!sourcePermTime->isChecked())
 				tempScale *= tau*(1.0-exp(-(sourceTempTimeEdit->text().toDouble()/tau))); // Copied whole-cloth from Shannon
 			else if (sourcePermTime->isChecked())
