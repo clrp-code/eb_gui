@@ -67,7 +67,7 @@ public:
 	QString VC_density, VC_type, VC_bound, VC_thresh;
 	
 	// source definition
-	QString sourceTransFile, sourceSpecFile, sourceShapeFile, sourceDwells;
+	QString sourceTransFile, sourceSpecFile, sourceShapeFile, sourceSeedFile, sourceDwells;
 	
 	// scoring options
 	QString SO_edep, SO_muenFile, SO_muenMed, SO_scale;

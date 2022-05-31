@@ -1039,6 +1039,13 @@ int Interface::populateEgsinp() {
 		egsinp->sourceSpecFile = data->eb_location+"/lib/spectra/Pd103_NNDC_2.6_line.spectrum"; // Pre-set parameter
 	else
 		egsinp->sourceSpecFile = data->eb_location+"/lib/spectra/I125_NCRP_line.spectrum"; // Pre-set parameter
+
+        s = sourceListView->currentItem()->text();
+        if (s.endsWith("_wrapped"))
+                s.chop(8);
+        i = data->libNameSources.indexOf(s);
+        s = data->libDirSources[i]+s;
+        egsinp->sourceSeedFile = s+".shape"; // GUI parameter
 	
 	s = sourceListView->currentItem()->text();
 	i = data->libNameSources.indexOf(s);

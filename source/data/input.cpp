@@ -203,7 +203,7 @@ QString EGSInput::buildInput() {
 	output = output + "\t\tname         = lib_source\n";
 	output = output + "\t\tlibrary      = egs_isotropic_source\n";
 	output = output + "\t\tcharge       = 0\n";
-	output = output + "\t\tinclude file = " + sourceShapeFile + "\n";
+	output = output + "\t\tinclude file = " + sourceSeedFile + "\n";
 	output = output + "\t\t:start spectrum:\n";
 	output = output + "\t\t\ttype          = tabulated spectrum\n";
 	output = output + "\t\t\tspectrum file = " + sourceSpecFile + "\n";
