@@ -1042,7 +1042,7 @@ int Interface::populateEgsinp() {
 
         s = sourceListView->currentItem()->text();
         if (s.endsWith("_wrapped"))
-                s.chop(8);
+                s.chop(9);
         i = data->libNameSources.indexOf(s);
         s = data->libDirSources[i]+s;
         egsinp->sourceSeedFile = s+".shape"; // GUI parameter
