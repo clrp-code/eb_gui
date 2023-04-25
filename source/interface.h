@@ -112,7 +112,8 @@ public:
 	QRegExpValidator allowedNums; // Positive, real numbers
 	bool firstDelete = true; // Ask if they're sure they want to delete something the firstDelete
 						     // time they try
-	
+	//Maximum dwell time
+	double maxDwellTime=0;
 	// Phantom list	
 	QLabel*      phantomLabel;
 	QCheckBox*   phantomOnlyLocal;
