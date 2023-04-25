@@ -740,9 +740,12 @@ void Interface::transformationLoadDwells() {
 	
 	int dwells = 0;
 	double temp;
-	
+	maxDwellTime=0;
 	while (!in.atEnd()) {
         in >> temp;
+		if (temp>maxDwellTime){
+			maxDwellTime=temp;
+		}
 		dwells++;
     }
 	file.close();
@@ -1115,7 +1118,7 @@ int Interface::populateEgsinp() {
 
 			double tau = (half_life/0.6931471805)*24.0; // go from half-life in days to mean lifetime in hours
 			if (!sourcePermTime->isChecked())
-				tempScale *= tau*(1.0-exp(-(sourceTempTimeEdit->text().toDouble()/tau))); // Copied whole-cloth from Shannon
+				tempScale *= maxDwellTime;
 			else if (sourcePermTime->isChecked())
 				tempScale *= tau;
 			
