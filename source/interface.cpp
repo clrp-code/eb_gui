@@ -1118,9 +1118,9 @@ int Interface::populateEgsinp() {
 
 			double tau = (half_life/0.6931471805)*24.0; // go from half-life in days to mean lifetime in hours
 			if (!sourcePermTime->isChecked())
-				tempScale *= maxDwellTime;
+				tempScale *= maxDwellTime/3600; //HDR scaling factor
 			else if (sourcePermTime->isChecked())
-				tempScale *= tau;
+				tempScale *= tau; //LDR scaling factor
 			
 			skFile.close();
 		}
