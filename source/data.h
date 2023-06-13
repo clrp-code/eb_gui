@@ -40,6 +40,7 @@
 #define DATA_H
 
 #include <QtGui>
+#include <sstream>
 
 #include "data/DICOM.h"
 #include "data/egsphant.h"
