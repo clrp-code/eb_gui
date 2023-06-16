@@ -939,7 +939,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 									zIndex << QPoint(structIndex->at(l),iBelow); // Add it to lookup
 							}
 						}
-					#elif
+					#else //#elif
 						// Find the first struct within the voxel
 						for (int m = 0; m < structZ[structIndex->at(l)].size(); m++) {
 							// If slice j of struct i on the same plane as slice k of the phantom
@@ -1983,8 +1983,10 @@ int Data::outputRTDose(QString dosePath, QString errorPath, Dose* output, QStrin
 		// Dose Grid Scaling  3004,000E
 		double scaling = (0xEFFF)/output->getMax();
 		output->scale(scaling);
-		
-		std::string scalingString = std::to_string(1/scaling);
+		std::ostringstream oss;
+		oss.precision(8);
+		oss << scaling;
+		std::string scalingString = oss.str();
 		if (!(scalingString.size()%2)) scalingString = scalingString+" ";
 		size = 8 + scalingString.size();
 		dat = new unsigned char[size];
