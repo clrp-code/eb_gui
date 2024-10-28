@@ -1041,7 +1041,7 @@ int Interface::populateEgsinp() {
 	else if (s.contains("Pd103"))
 		egsinp->sourceSpecFile = data->eb_location+"/lib/spectra/Pd103_NNDC_2.6_line.spectrum"; // Pre-set parameter
 	else
-		egsinp->sourceSpecFile = data->eb_location+"/lib/spectra/I125_NCRP_line.spectrum"; // Pre-set parameter
+		egsinp->sourceSpecFile = data->eb_location+"/lib/spectra/I125_NNDC_line.spectrum"; // Pre-set parameter
 
         s = sourceListView->currentItem()->text();
         if (s.endsWith("_wrapped"))
