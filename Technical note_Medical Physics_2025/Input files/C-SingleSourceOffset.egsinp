@@ -1,0 +1,97 @@
+#----------------------------------------------------------------------------------------------------
+:start run control:
+	ncase                = 1e9
+	nbatch               = 1
+	nchunk               = 1
+	calculation          = first
+	geometry error limit = 250
+	egsdat file format   = text
+:stop run control:
+#----------------------------------------------------------------------------------------------------
+:start run mode:
+	run mode = superposition
+:stop run mode:
+#----------------------------------------------------------------------------------------------------
+:start media definition:
+	AE                 = 2.010
+	UE                 = 2.011
+	AP                 = 0.001
+	UP                 = 1.500
+	material data file = /home/EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat
+:stop media definition:
+#----------------------------------------------------------------------------------------------------
+:start geometry definition:
+	:start geometry:
+		name          = phantom
+		library       = egs_glib
+		type          = egsphant
+		egsphant file = /home/EGSnrc_CLRP/egs_home/eb_gui/database/egsphant/SingleSourceOffset.gz
+		density file  = /home/EGSnrc_CLRP/egs_home/egs_brachy/lib/media/material.dat
+	:stop geometry:
+
+	:start geometry:
+		name         = lib_source
+		library      = egs_glib
+		include file = /home/EGSnrc_CLRP/egs_home/egs_brachy/lib/geometry/sources/Ir192_HDR/MBDCA-WG/MBDCA-WG_wrapped.geom
+	:stop geometry:
+
+	:start geometry:
+		name          = ultimate_geom
+		library       = egs_autoenvelope
+		type          = EGS_ASwitchedEnvelope
+		base geometry = phantom
+		:start inscribed geometry:
+			inscribed geometry name = lib_source
+			:start transformations:
+				include file = /home/EGSnrc_CLRP/egs_home/eb_gui/database/transformation/transform_C
+			:stop transformations:
+			:start region discovery:
+				action                           = discover
+				density of random points (cm^-3) = 1e8
+				include file                     = /home/EGSnrc_CLRP/egs_home/egs_brachy/lib/geometry/sources/Ir192_HDR/MBDCA-WG/boundary.shape
+			:stop region discovery:
+		:stop inscribed geometry:
+	:stop geometry:
+
+	source geometries        = lib_source
+	phantom geometries       = phantom
+	simulation geometry      = ultimate_geom
+	source envelope geometry = ultimate_geom
+:stop geometry definition:
+#----------------------------------------------------------------------------------------------------
+:start volume correction:
+	:start source volume correction:
+		 correction type                  = correct
+		 density of random points (cm^-3) = 1e10
+		 include file                     = /home/EGSnrc_CLRP/egs_home/egs_brachy/lib/geometry/sources/Ir192_HDR/MBDCA-WG/boundary.shape
+		 total coverage threshold %       = 99.9%
+	:stop source volume correction:
+:stop volume correction:
+#----------------------------------------------------------------------------------------------------
+:start source definition:
+	:start source:
+		name         = lib_source
+		library      = egs_isotropic_source
+		charge       = 0
+		include file = /home/EGSnrc_CLRP/egs_home/egs_brachy/lib/geometry/sources/Ir192_HDR/MBDCA-WG/MBDCA-WG.shape
+		:start spectrum:
+			type          = tabulated spectrum
+			spectrum file = /home/EGSnrc_CLRP/egs_home/egs_brachy/lib/spectra/Ir192_NNDC_2.6_line.spectrum
+		:stop spectrum:
+	:stop source:
+	:start transformations:
+		include file = /home/EGSnrc_CLRP/egs_home/eb_gui/database/transformation/transform_C
+	:stop transformations:
+	source weights = 10
+	simulation source = lib_source
+:stop source definition:
+#----------------------------------------------------------------------------------------------------
+:start scoring options:
+	score energy deposition = no
+	muen file               = /home/EGSnrc_CLRP/egs_home/egs_brachy/lib/muen/brachy_xcom_1.5MeV_egsphant.muendat
+	muen for media          = WATER_0.998 AIR_TG43
+	dose scaling factor     = 9.75289e+12
+:stop scoring options:
+#----------------------------------------------------------------------------------------------------
+include file = /home/EGSnrc_CLRP/egs_home/egs_brachy/lib/transport/high_energy_default
+#----------------------------------------------------------------------------------------------------
