@@ -1,0 +1,7 @@
+# Seed Location Transformations
+# Air Kerma Strength = 407
+
+# Seed 0
+:start transformation:
+    translation = 0 0 0
+:stop transformation:

@@ -1,0 +1,397 @@
+# Seed Location Transformations
+# Air Kerma Strength = 407
+
+# Seed 0
+:start transformation:
+    translation = 26.687 12.5584 -26.9294
+:stop transformation:
+
+# Seed 1
+:start transformation:
+    translation = 26.3579 12.243 -26.7237
+:stop transformation:
+
+# Seed 2
+:start transformation:
+    translation = 26.0289 11.9277 -26.5181
+:stop transformation:
+
+# Seed 3
+:start transformation:
+    translation = 25.6744 11.6325 -26.3256
+:stop transformation:
+
+# Seed 4
+:start transformation:
+    translation = 25.3174 11.3393 -26.1343
+:stop transformation:
+
+# Seed 5
+:start transformation:
+    translation = 24.9604 11.046 -25.9431
+:stop transformation:
+
+# Seed 6
+:start transformation:
+    translation = 24.6208 10.7614 -25.7126
+:stop transformation:
+
+# Seed 7
+:start transformation:
+    translation = 27.7332 14.1771 -26.628
+:stop transformation:
+
+# Seed 8
+:start transformation:
+    translation = 27.3654 13.9044 -26.4274
+:stop transformation:
+
+# Seed 9
+:start transformation:
+    translation = 27.0052 13.6282 -26.2176
+:stop transformation:
+
+# Seed 10
+:start transformation:
+    translation = 26.6451 13.352 -26.0078
+:stop transformation:
+
+# Seed 11
+:start transformation:
+    translation = 26.3148 13.0587 -25.7773
+:stop transformation:
+
+# Seed 12
+:start transformation:
+    translation = 26.016 12.7473 -25.5248
+:stop transformation:
+
+# Seed 13
+:start transformation:
+    translation = 25.7133 12.4391 -25.2735
+:stop transformation:
+
+# Seed 14
+:start transformation:
+    translation = 25.3788 12.1569 -25.0316
+:stop transformation:
+
+# Seed 15
+:start transformation:
+    translation = 25.0442 11.8748 -24.7898
+:stop transformation:
+
+# Seed 16
+:start transformation:
+    translation = 24.7183 11.578 -24.5542
+:stop transformation:
+
+# Seed 17
+:start transformation:
+    translation = 24.3975 11.2726 -24.3223
+:stop transformation:
+
+# Seed 18
+:start transformation:
+    translation = 27.2069 14.7464 -25.2322
+:stop transformation:
+
+# Seed 19
+:start transformation:
+    translation = 26.8304 14.4908 -25.025
+:stop transformation:
+
+# Seed 20
+:start transformation:
+    translation = 26.4539 14.2352 -24.8178
+:stop transformation:
+
+# Seed 21
+:start transformation:
+    translation = 26.0884 13.9654 -24.61
+:stop transformation:
+
+# Seed 22
+:start transformation:
+    translation = 25.7373 13.6769 -24.4014
+:stop transformation:
+
+# Seed 23
+:start transformation:
+    translation = 25.3863 13.3884 -24.1928
+:stop transformation:
+
+# Seed 24
+:start transformation:
+    translation = 25.1196 13.0573 -23.946
+:stop transformation:
+
+# Seed 25
+:start transformation:
+    translation = 24.9208 12.6919 -23.6686
+:stop transformation:
+
+# Seed 26
+:start transformation:
+    translation = 24.6637 12.3603 -23.4111
+:stop transformation:
+
+# Seed 27
+:start transformation:
+    translation = 24.3163 12.081 -23.1846
+:stop transformation:
+
+# Seed 28
+:start transformation:
+    translation = 23.969 11.8016 -22.958
+:stop transformation:
+
+# Seed 29
+:start transformation:
+    translation = 27.4401 15.4228 -23.6608
+:stop transformation:
+
+# Seed 30
+:start transformation:
+    translation = 27.1183 15.1455 -23.4055
+:stop transformation:
+
+# Seed 31
+:start transformation:
+    translation = 26.7485 14.8775 -23.2019
+:stop transformation:
+
+# Seed 32
+:start transformation:
+    translation = 26.3787 14.6095 -22.9984
+:stop transformation:
+
+# Seed 33
+:start transformation:
+    translation = 26.0166 14.3386 -22.7854
+:stop transformation:
+
+# Seed 34
+:start transformation:
+    translation = 25.6617 14.0651 -22.5636
+:stop transformation:
+
+# Seed 35
+:start transformation:
+    translation = 25.3068 13.7915 -22.3418
+:stop transformation:
+
+# Seed 36
+:start transformation:
+    translation = 24.9765 13.499 -22.1072
+:stop transformation:
+
+# Seed 37
+:start transformation:
+    translation = 28.6399 13.2799 -26.9999
+:stop transformation:
+
+# Seed 38
+:start transformation:
+    translation = 28.2736 13.0281 -26.771
+:stop transformation:
+
+# Seed 39
+:start transformation:
+    translation = 27.9073 12.7763 -26.542
+:stop transformation:
+
+# Seed 40
+:start transformation:
+    translation = 27.5359 12.5233 -26.3228
+:stop transformation:
+
+# Seed 41
+:start transformation:
+    translation = 27.1633 12.2701 -26.1058
+:stop transformation:
+
+# Seed 42
+:start transformation:
+    translation = 26.7935 12.0137 -25.8887
+:stop transformation:
+
+# Seed 43
+:start transformation:
+    translation = 26.4735 11.6974 -25.6706
+:stop transformation:
+
+# Seed 44
+:start transformation:
+    translation = 26.1536 11.3811 -25.4525
+:stop transformation:
+
+# Seed 45
+:start transformation:
+    translation = 25.8281 11.0672 -25.2395
+:stop transformation:
+
+# Seed 46
+:start transformation:
+    translation = 25.4896 10.7589 -25.0384
+:stop transformation:
+
+# Seed 47
+:start transformation:
+    translation = 27.997 13.654 -25.3433
+:stop transformation:
+
+# Seed 48
+:start transformation:
+    translation = 27.6657 13.3609 -25.1108
+:stop transformation:
+
+# Seed 49
+:start transformation:
+    translation = 27.336 13.0616 -24.8835
+:stop transformation:
+
+# Seed 50
+:start transformation:
+    translation = 27.0071 12.7607 -24.6571
+:stop transformation:
+
+# Seed 51
+:start transformation:
+    translation = 26.6812 12.4533 -24.4349
+:stop transformation:
+
+# Seed 52
+:start transformation:
+    translation = 26.3554 12.146 -24.2128
+:stop transformation:
+
+# Seed 53
+:start transformation:
+    translation = 26.0782 11.8062 -23.9802
+:stop transformation:
+
+# Seed 54
+:start transformation:
+    translation = 25.851 11.4331 -23.7368
+:stop transformation:
+
+# Seed 55
+:start transformation:
+    translation = 25.6209 11.0616 -23.495
+:stop transformation:
+
+# Seed 56
+:start transformation:
+    translation = 27.9656 14.4642 -24.2039
+:stop transformation:
+
+# Seed 57
+:start transformation:
+    translation = 27.6498 14.179 -23.9614
+:stop transformation:
+
+# Seed 58
+:start transformation:
+    translation = 27.4103 13.8381 -23.6849
+:stop transformation:
+
+# Seed 59
+:start transformation:
+    translation = 27.1349 13.5153 -23.4281
+:stop transformation:
+
+# Seed 60
+:start transformation:
+    translation = 26.7872 13.2292 -23.2108
+:stop transformation:
+
+# Seed 61
+:start transformation:
+    translation = 26.4395 12.9431 -22.9935
+:stop transformation:
+
+# Seed 62
+:start transformation:
+    translation = 26.107 12.637 -22.7807
+:stop transformation:
+
+# Seed 63
+:start transformation:
+    translation = 25.786 12.316 -22.5713
+:stop transformation:
+
+# Seed 64
+:start transformation:
+    translation = 25.4649 11.9949 -22.3619
+:stop transformation:
+
+# Seed 65
+:start transformation:
+    translation = 28.3604 15.0552 -22.7752
+:stop transformation:
+
+# Seed 66
+:start transformation:
+    translation = 27.9867 14.8319 -22.5534
+:stop transformation:
+
+# Seed 67
+:start transformation:
+    translation = 27.7803 14.5095 -22.245
+:stop transformation:
+
+# Seed 68
+:start transformation:
+    translation = 27.4312 14.2447 -22.0043
+:stop transformation:
+
+# Seed 69
+:start transformation:
+    translation = 28.1137 11.9544 -25.0676
+:stop transformation:
+
+# Seed 70
+:start transformation:
+    translation = 27.7547 11.6969 -24.8335
+:stop transformation:
+
+# Seed 71
+:start transformation:
+    translation = 27.4006 11.4271 -24.6066
+:stop transformation:
+
+# Seed 72
+:start transformation:
+    translation = 27.0529 11.1409 -24.3893
+:stop transformation:
+
+# Seed 73
+:start transformation:
+    translation = 26.7052 10.8548 -24.172
+:stop transformation:
+
+# Seed 74
+:start transformation:
+    translation = 28.3139 12.6292 -24.088
+:stop transformation:
+
+# Seed 75
+:start transformation:
+    translation = 27.9505 12.3557 -23.8803
+:stop transformation:
+
+# Seed 76
+:start transformation:
+    translation = 27.6265 12.0441 -23.6657
+:stop transformation:
+
+# Seed 77
+:start transformation:
+    translation = 27.3274 11.7085 -23.4469
+:stop transformation:
+
+# Seed 78
+:start transformation:
+    translation = 27.0283 11.3729 -23.228
+:stop transformation:
