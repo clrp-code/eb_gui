@@ -39,6 +39,7 @@
 #ifndef DATA_H
 #define DATA_H
 
+#include <QtWidgets>
 #include <QtGui>
 #include <sstream>
 

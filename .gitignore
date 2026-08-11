@@ -2,11 +2,13 @@
 *.o
 *.egsphant.gz
 *.log
+eb_gui
 eb_gui.app/*
 *.dcm
 *.stash
 source/moc_*
 source/Makefile
+source/.qmake.stash
 */*.zip
 LDR_Phantom_Test_Case
 configuration.txt

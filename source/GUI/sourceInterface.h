@@ -39,6 +39,7 @@
 #ifndef SOURCEINTERFACE_H
 #define SOURCEINTERFACE_H
 
+#include <QtWidgets>
 #include <QtGui>
 #include <iostream>
 #include "../interface.h"

@@ -40,7 +40,7 @@
 
 // Constructors
 ebInterface::ebInterface()
-	: allowedNums(QRegExp(REGEX_REAL_POS)) {
+	: allowedNums(QRegularExpression(REGEX_REAL_POS)) {
 	parent = (Interface*)parentWidget();
 	
 	console = new consoleWindow;
@@ -53,7 +53,7 @@ ebInterface::ebInterface()
 }
 
 ebInterface::ebInterface(Interface* p)
-	: allowedNums(QRegExp(REGEX_REAL_POS)) {
+	: allowedNums(QRegularExpression(REGEX_REAL_POS)) {
 	parent = p;
 	
 	console = new consoleWindow();

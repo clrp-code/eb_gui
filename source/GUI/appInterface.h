@@ -40,6 +40,7 @@
 #ifndef APPINTERFACE_H
 #define APPINTERFACE_H
 
+#include <QtWidgets>
 #include <QtGui>
 #include <iostream>
 #include "../interface.h"

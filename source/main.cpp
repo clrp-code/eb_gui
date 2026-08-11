@@ -41,6 +41,7 @@
 #include "GUI/phantInterface.h"
 #include "GUI/sourceInterface.h"
 
+#include <QtWidgets>
 #include <QtGui>
 #include <iostream>
 #include <math.h>
