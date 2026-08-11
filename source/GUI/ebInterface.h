@@ -39,6 +39,7 @@
 #ifndef EBINTERFACE_H
 #define EBINTERFACE_H
 
+#include <QtWidgets>
 #include <QtGui>
 #include <iostream>
 #include "../interface.h"
@@ -63,7 +64,7 @@ public:
 // LAYOUT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     QGridLayout* mainLayout;
 	
-	QRegExpValidator allowedNums;
+	QRegularExpressionValidator allowedNums;
 	
 	QFrame*      simulationOptions;
 	QGridLayout* simulationLayout;

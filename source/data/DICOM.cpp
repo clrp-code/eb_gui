@@ -122,7 +122,7 @@ int DICOM::parse(QString p) {
             file.close();
             return 102;
         }
-        else if ((QString(dat[0])+dat[1]+dat[2]+dat[3]) != "DICM") {
+        else if ((QString::fromLatin1(reinterpret_cast<const char*>(dat), 4)) != "DICM") {
             // Not a DICOM file
             delete[] dat;
             file.close();
@@ -180,7 +180,7 @@ int DICOM::parse(QString p) {
 			
 			// Find the closest tag in the database
 			Reference closest = lib->binSearch(temp->tag[0], temp->tag[1], 0, lib->lib.size()-1);
-            QString tempVR = QString(dat[0])+dat[1];
+            QString tempVR = QString::fromLatin1(reinterpret_cast<const char*>(dat), 2);
 			if (closest.tag[0] == temp->tag[0] && closest.tag[1] == temp->tag[1]) { // Found the tag
                 temp->desc = closest.title;
                 l++;
@@ -206,7 +206,7 @@ int DICOM::parse(QString p) {
 			
 			// It is either explicit or we are in the syntax defining tags at the start
             if (!isImplicit || temp->tag[0] == 0x0002) {
-                VR = QString(dat[0])+dat[1];
+                VR = QString::fromLatin1(reinterpret_cast<const char*>(dat), 2);
 				readVR = true;
 					
 				#if defined(OUTPUT_ALL) || defined(OUTPUT_TAG)
@@ -216,7 +216,7 @@ int DICOM::parse(QString p) {
 				#endif
             } // Check for explicit VRs when using custom tags even if isImplicit
 			else if (ALLOW_LOOSE_CUSTOM_TAGS && isImplicit && !temp->desc.compare("Unknown Tag")) {
-				QString tempVR = QString(dat[0])+dat[1];
+				QString tempVR = QString::fromLatin1(reinterpret_cast<const char*>(dat), 2);
 				unsigned long int tempVL = ((unsigned int)(dat[3]) << 24) +
 										   ((unsigned int)(dat[2]) << 16) +
 										   ((unsigned int)(dat[1]) << 8) +
@@ -448,7 +448,7 @@ int DICOM::parse(QString p) {
 				if (temp->tag[0] == 0x0020 && temp->tag[1] == 0x0013) {
 					QString tempS = "";
 					for (unsigned int s = 0; s < temp->vl; s++) {
-						tempS.append(temp->vf[s]);
+						tempS.append(QChar(temp->vf[s]));
 					}
 
 					n = tempS.toInt();
@@ -458,7 +458,7 @@ int DICOM::parse(QString p) {
 				//if (temp->tag[0] == 0x0020 && temp->tag[1] == 0x1041) { // removed as it wasn't
 				//	QString tempS = "";									  // always correct in all
 				//	for (unsigned int s = 0; s < temp->vl; s++) {		  // datasets
-				//		tempS.append(temp->vf[s]);
+				//		tempS.append(QChar(temp->vf[s]));
 				//	}
 				//	
 				//	z = tempS.toDouble();
@@ -466,7 +466,7 @@ int DICOM::parse(QString p) {
 				if (temp->tag[0] == 0x0020 && temp->tag[1] == 0x0032) {
 					QString tempS = "";
 					for (unsigned int s = 0; s < temp->vl; s++) { // Image Position Patient
-						tempS.append(temp->vf[s]);
+						tempS.append(QChar(temp->vf[s]));
 					}
 
 					z = tempS.split("\\").last().toDouble();
@@ -835,7 +835,7 @@ int DICOM::parseSequence(QDataStream *in, QVector <Attribute*> *att) {
 				return 0;
 			}
 
-			VR = QString(dat[0])+dat[1];
+			VR = QString::fromLatin1(reinterpret_cast<const char*>(dat), 2);
 			#if defined(OUTPUT_READ_SQ)
 			    std::cout << ((unsigned short int)(dat[0]) << 8) + (unsigned short int)dat[1] << " -> " << VR.toStdString() << " | Size "; std::cout.flush(); 
 			#endif
@@ -959,7 +959,7 @@ int DICOM::parseSequence(QDataStream *in, QVector <Attribute*> *att) {
 		    if (!nested) {
 		    	QString tempS = "";
 		    	for (unsigned int s = 0; s < temp->vl; s++)
-		    		tempS.append(temp->vf[s]);
+		    		tempS.append(QChar(temp->vf[s]));
 		    	std::cout << tempS.toStdString() << "\n";
 		    }
 		    else {

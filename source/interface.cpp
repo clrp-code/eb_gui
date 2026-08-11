@@ -48,7 +48,7 @@ Interface::Interface()
 // 1) some number of digits
 // 2) (e|E)[+-]?\d{1,2} character e or E, an optional +, then 1-2 digits 
 // 3) .\d*(e|E)[+]?\d{1,2} dot ., some number of digits, character e or E, an optional +, then 1-2 digits 
-	: allowedNums(QRegExp(REGEX_REAL_POS)) {
+	: allowedNums(QRegularExpression(REGEX_REAL_POS)) {
 	// Create the data backend
 	data = new Data();
 	int err = data->loadDefaults(); // load default parameters
@@ -1179,9 +1179,9 @@ int Interface::populateEgsinp() {
 				
 				if (line.startsWith("media =")) {
 					if (line.contains(","))
-						media =	line.split('=')[1].trimmed().split(",",QString::SkipEmptyParts);
+						media =	line.split('=')[1].trimmed().split(",",Qt::SkipEmptyParts);
 					else
-						media = line.split('=')[1].trimmed().split(" ",QString::SkipEmptyParts);
+						media = line.split('=')[1].trimmed().split(" ",Qt::SkipEmptyParts);
 					break;
 				}
 			}
@@ -1304,7 +1304,7 @@ void Interface::finishedProgress(){
 // EGS_geom~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EGS_geom::EGS_geom(QString n, int ind) : name (n), index(ind),
-allowedNums(QRegExp(REGEX_REAL)),
+allowedNums(QRegularExpression(REGEX_REAL)),
 // -?[\d*] potential -, then one digit followed by:
 // 1) some number of digits
 // 2) (e|E)[+-]?\d{1,2} character e or E, an optional + or -, then 1-2 digits 

@@ -44,7 +44,7 @@ phantInterface::phantInterface()
 // 1) some number of digits
 // 2) (e|E)[+]?\d{1,2} character e or E, an optional +, then 1-2 digits 
 // 3) .\d*(e|E)[+]?\d{1,2} dot ., some number of digits, character e or E, an optional +, then 1-2 digits 
-	: allowedNums(QRegExp(REGEX_REAL_POS)) {
+	: allowedNums(QRegularExpression(REGEX_REAL_POS)) {
 	parent = (Interface*)parentWidget();
 	
 	log = new logWindow();
@@ -58,7 +58,7 @@ phantInterface::phantInterface(Interface* p)
 // 1) some number of digits
 // 2) (e|E)[+]?\d{1,2} character e or E, an optional +, then 1-2 digits 
 // 3) .\d*(e|E)[+]?\d{1,2} dot ., some number of digits, character e or E, an optional +, then 1-2 digits 
-	: allowedNums(QRegExp(REGEX_REAL_POS)) {
+	: allowedNums(QRegularExpression(REGEX_REAL_POS)) {
 	parent = p;
 	
 	log = new logWindow();
@@ -638,7 +638,7 @@ void phantInterface::loadCTFiles() {
 			else {
 				QString temp = "";
 				for (unsigned int s = 0; s < tempAtt->vl; s++) {
-					temp.append(tempAtt->vf[s]);
+					temp.append(QChar(tempAtt->vf[s]));
 				}
 				
 				if (temp.trimmed().compare("CT")) { // See if the field contains CT
@@ -657,7 +657,7 @@ void phantInterface::loadCTFiles() {
 	if (tempAtt->tag[0] == 0x0010 && tempAtt->tag[1] == 0x0010) {
 		QString temp = "";
 		for (unsigned int s = 0; s < tempAtt->vl; s++) {
-			temp.append(tempAtt->vf[s]);
+			temp.append(QChar(tempAtt->vf[s]));
 		}
 		
 		phantNameEdit->setText(temp);
@@ -725,7 +725,7 @@ void phantInterface::loadCTDir() { // Very similar to CT files with an extra ste
 			else {
 				QString temp = "";
 				for (unsigned int s = 0; s < tempAtt->vl; s++) {
-					temp.append(tempAtt->vf[s]);
+					temp.append(QChar(tempAtt->vf[s]));
 				}
 				
 				if (temp.trimmed().compare("CT")) { // See if the field contains CT
@@ -744,7 +744,7 @@ void phantInterface::loadCTDir() { // Very similar to CT files with an extra ste
 	if (tempAtt->tag[0] == 0x0010 && tempAtt->tag[1] == 0x0010 && tempAtt->vl) {
 		QString temp = "";
 		for (unsigned int s = 0; s < tempAtt->vl; s++) {
-			temp.append(tempAtt->vf[s]);
+			temp.append(QChar(tempAtt->vf[s]));
 		}
 		
 		phantNameEdit->setText(temp);
@@ -884,10 +884,10 @@ void phantInterface::loadStruct() {
 		for (int l = 0; l < att->size(); l++) {
 			if (att->at(l)->tag[0] == 0x3006 && att->at(l)->tag[1] == 0x0026)
 				for (unsigned int s = 0; s < att->at(l)->vl; s++)
-					tempS.append(att->at(l)->vf[s]);
+					tempS.append(QChar(att->at(l)->vf[s]));
 			else if (att->at(l)->tag[0] == 0x3006 && att->at(l)->tag[1] == 0x0022)
 				for (unsigned int s = 0; s < att->at(l)->vl; s++)
-					tempI.append(att->at(l)->vf[s]);
+					tempI.append(QChar(att->at(l)->vf[s]));
 		}
 		tempS = tempS.trimmed().replace(" ", "_");
 		
@@ -948,7 +948,7 @@ void phantInterface::loadStruct() {
 					for (int m = 0; m < att2->size(); m++)
 						if (att2->at(m)->tag[0] == 0x3006 && att2->at(m)->tag[1] == 0x0050)
 							for (unsigned int s = 0; s < att2->at(m)->vl; s++)
-								tempS.append(att2->at(m)->vf[s]);
+								tempS.append(QChar(att2->at(m)->vf[s]));
 					
 					pointData = tempS.split('\\');
 					structZTemp.append(pointData[2].toDouble()/10.0);
@@ -963,7 +963,7 @@ void phantInterface::loadStruct() {
 			else if (att->at(l)->tag[0] == 0x3006 && att->at(l)->tag[1] == 0x0084) {
 				QString tempI = ""; // Get the number
 				for (unsigned int s = 0; s < att->at(l)->vl; s++)
-					tempI.append(att->at(l)->vf[s]);
+					tempI.append(QChar(att->at(l)->vf[s]));
 				structReferenceTemp = tempI.toInt();
 			}
 		}
@@ -1135,7 +1135,7 @@ void phantInterface::refresh() {
 void phantInterface::loadHU2rho() {
 	QString path = QFileDialog::getOpenFileName(this, tr("Load HU to density conversion table"), parent->data->gui_location+"/database/HU_conversion", tr("HU2RHO file (*.HU2RHO)"));
 	
-	if (path < 1)
+	if (path.isEmpty())
 		return;
 	
 	// Check if it opens as a text file (at the very least)
