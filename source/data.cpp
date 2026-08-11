@@ -121,12 +121,6 @@ int Data::loadDefaults() {
     }
 
 	gui_location = QCoreApplication::applicationDirPath();
-    #if defined(__APPLE__)
-        // on OSX applicationDirPath() resolves to ${EGS_HOME}/eb_gui/eb_gui.app/Contents/MacOS
-        // but it should resolve to ${EGS_HOME}/eb_gui
-        // so we go back 3 directories
-        gui_location = QDir::cleanPath(gui_location + "/../../..");
-    #endif
 	ep_location = hh_location+"scripts/bin/egs-parallel";
 	
 	QFile *file;

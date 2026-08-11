@@ -13,8 +13,9 @@ CONFIG += c++17
 # Prefer a plain executable (../eb_gui) over an .app bundle on macOS
 CONFIG -= app_bundle
 
-# Warn on deprecated Qt APIs
+# Fail the build on APIs deprecated before Qt 6.0
 DEFINES += QT_DEPRECATED_WARNINGS
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
 
 # Input
 HEADERS += data.h \
