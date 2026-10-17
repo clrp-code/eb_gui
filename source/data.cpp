@@ -490,6 +490,8 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 		return 102;	
 	}
 	file.close();
+	if (HUMap.size() < 2 || denMap.size() < 2)
+		return 102;
 	*log = *log + "-------------------------------------\n";
 	
 	// Read CT data
@@ -501,6 +503,8 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
     QVector <QVector <double> > imagePos;
     QVector <QVector <double> > xySpacing;
     QVector <double> zSpacing;
+	bool huRangeInitialized = false;
+	short int minCTHU = 0, maxCTHU = 0;
 	
 	*log = *log + "--- Parsing DICOM CT data ---\n";
     double increment = 5./double(CT_data.size()); // First 10% is reading DICOM
@@ -630,17 +634,41 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 					for (unsigned int s = 0; s < tempAtt->vl; s+=2) {
 						temp  = (tempAtt->vf[s+1]);
 						temp += (short int)(tempAtt->vf[s]) << 8;
+						short int convertedHU = rescaleFlag == 2 ? rescaleM*temp+rescaleB : temp;
 						
 						HU.last()[int(int(s/2)/xPix.last())][int(s/2)%xPix.last()] =
-							rescaleFlag == 2 ? rescaleM*temp+rescaleB : temp;
+							convertedHU;
+						if (!huRangeInitialized) {
+							minCTHU = convertedHU;
+							maxCTHU = convertedHU;
+							huRangeInitialized = true;
+						}
+						else {
+							if (convertedHU < minCTHU)
+								minCTHU = convertedHU;
+							if (convertedHU > maxCTHU)
+								maxCTHU = convertedHU;
+						}
 					}
 				else
 					for (unsigned int s = 0; s < tempAtt->vl; s+=2) {
 						temp  = (tempAtt->vf[s]);
 						temp += (short int)(tempAtt->vf[s+1]) << 8;
+						short int convertedHU = rescaleFlag == 2 ? rescaleM*temp+rescaleB : temp;
 						
 						HU.last()[int(int(s/2)/xPix.last())][int(s/2)%xPix.last()] =
-							rescaleFlag == 2 ? rescaleM*temp+rescaleB : temp;
+							convertedHU;
+						if (!huRangeInitialized) {
+							minCTHU = convertedHU;
+							maxCTHU = convertedHU;
+							huRangeInitialized = true;
+						}
+						else {
+							if (convertedHU < minCTHU)
+								minCTHU = convertedHU;
+							if (convertedHU > maxCTHU)
+								maxCTHU = convertedHU;
+						}
 					}
 			}
 		}
@@ -654,6 +682,20 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
     }
 	*log = *log + "Extracted all HU data for the " + QString::number(CT_data.size()) + " (" + QString::number(xPix[0]) + "x" + QString::number(yPix[0]) + ") slices\n";
 	*log = *log + "-----------------------------\n";
+	if (huRangeInitialized && (minCTHU < HUMap.first() || maxCTHU > HUMap.last())) {
+		QString warning = tr("Some CT HU values fall outside the selected HU-to-density calibration table.\n\n")
+			+ tr("CT HU range: ") + QString::number(minCTHU) + tr(" to ") + QString::number(maxCTHU) + tr("\n")
+			+ tr("Calibration HU range: ") + QString::number(HUMap.first()) + tr(" to ") + QString::number(HUMap.last()) + tr("\n\n")
+			+ tr("Densities for out-of-range values will be calculated by linear extrapolation. Values below the table will use the first two calibration points; values above the table will use the last two calibration points.\n\n")
+			+ tr("For clinical use, provide a scanner-specific calibration curve that covers the full CT HU range.\n\n")
+			+ tr("Continue VPM generation?");
+		if (QMessageBox::Ok != QMessageBox::question(0, "HU to density extrapolation", warning, QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel))
+			return 103;
+		*log = *log + "WARNING: CT HU values outside the HU-to-density calibration range were found. Linear extrapolation was used for out-of-range densities. Use a scanner-specific calibration curve that covers the full CT HU range when possible.\n";
+		*log = *log + QString("  CT HU range: %1 to %2\n").arg(minCTHU).arg(maxCTHU);
+		*log = *log + QString("  Calibration HU range: %1 to %2\n").arg(HUMap.first()).arg(HUMap.last());
+		*log = *log + "-----------------------------\n";
+	}
 	
 	// Build the actual egsphant
 	#if defined(DEBUG_BUILDEGSPHANT)
@@ -799,6 +841,8 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 					
 				if (tempHU < HUMap[0])
 					n = 0;
+				else if (tempHU >= HUMap.last())
+					n = HUMap.size()-2;
 				
 				temp = interp(tempHU,HUMap[n],HUMap[n+1],denMap[n],denMap[n+1]);
 				temp = temp<=0?0.000001:temp; // Set min density to 0.000001
