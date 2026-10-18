@@ -1244,7 +1244,7 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 	
 	// Generate metric data
 	double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
-	int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
+	int dIndex = xD.size()-1, ccIndex = ccD.size()-1;
 	for (int j = 0; j < data->size(); j++) {		
 		countTally    += 1.0;
 		volumeTally   += data->at(j).vol;
@@ -1256,14 +1256,6 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		maxD = maxD<data->at(j).dose?data->at(j).dose:maxD;
 		minE = minD>data->at(j).dose?absError:minE;
 		minD = minD>data->at(j).dose?data->at(j).dose:minD;
-		
-		// Append Vx values as we go
-		if (vIndex < xV.size()) {
-			if (data->at(j).dose > (xV[vIndex]*pD/100.0) && j) {
-				Vx[vIndex] += QString::number((volume-volumeTally+data->at(j).vol)/volume*100.0)+",,";
-				vIndex++;
-			}
-		}
 		
 		// Append Dx values as we go
 		if (dIndex >= 0) {
@@ -1282,8 +1274,19 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		}
 	}
 	
-	for (int j = vIndex; j < xV.size(); j++) 
-		Vx[j] += "n/a,n/a,";
+	if (volume > 0 && data->size()) {
+		for (int j = 0; j < xV.size(); j++) {
+			double volDose = 0, threshold = xV[j]*pD/100.0;
+			for (int k = 0; k < data->size(); k++)
+				if (data->at(k).dose >= threshold)
+					volDose += data->at(k).vol;
+			Vx[j] += QString::number(volDose/volume*100.0)+",,";
+		}
+	}
+	else {
+		for (int j = 0; j < xV.size(); j++)
+			Vx[j] += "n/a,n/a,";
+	}
 	
 	for (int j = dIndex; j >= 0; j--) 
 		Dx[j] += "n/a,n/a,";
