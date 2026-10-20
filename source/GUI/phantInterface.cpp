@@ -584,6 +584,9 @@ void phantInterface::createEGSphant() {
 	else if (err == 102)
 		QMessageBox::warning(0, "HU to density error",
         tr("Could not parse the hu2rho file. Aborting"));
+	else if (err == 103)
+		QMessageBox::information(0, "Creating VPM cancelled",
+        tr("VPM generation was cancelled before HU-to-density extrapolation."));
 	else if (err == 201)
 		QMessageBox::warning(0, "DICOM error",
         tr("Could not find field ") + "Pixel Spacing (0028,0030)" + tr (" in CT DICOM file.  Aborting"));
