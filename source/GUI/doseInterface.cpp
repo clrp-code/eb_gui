@@ -2549,6 +2549,8 @@ void doseInterface::calcMetrics() {
 		// Generate metric data
 		double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
 		int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
+		for (; ccIndex >= 0 && ccD[ccIndex] > volume; ccIndex--)
+			Dcc[ccIndex] += "        n/a         n/a |";
 		for (int j = 0; j < data.size(); j++) {
 			
 			
@@ -2584,7 +2586,6 @@ void doseInterface::calcMetrics() {
 				vIndex++;
 			}
 		}
-
 		// Calculate global metrics
 		doseTally     /= countTally; // Average dose
 		doseTallyErr  /= countTally; // Average uncertainty
@@ -2792,8 +2793,19 @@ void doseInterface::outputMetrics() {
 			}
 		}
 		
-		for (int j = vIndex; j < xV.size(); j++) 
-			Vx[j] += "n/a,n/a,";
+		if (volume > 0 && data.size()) {
+			for (int j = 0; j < xV.size(); j++) {
+				double volDose = 0, threshold = xV[j]*pD/100.0;
+				for (int k = 0; k < data.size(); k++)
+					if (data[k].dose >= threshold)
+						volDose += data[k].vol;
+				Vx[j] += QString::number(volDose/volume*100.0)+",,";
+			}
+		}
+		else {
+			for (int j = 0; j < xV.size(); j++)
+				Vx[j] += "n/a,n/a,";
+		}
 		
 		for (int j = dIndex; j >= 0; j--) 
 			Dx[j] += "n/a,n/a,";
