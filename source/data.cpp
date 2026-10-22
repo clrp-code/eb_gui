@@ -38,7 +38,9 @@
 */
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <algorithm>  // min and max
+
+#include <algorithm>
+using std::min, std::max;
 
 struct stat info; // required struct for using sys/stat
 
@@ -638,8 +640,8 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 						short int convertedHU = rescaleFlag == 2 ? rescaleM*temp+rescaleB : temp;
 						
 						HU.last()[int(int(s/2)/xPix.last())][int(s/2)%xPix.last()] = convertedHU;
-						minCTHU = std::min(minCTHU, convertedHU);
-						maxCTHU = std::max(maxCTHU, convertedHU);
+						minCTHU = min(minCTHU, convertedHU);
+						maxCTHU = max(maxCTHU, convertedHU);
 					}
 				else
 					for (unsigned int s = 0; s < tempAtt->vl; s+=2) {
@@ -648,8 +650,8 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 						short int convertedHU = rescaleFlag == 2 ? rescaleM*temp+rescaleB : temp;
 						
 						HU.last()[int(int(s/2)/xPix.last())][int(s/2)%xPix.last()] = convertedHU;
-						minCTHU = std::min(minCTHU, convertedHU);
-						maxCTHU = std::max(maxCTHU, convertedHU);
+						minCTHU = min(minCTHU, convertedHU);
+						maxCTHU = max(maxCTHU, convertedHU);
 					}
 			}
 		}

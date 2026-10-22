@@ -37,6 +37,8 @@
 ################################################################################
 */
 #include "doseInterface.h"
+#include <algorithm>  // min and max
+using std::min, std::max;
 
 // Constructors
 doseInterface::doseInterface() :
@@ -533,7 +535,7 @@ void doseInterface::createLayout() {
 	histDccEdit      = new QLineEdit();
 	histVxLabel      = new QLabel("Vx");
 	histVxEdit       = new QLineEdit();
-	histDpLabel      = new QLabel("Prescription (Gy)");
+	histDpLabel      = new QLabel("Prescription (Gy)=");
 	histDpEdit       = new QLineEdit();
 	
 	if (parent->data->metricNames.size() > 1) {
@@ -555,12 +557,14 @@ void doseInterface::createLayout() {
 	histDccEdit->setValidator(&allowedPosRealArrs);
 	histVxEdit->setValidator(&allowedPosRealArrs);
 	histDpEdit->setValidator(&allowedPosReals);
-	ttt = tr("Calculate Dx (in cc or % of total volume) and Vx (in % of prescription) values, the dose deposited within "
-			 " at least x percent of the volume and total volume with at least x dose, respectively.");
+	ttt = tr("x% of the volume has a dose larger than Dx (%)");
 	histDxLabel->setToolTip(ttt);
 	histDxEdit->setToolTip(ttt);
+    ttt = tr("The voxels with a dose greater than Dxcc have a net volume of x cubic centimetres");
 	histDccLabel->setToolTip(ttt);
 	histDccEdit->setToolTip(ttt);
+	ttt = tr("Vx, as a percentage of the total volume, is the net volume ")
+	    + tr("of voxels with more than x% of the prescription dose");
 	histVxLabel->setToolTip(ttt);
 	histVxEdit->setToolTip(ttt);
 	
@@ -1229,7 +1233,7 @@ void doseInterface::previewPhantRender() {
 	if (phantSelect->currentIndex() < 1) 
 		return;
 		
-	QString axis = xAxisButton->isChecked()?"x axis":(yAxisButton->isChecked()?"y axis":"z axis");
+	QString axis = (xAxisButton->isChecked() ? "x axis" : yAxisButton->isChecked() ? "y axis" : "z axis");
 	double horMin = horBoundaryMin->text().toDouble(), horMax = horBoundaryMax->text().toDouble();
 	double vertMin = vertBoundaryMin->text().toDouble(), vertMax = vertBoundaryMax->text().toDouble();
 	double depth, res;
@@ -1270,7 +1274,7 @@ void doseInterface::previewMapRender() {
 	if (mapDoseBox->currentIndex() < 1)
 		return;
 	
-	QString axis = xAxisButton->isChecked()?"x axis":(yAxisButton->isChecked()?"y axis":"z axis");
+	QString axis = (xAxisButton->isChecked() ? "x axis" : yAxisButton->isChecked() ? "y axis" : "z axis");
 	double horMin = horBoundaryMin->text().toDouble(), horMax = horBoundaryMax->text().toDouble();
 	double vertMin = vertBoundaryMin->text().toDouble(), vertMax = vertBoundaryMax->text().toDouble();
 	double depth, res;
@@ -1308,7 +1312,7 @@ void doseInterface::previewIsoRender() {
 	if ((isoDoseBox[0]->currentIndex()+isoDoseBox[1]->currentIndex()+isoDoseBox[2]->currentIndex()) < 1)
 		return;
 	
-	QString axis = xAxisButton->isChecked()?"X":(yAxisButton->isChecked()?"Y":"Z");
+	QString axis = (xAxisButton->isChecked() ? "X" : yAxisButton->isChecked() ? "Y" : "Z");
 	double horMin = horBoundaryMin->text().toDouble(), horMax = horBoundaryMax->text().toDouble();
 	double vertMin = vertBoundaryMin->text().toDouble(), vertMax = vertBoundaryMax->text().toDouble();
 	double depth, res;
@@ -1524,13 +1528,13 @@ void doseInterface::previewResetBounds() {
 			isReset = true;
 		}
 		else {
-			xMin = xMin>phant->x[0]?phant->x[0]:xMin;
-			yMin = yMin>phant->y[0]?phant->y[0]:yMin;
-			zMin = zMin>phant->z[0]?phant->z[0]:zMin;
+			xMin = min(xMin, phant->x[0]);
+			yMin = min(yMin, phant->y[0]);
+			zMin = min(zMin, phant->z[0]);
 			
-			xMax = xMax<phant->x.last()?phant->x.last():xMax;
-			yMax = yMax<phant->y.last()?phant->y.last():yMax;
-			zMax = zMax<phant->z.last()?phant->z.last():zMax;
+			xMax = max(xMax, phant->x.last());
+			yMax = max(yMax, phant->y.last());
+			zMax = max(zMax, phant->z.last());
 		}
 	}
 	
@@ -1547,13 +1551,13 @@ void doseInterface::previewResetBounds() {
 			isReset = true;
 		}
 		else {
-			xMin = xMin>mapDose->cx[0]?mapDose->cx[0]:xMin;
-			yMin = yMin>mapDose->cy[0]?mapDose->cy[0]:yMin;
-			zMin = zMin>mapDose->cz[0]?mapDose->cz[0]:zMin;
+			xMin = min(xMin, mapDose->cx[0]);
+			yMin = min(yMin, mapDose->cy[0]);
+			zMin = min(zMin, mapDose->cz[0]);
 			
-			xMax = xMax<mapDose->cx.last()?mapDose->cx.last():xMax;
-			yMax = yMax<mapDose->cy.last()?mapDose->cy.last():yMax;
-			zMax = zMax<mapDose->cz.last()?mapDose->cz.last():zMax;
+			xMax = max(xMax, mapDose->cx.last());
+			yMax = max(yMax, mapDose->cy.last());
+			zMax = max(zMax, mapDose->cz.last());
 		}
 	}
 
@@ -1571,13 +1575,13 @@ void doseInterface::previewResetBounds() {
 				isReset = true;
 			}
 			else {
-				xMin = xMin>isoDoses[i]->cx[0]?isoDoses[i]->cx[0]:xMin;
-				yMin = yMin>isoDoses[i]->cy[0]?isoDoses[i]->cy[0]:yMin;
-				zMin = zMin>isoDoses[i]->cz[0]?isoDoses[i]->cz[0]:zMin;
+				xMin = min(xMin, isoDoses[i]->cx[0]);
+				yMin = min(yMin, isoDoses[i]->cy[0]);
+				zMin = min(zMin, isoDoses[i]->cz[0]);
 				
-				xMax = xMax<isoDoses[i]->cx.last()?isoDoses[i]->cx.last():xMax;
-				yMax = yMax<isoDoses[i]->cy.last()?isoDoses[i]->cy.last():yMax;
-				zMax = zMax<isoDoses[i]->cz.last()?isoDoses[i]->cz.last():zMax;
+				xMax = max(xMax, isoDoses[i]->cx.last());
+				yMax = max(yMax, isoDoses[i]->cy.last());
+				zMax = max(zMax, isoDoses[i]->cz.last());
 			}
 		}
 	
@@ -1829,7 +1833,7 @@ void doseInterface::previewSliceDown() {
 void doseInterface::writePreviewLabel(int i, int j) {	
 	QString temp = "";
 	
-	QString axis = xAxisButton->isChecked()?"X":(yAxisButton->isChecked()?"Y":"Z");
+	QString axis = (xAxisButton->isChecked() ? "X" : yAxisButton->isChecked() ? "Y" : "Z");
 	double horMin = horBoundaryMin->text().toDouble(), horMax = horBoundaryMax->text().toDouble();
 	double vertMin = vertBoundaryMin->text().toDouble(), vertMax = vertBoundaryMax->text().toDouble();
 	double depth, res;
@@ -1913,23 +1917,23 @@ QImage doseInterface::createLegend() {
 				labels.append(phant->media[i]);
 				c = (i+1)*255.0/double(phant->media.size()+1);
 				colours.append(QColor(qRgb(c,c,c)));
-				longest = int(longest<labels.last().length()?labels.last().length():longest);
+				longest = int(max(longest, labels.last().length()));
 			}
 		}
 		else {
 			labels.append(densityMin->text()+" g/cm^3");
-			longest = int(longest<labels.last().length()?labels.last().length():longest);
+			longest = int(max(longest, labels.last().length()));
 			labels.append(densityMax->text()+" g/cm^3");
-			longest = int(longest<labels.last().length()?labels.last().length():longest);
+			longest = int(max(longest, labels.last().length()));
 			colours.append(QColor(qRgb(0,0,0)));
 			colours.append(QColor(qRgb(255,255,255)));
 		}
 	}
 	else if (legendBox->currentIndex() == 2) {
 		labels.append(mapMinDose->text()+" "+unitsEdit->text());
-		longest = int(longest<labels.last().length()?labels.last().length():longest);
+		longest = int(max(longest, labels.last().length()));
 		labels.append(mapMaxDose->text()+" "+unitsEdit->text());
-		longest = int(longest<labels.last().length()?labels.last().length():longest);
+		longest = int(max(longest, labels.last().length()));
 		colours.append(QColor(mapMinButton->palette().color(QPalette::Button)));
 		colours.append(QColor(mapMidButton->palette().color(QPalette::Button)));
 		colours.append(QColor(mapMaxButton->palette().color(QPalette::Button)));
@@ -1937,7 +1941,7 @@ QImage doseInterface::createLegend() {
 	else if (legendBox->currentIndex() == 3) {
 		for (int i = 0; i < isoColourDose.size(); i++) {
 			labels.append(isoColourDose[i]->text()+" "+unitsEdit->text());
-			longest = int(longest<labels.last().length()?labels.last().length():longest);
+			longest = int(max(longest, labels.last().length()));
 			colours.append(QColor(isoColourButton[i]->palette().color(QPalette::Button)));
 		}
 	}
@@ -2018,8 +2022,8 @@ QImage doseInterface::createLegend() {
 			blue  = (colours[1].blue() * weight) +
 					(colours[0].blue() * invWeight);
 					
-			weight = red>blue?red:blue;
-			weight = weight>green?weight:green;
+			weight = max(red, blue);
+			weight = max(weight, green);
 			weight = 255.0/weight;
 			
 			pen.setColor(qRgb(red*weight,green*weight,blue*weight));
@@ -2037,8 +2041,8 @@ QImage doseInterface::createLegend() {
 			blue  = (colours[2].blue() * weight) +
 					(colours[1].blue() * invWeight);
 					
-			weight = red>blue?red:blue;
-			weight = weight>green?weight:green;
+			weight = max(red, blue);
+			weight = max(weight, green);
 			weight = 255.0/weight;
 			
 			pen.setColor(qRgb(red*weight,green*weight,blue*weight));
@@ -2337,7 +2341,7 @@ void doseInterface::histoRender() {
 			savePlotName.append(histLoadedView->item(i)->text());
 			int binCount = parent->data->histogramBinCount;
 			
-			// Bin count, maybe make a configuration file option?
+			// Bin count, maybe make a configuration file option
 			double sInc = (data.last().dose-data[0].dose)/double(binCount);
 			double s0 = data[0].dose;
 			
@@ -2475,7 +2479,7 @@ void doseInterface::calcMetrics() {
 	int count = histDoses.size();
 	
 	// Metrics to extract
-	QString names, units, average, uncertainty, voxels, volumes, minimum, maximum;
+	QString names, units, average, uncertainty, voxels, volumes, minimum, maximum, text;
 	QStringList Dx, Vx, Dcc, temp;
 	QVector <double> xD, xV, ccD;
 	double pD, minD = 1000000000, maxD = 0, minE = 0, maxE = 0;
@@ -2484,7 +2488,7 @@ void doseInterface::calcMetrics() {
 		temp = histDxEdit->text().replace(' ',',').split(',');
 		for (int i = 0; i < temp.size(); i++) {
 			xD.append(temp[i].toDouble());
-			Dx.append("");
+			Dx.append("        n/a         n/a |");
 		}
 		std::sort(xD.begin(), xD.end());
 	}
@@ -2493,7 +2497,7 @@ void doseInterface::calcMetrics() {
 		temp = histVxEdit->text().replace(' ',',').split(',');
 		for (int i = 0; i < temp.size(); i++) {
 			xV.append(temp[i].toDouble());
-			Vx.append("");
+			Vx.append("        n/a         n/a |");
 		}
 		std::sort(xV.begin(), xV.end());
 	}
@@ -2502,7 +2506,7 @@ void doseInterface::calcMetrics() {
 		temp = histDccEdit->text().replace(' ',',').split(',');
 		for (int i = 0; i < temp.size(); i++) {
 			ccD.append(temp[i].toDouble());
-			Dcc.append("");
+			Dcc.append("        n/a         n/a |");
 		}
 		std::sort(ccD.begin(), ccD.end());
 	}
@@ -2546,54 +2550,41 @@ void doseInterface::calcMetrics() {
 		double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
 		int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
 		for (int j = 0; j < data.size(); j++) {
+			
+			
 			countTally    += 1.0;
 			volumeTally   += data[j].vol;
 			doseTally     += data[j].dose;
 			absError       = data[j].dose*data[j].err;
 			doseTallyErr  += absError;
 			doseTallyErr2 += absError*absError;
-			maxE = maxD<data[j].dose?absError:maxE;
-			maxD = maxD<data[j].dose?data[j].dose:maxD;
-			minE = minD>data[j].dose?absError:minE;
-			minD = minD>data[j].dose?data[j].dose:minD;
+			maxE = (maxD < data[j].dose ? absError :     maxE);
+			maxD = (maxD < data[j].dose ? data[j].dose : maxD);
+			minE = (minD > data[j].dose ? absError     : minE);
+			minD = (minD > data[j].dose ? data[j].dose : minD);
 			
-			// Append Vx values as we go
-			if (vIndex < xV.size()) {
-				if (data[j].dose > (xV[vIndex]*pD/100.0) && j) {
-					Vx[vIndex] += QString::number((volume-volumeTally+data[j].vol)/volume*100.0).left(11).rightJustified(11,' ')+" "
-							   +  "            |";
-					vIndex++;
-				}
+			// update Dx entries whenever a threshold is passed
+			while (dIndex >= 0 && volume-volumeTally < xD[dIndex]*volume/100.) {
+				Dx[dIndex] = QString::number(data[j-1].dose).left(11).rightJustified(11,' ')+" "
+							 + QString::number(data[j-1].dose*data[j-1].err).left(11).rightJustified(11,' ')+" |";
+				dIndex--;
 			}
 			
-			// Append Dx values as we go
-			if (dIndex >= 0) {
-				if ((volume-volumeTally)/volume*100.0 < xD[dIndex] && j) {
-					Dx[dIndex] += QString::number(data[j-1].dose).left(11).rightJustified(11,' ')+" "
-							   +  QString::number(data[j-1].dose*data[j-1].err).left(11).rightJustified(11,' ')+" |";
-					dIndex--;
-				}
+			// update Dcc entries whenever a threshold is passed
+			while (ccIndex >= 0 && volume-volumeTally < ccD[ccIndex]) {
+				Dcc[ccIndex] = QString::number(data[j-1].dose).left(11).rightJustified(11,' ')+" "
+							   + QString::number(data[j-1].dose*data[j-1].err).left(11).rightJustified(11,' ')+" |";
+				ccIndex--;
 			}
-			
-			// Append Dcc values as we go
-			if (ccIndex >= 0) {
-				if ((volume-volumeTally) < ccD[ccIndex] && j) {
-					Dcc[ccIndex] += QString::number(data[j-1].dose).left(11).rightJustified(11,' ')+" "
-							     +  QString::number(data[j-1].dose*data[j-1].err).left(11).rightJustified(11,' ')+" |";
-					ccIndex--;
-				}
+        
+			// update Vx entries whenever a threshold is passed
+			while (vIndex < xV.size() && data[j].dose > pD*xV[vIndex]/100.0) {
+				dobule vol = volume-volumeTally+data[j].vol;
+				Vx[vIndex] = QString::number(vol/volume*100.0)+",,";
+				vIndex++;
 			}
 		}
-		
-		for (int j = vIndex; j < xV.size(); j++) 
-			Vx[j] += "        n/a         n/a |";
-		
-		for (int j = dIndex; j >= 0; j--) 
-			Dx[j] += "        n/a         n/a |";
-		
-		for (int j = ccIndex; j >= 0; j--) 
-			Dcc[j] += "        n/a         n/a |";
-		
+
 		// Calculate global metrics
 		doseTally     /= countTally; // Average dose
 		doseTallyErr  /= countTally; // Average uncertainty
@@ -2612,7 +2603,7 @@ void doseInterface::calcMetrics() {
 		volumes     += QString::number(volume).left(11).rightJustified(11,' ')+"             |";
 	}
 	
-	QString text = QString("Dataset").left(24).rightJustified(24,' ')+"|"+names+"\n";
+	text        += QString("Dataset").left(24).rightJustified(24,' ')+"|"+names+"\n";
 	text        += QString(" ").left(24).rightJustified(24,' ')+" "+units+"\n";
 	text        += QString("Max dose / Gy").left(24).rightJustified(24,' ')+"|"+maximum+"\n";
 	text        += QString("Min dose / Gy").left(24).rightJustified(24,' ')+"|"+minimum+"\n";
@@ -2658,25 +2649,26 @@ void doseInterface::outputMetrics() {
 	int filterInfo = 0;
 	if (histMaskSelect->currentIndex()) {
 		filterInfo += 1;
-		text += QString("Data filtered to only include doses within contour ")+histMaskSelect->currentText()+"\n";
+		text += QString("Data filtered to only include doses within contour ") + histMaskSelect->currentText() + "\n";
 	}
 	
 	QList <QListWidgetItem*> selectedMedia = histMediumView->selectedItems();
 	QString allowedMedia = "", allMedia = EGSPHANT_CHARS;
 	if (selectedMedia.size()) {
 		filterInfo += 2;
-		text += QString("Data filtered to only include doses within ")+histPhantSelect->currentText()+" VPM voxels containing:,";
+		text += QString("Data filtered to only include doses within ") + histPhantSelect->currentText()
+		        + " VPM voxels containing:,";
 		for (int i = 0; i < selectedMedia.size(); i++) {
 			allowedMedia += allMedia[histMediumView->row(selectedMedia[i])];
-			text += selectedMedia[i]->text()+",";
+			text += selectedMedia[i]->text() + ",";
 		}
 		text += QString("\n");
 	}
 	
 	double minDose = histDoseMinEdit->text().toDouble(), maxDose = histDoseMaxEdit->text().toDouble();
 	if (minDose || maxDose) {
-		text += QString("Data filtered to only include doses within range ")+QString::number(minDose)
-		     +  " and "+((minDose < maxDose)?QString::number(maxDose):QString("infinity"))+"\n";
+		text += QString("Data filtered to only include doses within range ") + QString::number(minDose)
+		     +  " and " + (minDose < maxDose ? QString::number(maxDose) : QString("infinity")) + "\n";
 		filterInfo += 4;
 	}
 	
@@ -2761,21 +2753,23 @@ void doseInterface::outputMetrics() {
 		// Generate metric data
 		double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
 		int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
-		for (int j = 0; j < data.size(); j++) {			
+		for (int j = 0; j < data.size(); j++) {
+			
 			countTally    += 1.0;
 			volumeTally   += data[j].vol;
 			doseTally     += data[j].dose;
 			absError       = data[j].dose*data[j].err;
 			doseTallyErr  += absError;
 			doseTallyErr2 += absError*absError;
-			maxE = maxD<data[j].dose?absError:maxE;
-			maxD = maxD<data[j].dose?data[j].dose:maxD;
-			minE = minD>data[j].dose?absError:minE;
-			minD = minD>data[j].dose?data[j].dose:minD;
+			maxE = (maxD < data[j].dose ? absError     : maxE);
+			maxD = (maxD < data[j].dose ? data[j].dose : maxD);
+			minE = (minD > data[j].dose ? absError     : minE);
+			minD = (minD > data[j].dose ? data[j].dose : minD);
 			
 			// Append Vx values as we go
 			if (vIndex < xV.size()) {
 				if (data[j].dose > (xV[vIndex]*pD/100.0) && j) {
+					
 					Vx[vIndex] += QString::number((volume-volumeTally+data[j].vol)/volume*100.0)+",,";
 					vIndex++;
 				}
@@ -2891,8 +2885,8 @@ void doseInterface::outputRawData() {// Return
 	
 	double minDose = histDoseMinEdit->text().toDouble(), maxDose = histDoseMaxEdit->text().toDouble();
 	if (minDose || maxDose) {
-		text += QString("Data filtered to only include doses within range ")+QString::number(minDose)
-		     +  " and "+((minDose < maxDose)?QString::number(maxDose):QString("infinity"))+"\n";
+		text += QString("Data filtered to only include doses within range ") + QString::number(minDose)
+		     +  " and " + (minDose < maxDose ? QString::number(maxDose) : QString("infinity")) + "\n";
 		filterInfo += 4;
 	}
 	
@@ -2960,7 +2954,7 @@ void doseInterface::outputRawData() {// Return
 		text += "Dose / Gy,";
 		text += "Uncertainty / Gy,";
 		text += "Volume / cm^3,";	
-		count = (count<dataColumns[i].size()?dataColumns[i].size():count);
+		count = (count < dataColumns[i].size() ? dataColumns[i].size() : count);
 	}
 	text += "\n";
 	

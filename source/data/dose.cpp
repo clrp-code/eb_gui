@@ -842,8 +842,8 @@ void Dose::getContour(QVector <QVector <QLineF> > *con,
             }
 }
 
-int Dose::interp(int x1, int x2, double y1, double y2, double y0) {
-    return int(x1+(y0-y1)*(x2-x1)/(y2-y1));
+int Dose::interp(int y1, int y2, double x1, double x2, double x) {
+    return int(y1 + (x-x1) * (y2-y1) / (x2-x1));
 }
 
 QImage Dose::getColourMap(QString axis, double ai, double af, double bi, double bf, double d, int res,
@@ -1205,14 +1205,12 @@ void Dose::getDVs(QVector <QVector <DV> > *data, QVector <EGSPhant*> *masks, QVe
 		std::sort((*data)[i].begin(), (*data)[i].end(), DV_sorter);
 }
 
-QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QString DxStr, QString DccStr, QString VxStr, QString pDStr) {
-	QString names, units, average, uncertainty, voxels, volumes, minimum, maximum;
-	QStringList Dx, Vx, Dcc, temp;
+QString Dose::getMetricCSV(
+    QVector <DV> *data, double volume, QString name, QString DxStr, QString DccStr, QString VxStr, QString pDStr) {
+        		
+	// parse the textboxes on the AnalyzeResults -> DVH -> Metrics tab
 	QVector <double> xD, xV, ccD;
-	double pD, minD = 1000000000, maxD = 0, minE = 0, maxE = 0;
-	
-	QString text = "";
-	
+	QStringList Dx, Vx, Dcc, temp;
 	if (DxStr.length()) {
 		temp = DxStr.replace(' ',',').split(',');
 		for (int i = 0; i < temp.size(); i++) {
@@ -1239,11 +1237,11 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		}
 		std::sort(ccD.begin(), ccD.end());
 	}
-	
-	pD = pDStr.toDouble();
+	double pD = pDStr.toDouble();  // precription dose
 	
 	// Generate metric data
 	double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
+	double minD = 1e9, maxD = 0, minE = 0.1*minD, maxE = 0.1*maxD;
 	int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
 	for (int j = 0; j < data->size(); j++) {		
 		countTally    += 1.0;
@@ -1252,10 +1250,10 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		absError       = data->at(j).dose*data->at(j).err;
 		doseTallyErr  += absError;
 		doseTallyErr2 += absError*absError;
-		maxE = maxD<data->at(j).dose?absError:maxE;
-		maxD = maxD<data->at(j).dose?data->at(j).dose:maxD;
-		minE = minD>data->at(j).dose?absError:minE;
-		minD = minD>data->at(j).dose?data->at(j).dose:minD;
+		maxE = (maxD < data->at(j).dose ? absError         : maxE);
+		maxD = (maxD < data->at(j).dose ? data->at(j).dose : maxD);
+		minE = (minD > data->at(j).dose ? absError         : minE);
+		minD = (minD > data->at(j).dose ? data->at(j).dose : minD);
 		
 		// Append Vx values as we go
 		if (vIndex < xV.size()) {
@@ -1292,6 +1290,8 @@ QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QStr
 		Dcc[j] += "n/a,n/a,";
 	
 	// Calculate global metrics
+	QString names, units, average, uncertainty, voxels, volumes, minimum, maximum, text;
+	
 	doseTally     /= countTally; // Average dose
 	doseTallyErr  /= countTally; // Average uncertainty
 	doseTallyErr2 = sqrt(doseTallyErr2/countTally); // Propagated average dose uncertainty
