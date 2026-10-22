@@ -2544,7 +2544,9 @@ void doseInterface::calcMetrics() {
 		
 		// Generate metric data
 		double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
-		int dIndex = xD.size()-1, ccIndex = ccD.size()-1;
+		int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
+		for (; ccIndex >= 0 && ccD[ccIndex] > volume; ccIndex--)
+			Dcc[ccIndex] += "        n/a         n/a |";
 		for (int j = 0; j < data.size(); j++) {
 			countTally    += 1.0;
 			volumeTally   += data[j].vol;
@@ -2763,7 +2765,9 @@ void doseInterface::outputMetrics() {
 		
 		// Generate metric data
 		double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
-		int dIndex = xD.size()-1, ccIndex = ccD.size()-1;
+		int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
+		for (; ccIndex >= 0 && ccD[ccIndex] > volume; ccIndex--)
+			Dcc[ccIndex] += "n/a,n/a,";
 		for (int j = 0; j < data.size(); j++) {			
 			countTally    += 1.0;
 			volumeTally   += data[j].vol;
