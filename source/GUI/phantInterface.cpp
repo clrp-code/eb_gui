@@ -1244,7 +1244,7 @@ void logWindow::createLayout() {
 	
 	frame->setLayout(layout);
 	setCentralWidget(frame);
-    setWindowTitle("egsphant creation log");
+    setWindowTitle("eb_gui log");
 	resize(1280,720);
 	hide();
 }

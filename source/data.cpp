@@ -40,7 +40,8 @@
 #include <sys/stat.h>
 
 #include <algorithm>
-using std::min, std::max;
+using std::min;
+using std::max;
 
 struct stat info; // required struct for using sys/stat
 
