@@ -138,7 +138,7 @@ int Data::loadDefaults() {
     QTextStream *input;
 	QString text;
 	
-	muen_location = lib_location+"/muen/brachy_xcom_1.5MeV.muendat";
+	muen_location = lib_location+"/muen/materials_1500keV.muendat";
 	material_location = lib_location+"/media/material.dat";
 	transport_location = lib_location+"/transport/low_energy_default";
 	mar_location = gui_location+"/database/MAR_defaults.txt";
