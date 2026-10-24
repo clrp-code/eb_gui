@@ -82,7 +82,7 @@ int Data::loadDefaults() {
 
     // EGS_CONFIG
     if (envVars.contains("EGS_CONFIG")) { // No HEN_HOUSE defined
-        QFileInfo egs_config = envVars.value("EGS_CONFIG");
+        QFileInfo egs_config(envVars.value("EGS_CONFIG"));
         my_machine = egs_config.baseName(); 
     }
     else {
@@ -95,7 +95,7 @@ int Data::loadDefaults() {
     if (!envVars.contains("HEN_HOUSE")) { // No HEN_HOUSE defined
         // first try to figure it out based on EGS_CONFIG
         if (envVars.contains("EGS_CONFIG")) { // No HEN_HOUSE defined
-            QFileInfo egs_config = envVars.value("EGS_CONFIG");
+            QFileInfo egs_config(envVars.value("EGS_CONFIG"));
             hh_location = QDir::cleanPath(egs_config.absolutePath() + "/../"); 
         }
         else {
@@ -123,12 +123,6 @@ int Data::loadDefaults() {
     }
 
 	gui_location = QCoreApplication::applicationDirPath();
-    #if defined(__APPLE__)
-        // on OSX applicationDirPath() resolves to ${EGS_HOME}/eb_gui/eb_gui.app/Contents/MacOS
-        // but it should resolve to ${EGS_HOME}/eb_gui
-        // so we go back 3 directories
-        gui_location = QDir::cleanPath(gui_location + "/../../..");
-    #endif
 	ep_location = hh_location+"scripts/bin/egs-parallel";
 	
 	QFile *file;
@@ -182,7 +176,7 @@ int Data::loadDefaults() {
 			else if (text.left(33).compare("HU to egsphant conversion table =") == 0)	
 				hu_location = gui_location+text.right(text.length()-33).trimmed();
 			else if (text.left(27).compare("tissue assignment schemes =") == 0)
-				TAS_names = text.right(text.length()-27).trimmed().split(" ", QString::SkipEmptyParts);
+				TAS_names = text.right(text.length()-27).trimmed().split(" ", Qt::SkipEmptyParts);
 			else if (text.left(24).compare("isodose line thickness =") == 0)
 				isodoseLineThickness = text.right(text.length()-24).trimmed().toInt();
 			else if (text.left(22).compare("histogram bin count =") == 0)
@@ -474,13 +468,13 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 			tempS = input.readLine();
 			
 			if (tempS.contains(" ")) {
-				HUMap << tempS.split(' ', QString::SkipEmptyParts)[0].toDouble();
-				denMap << tempS.split(' ', QString::SkipEmptyParts)[1].toDouble();
+				HUMap << tempS.split(' ', Qt::SkipEmptyParts)[0].toDouble();
+				denMap << tempS.split(' ', Qt::SkipEmptyParts)[1].toDouble();
 				*log = *log + "  " + QString::number(HUMap.last()).rightJustified(8,' ') + " " + QString::number(denMap.last()) + "\n";
 			}
 			else if (tempS.contains("\t")) {
-				HUMap << tempS.split('\t', QString::SkipEmptyParts)[0].toDouble();
-				denMap << tempS.split('\t', QString::SkipEmptyParts)[1].toDouble();		
+				HUMap << tempS.split('\t', Qt::SkipEmptyParts)[0].toDouble();
+				denMap << tempS.split('\t', Qt::SkipEmptyParts)[1].toDouble();		
 				*log = *log + "  " + QString::number(HUMap.last()).rightJustified(8,' ') + " " + QString::number(denMap.last()) + "\n";		
 			}
 			else {
@@ -530,11 +524,11 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 
 			QString temp = "";
 			for (unsigned int s = 0; s < tempAtt->vl; s++) {
-				temp.append(tempAtt->vf[s]);
+				temp.append(QChar(tempAtt->vf[s]));
 			}
 
-			xySpacing.last()[0] = (temp.split('\\',QString::SkipEmptyParts)[0]).toDouble();
-			xySpacing.last()[1] = (temp.split('\\',QString::SkipEmptyParts)[1]).toDouble();
+			xySpacing.last()[0] = (temp.split('\\',Qt::SkipEmptyParts)[0]).toDouble();
+			xySpacing.last()[1] = (temp.split('\\',Qt::SkipEmptyParts)[1]).toDouble();
 		}
 		else
 			return 201;
@@ -544,7 +538,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 		if (tempAtt->tag[0] == 0x0018 && tempAtt->tag[1] == 0x0050) {
 			QString temp = "";
 			for (unsigned int s = 0; s < tempAtt->vl; s++) {
-				temp.append(tempAtt->vf[s]);
+				temp.append(QChar(tempAtt->vf[s]));
 			}
 
 			zSpacing.append(temp.toDouble());
@@ -560,12 +554,12 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 
 			QString temp = "";
 			for (unsigned int s = 0; s < tempAtt->vl; s++) {
-				temp.append(tempAtt->vf[s]);
+				temp.append(QChar(tempAtt->vf[s]));
 			}
 
-			imagePos.last()[0] = (temp.split('\\',QString::SkipEmptyParts)[0]).toDouble();
-			imagePos.last()[1] = (temp.split('\\',QString::SkipEmptyParts)[1]).toDouble();
-			imagePos.last()[2] = (temp.split('\\',QString::SkipEmptyParts)[2]).toDouble();
+			imagePos.last()[0] = (temp.split('\\',Qt::SkipEmptyParts)[0]).toDouble();
+			imagePos.last()[1] = (temp.split('\\',Qt::SkipEmptyParts)[1]).toDouble();
+			imagePos.last()[2] = (temp.split('\\',Qt::SkipEmptyParts)[2]).toDouble();
 		} 
 		else
 			return 203;
@@ -601,7 +595,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 		if (tempAtt->tag[0] == 0x0028 && tempAtt->tag[1] == 0x1053) {
 			QString temp = "";
 			for (unsigned int s = 0; s < tempAtt->vl; s++) {
-				temp.append(tempAtt->vf[s]);
+				temp.append(QChar(tempAtt->vf[s]));
 			}
 			
 			rescaleM = temp.toDouble();
@@ -613,7 +607,7 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 		if (tempAtt->tag[0] == 0x0028 && tempAtt->tag[1] == 0x1052) {
 			QString temp = "";
 			for (unsigned int s = 0; s < tempAtt->vl; s++) {
-				temp.append(tempAtt->vf[s]);
+				temp.append(QChar(tempAtt->vf[s]));
 			}
 			
 			rescaleB = temp.toDouble();
@@ -1215,7 +1209,7 @@ int Data::parsePlan(QString* log) {
 	if (tempAtt->tag[0] == 0x300A && tempAtt->tag[1] == 0x0202) {
 		QString temp = "";
 		for (unsigned int s = 0; s < tempAtt->vl; s++) {
-			temp.append(tempAtt->vf[s]);
+			temp.append(QChar(tempAtt->vf[s]));
 		}
 		treatmentType = temp.trimmed();
 	}
@@ -1229,7 +1223,7 @@ int Data::parsePlan(QString* log) {
 	if (tempAtt->tag[0] == 0x300A && tempAtt->tag[1] == 0x0200) {
 		QString temp = "";
 		for (unsigned int s = 0; s < tempAtt->vl; s++) {
-			temp.append(tempAtt->vf[s]);
+			temp.append(QChar(tempAtt->vf[s]));
 		}
 		treatmentTechnique = temp.trimmed();
 	}
@@ -1243,7 +1237,7 @@ int Data::parsePlan(QString* log) {
 	if (tempAtt->tag[0] == 0x300A && tempAtt->tag[1] == 0x0006) {
 		QString temp = "";
 		for (unsigned int s = 0; s < tempAtt->vl; s++) {
-			temp.append(tempAtt->vf[s]);
+			temp.append(QChar(tempAtt->vf[s]));
 		}
 		treatDate = temp.trimmed();
 	}
@@ -1251,7 +1245,7 @@ int Data::parsePlan(QString* log) {
 	if (tempAtt->tag[0] == 0x300A && tempAtt->tag[1] == 0x0007) {
 		QString temp = "";
 		for (unsigned int s = 0; s < tempAtt->vl; s++) {
-			temp.append(tempAtt->vf[s]);
+			temp.append(QChar(tempAtt->vf[s]));
 		}
 		treatTime = temp.trimmed();
 	}
@@ -1283,19 +1277,19 @@ int Data::parsePlan(QString* log) {
 			for (int l = 0; l < att->size(); l++) {
 				if (att->at(l)->tag[0] == 0x300A && att->at(l)->tag[1] == 0x022A)
 					for (unsigned int s = 0; s < att->at(l)->vl; s++)
-						tempS.append(att->at(l)->vf[s]);
+						tempS.append(QChar(att->at(l)->vf[s]));
 				else if (att->at(l)->tag[0] == 0x300A && att->at(l)->tag[1] == 0x0228)
 					for (unsigned int s = 0; s < att->at(l)->vl; s++)
-						tempI.append(att->at(l)->vf[s]);
+						tempI.append(QChar(att->at(l)->vf[s]));
 				else if (att->at(l)->tag[0] == 0x300A && att->at(l)->tag[1] == 0x0226)
 					for (unsigned int s = 0; s < att->at(l)->vl; s++)
-						tempE.append(att->at(l)->vf[s]);
+						tempE.append(QChar(att->at(l)->vf[s]));
 				else if (att->at(l)->tag[0] == 0x300A && att->at(l)->tag[1] == 0x0216) {
 					if (tempInf != "")
 						tempInf = tempInf + " - ";
 					
 					for (unsigned int s = 0; s < att->at(l)->vl; s++) {
-						tempInf.append(att->at(l)->vf[s]);
+						tempInf.append(QChar(att->at(l)->vf[s]));
 					}
 				}
 				else if (att->at(l)->tag[0] == 0x300A && att->at(l)->tag[1] == 0x021B) {
@@ -1303,7 +1297,7 @@ int Data::parsePlan(QString* log) {
 						tempInf = tempInf + " - ";
 					
 					for (unsigned int s = 0; s < att->at(l)->vl; s++) {
-						tempInf.append(att->at(l)->vf[s]);
+						tempInf.append(QChar(att->at(l)->vf[s]));
 					}
 				}
 				else if (att->at(l)->tag[0] == 0x300A && att->at(l)->tag[1] == 0x021C) {
@@ -1311,10 +1305,10 @@ int Data::parsePlan(QString* log) {
 				}
 				else if (att->at(l)->tag[0] == 0x300A && att->at(l)->tag[1] == 0x022C)
 					for (unsigned int s = 0; s < att->at(l)->vl; s++)
-						tempD.append(att->at(l)->vf[s]);
+						tempD.append(QChar(att->at(l)->vf[s]));
 				else if (att->at(l)->tag[0] == 0x300A && att->at(l)->tag[1] == 0x022E)
 					for (unsigned int s = 0; s < att->at(l)->vl; s++)
-						tempT.append(att->at(l)->vf[s]);
+						tempT.append(QChar(att->at(l)->vf[s]));
 			}
 
 			if (airKerma == -1 && tempS != "")
@@ -1451,7 +1445,7 @@ int Data::parsePlan(QString* log) {
 									for (int n = 0; n < att3->size(); n++) {
 										if (att3->at(n)->tag[0] == 0x300A && att3->at(n)->tag[1] == 0x02D4) { // Seed position
 											for (unsigned int s = 0; s < att3->at(n)->vl; s++) {
-												tempS.append(att3->at(n)->vf[s]);
+												tempS.append(QChar(att3->at(n)->vf[s]));
 											}
 
 											pointData2 = tempS.split('\\');
@@ -1465,7 +1459,7 @@ int Data::parsePlan(QString* log) {
 										else if (att3->at(n)->tag[0] == 0x300A && att3->at(n)->tag[1] == 0x02D6) { // Seed time weight
 
 											for (unsigned int s = 0; s < att3->at(n)->vl; s++) {
-												tempT.append(att3->at(n)->vf[s]);
+												tempT.append(QChar(att3->at(n)->vf[s]));
 											}
 
 											tempDwellTimes.append(tempT.toDouble());
@@ -1518,7 +1512,7 @@ int Data::parsePlan(QString* log) {
 	*log = *log + "Found " + QString::number(seedPos.size()) + " seeds\n";
 	treatmentTime /= 3600; // Go from seconds to hours
 	if (treatmentTime > 0) {
-		*log = *log + "  with " + QString::number(seedTime.size()) + " associated dwell times over " + treatmentTime + "\n";
+		*log = *log + "  with " + QString::number(seedTime.size()) + " associated dwell times over " + QString::number(treatmentTime) + "\n";
 	}
 	
 	*log = *log + "----------------------------------------------\n";

@@ -40,12 +40,12 @@
 
 // Constructors
 doseInterface::doseInterface() :
-allowedReals(QRegExp(REGEX_REAL)),
-allowedPosReals(QRegExp(REGEX_REAL_POS)),
-allowedPosRealArrs(QRegExp(REGEX_REAL_POS_ARR)),
-allowedNats(QRegExp(REGEX_NATURAL_POS)),
-allowedPercents(QRegExp(REGEX_PERCENT)),
-allowedPercentArrs(QRegExp(REGEX_PERCENT_ARR)) {
+allowedReals(QRegularExpression(REGEX_REAL)),
+allowedPosReals(QRegularExpression(REGEX_REAL_POS)),
+allowedPosRealArrs(QRegularExpression(REGEX_REAL_POS_ARR)),
+allowedNats(QRegularExpression(REGEX_NATURAL_POS)),
+allowedPercents(QRegularExpression(REGEX_PERCENT)),
+allowedPercentArrs(QRegularExpression(REGEX_PERCENT_ARR)) {
 	parent = (Interface*)parentWidget();
 	
 	log = new logWindow();
@@ -55,12 +55,12 @@ allowedPercentArrs(QRegExp(REGEX_PERCENT_ARR)) {
 }
 
 doseInterface::doseInterface(Interface* p) :
-allowedReals(QRegExp(REGEX_REAL)),
-allowedPosReals(QRegExp(REGEX_REAL_POS)),
-allowedPosRealArrs(QRegExp(REGEX_REAL_POS_ARR)),
-allowedNats(QRegExp(REGEX_NATURAL_POS)),
-allowedPercents(QRegExp(REGEX_PERCENT)),
-allowedPercentArrs(QRegExp(REGEX_PERCENT_ARR)) {
+allowedReals(QRegularExpression(REGEX_REAL)),
+allowedPosReals(QRegularExpression(REGEX_REAL_POS)),
+allowedPosRealArrs(QRegularExpression(REGEX_REAL_POS_ARR)),
+allowedNats(QRegularExpression(REGEX_NATURAL_POS)),
+allowedPercents(QRegularExpression(REGEX_PERCENT)),
+allowedPercentArrs(QRegularExpression(REGEX_PERCENT_ARR)) {
 	parent = p;
 	
 	log = new logWindow();
@@ -880,7 +880,7 @@ void doseInterface::connectLayout() {
 	sigMap->setMapping(isoDoseBox[1], 1);
 	sigMap->setMapping(isoDoseBox[2], 2);
 	
-	connect(sigMap, SIGNAL(mapped(int)),
+	connect(sigMap, SIGNAL(mappedInt(int)),
 			this, SLOT(loadIsoDose(int)));
 			
 	// Change all colours
@@ -902,7 +902,7 @@ void doseInterface::connectLayout() {
 	for (int i = 0; i < 5; i++)
 		sigMap->setMapping(isoColourButton[i], 3+i);
 	
-	connect(sigMap, SIGNAL(mapped(int)),
+	connect(sigMap, SIGNAL(mappedInt(int)),
 			this, SLOT(previewChangeColor(int)));
 			
 	// Histogram ~~~~~~~~~~~~
@@ -1954,7 +1954,7 @@ QImage doseInterface::createLegend() {
 	pen.setColor(Qt::black);
 	
 	QFont font;
-	font.setWeight(75);
+	font.setWeight(QFont::Bold);
 	font.setPointSize(10);
 	
 	painter.begin(&legend);
@@ -3320,17 +3320,19 @@ void doseInterface::savePreviewEgsphant() {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Hover Label Class~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 *******************************************************************************/
 void HoverLabel::mousePressEvent(QMouseEvent *event) {
-    if (event->x() > 0 && event->x() < width() && event->y() > 0 && event->y() < height()) {
-        emit mouseClicked(event->x(),event->y());
+    const QPoint p = event->position().toPoint();
+    if (p.x() > 0 && p.x() < width() && p.y() > 0 && p.y() < height()) {
+        emit mouseClicked(p.x(), p.y());
     }
     event->accept();
 }
 
 void HoverLabel::wheelEvent(QWheelEvent *event) {
-    if (event->delta() > 0 && event->x() > 0 && event->x() < width() && event->y() > 0 && event->y() < height()) {
+    const QPointF p = event->position();
+    if (event->angleDelta().y() > 0 && p.x() > 0 && p.x() < width() && p.y() > 0 && p.y() < height()) {
         emit mouseWheelUp();
     }
-    else if (event->x() > 0 && event->x() < width() && event->y() > 0 && event->y() < height()) {
+    else if (p.x() > 0 && p.x() < width() && p.y() > 0 && p.y() < height()) {
         emit mouseWheelDown();
     }
     event->accept();

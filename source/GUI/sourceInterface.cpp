@@ -206,7 +206,7 @@ void sourceInterface::loadPlan() {
 	if (tempAtt->tag[0] == 0x0008 && tempAtt->tag[1] == 0x0060) {// See if it is (0008,0060)
 		QString temp = "";
 		for (unsigned int s = 0; s < tempAtt->vl; s++) {
-			temp.append(tempAtt->vf[s]);
+			temp.append(QChar(tempAtt->vf[s]));
 		}
 		
 		if (temp.trimmed().compare("RTPLAN")) {
@@ -228,7 +228,7 @@ void sourceInterface::loadPlan() {
 	if (tempAtt->tag[0] == 0x0010 && tempAtt->tag[1] == 0x0010) {
 		QString temp = "";
 		for (unsigned int s = 0; s < tempAtt->vl; s++) {
-			temp.append(tempAtt->vf[s]);
+			temp.append(QChar(tempAtt->vf[s]));
 		}
 		
 		tagEdit->setText(temp);

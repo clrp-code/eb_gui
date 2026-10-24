@@ -40,6 +40,7 @@
 #ifndef DOSEINTERFACE_H
 #define DOSEINTERFACE_H
 
+#include <QtWidgets>
 #include <QtGui>
 #include <QtCharts>
 #include <iostream>
@@ -61,12 +62,12 @@ public:
 
     Interface *parent; // Pointer to the parent to access data with
 	
-	QRegExpValidator allowedReals;
-	QRegExpValidator allowedPosReals;
-	QRegExpValidator allowedPosRealArrs;
-	QRegExpValidator allowedNats;
-	QRegExpValidator allowedPercents;
-	QRegExpValidator allowedPercentArrs;
+	QRegularExpressionValidator allowedReals;
+	QRegularExpressionValidator allowedPosReals;
+	QRegularExpressionValidator allowedPosRealArrs;
+	QRegularExpressionValidator allowedNats;
+	QRegularExpressionValidator allowedPercents;
+	QRegularExpressionValidator allowedPercentArrs;
 	
 	// Shared objects
 	QScrollArea *canvasArea;

@@ -39,6 +39,7 @@
 #ifndef DICOM_H
 #define DICOM_H
 
+#include <QtWidgets>
 #include <QtGui>
 #include <iostream>
 #include <math.h>

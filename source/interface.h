@@ -39,6 +39,7 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+#include <QtWidgets>
 #include <QtGui>
 #include "data.h"
 #include "libraries/gzstream.h"
@@ -109,7 +110,7 @@ public slots:
 public:
 	void createGlobalWidgets();
 
-	QRegExpValidator allowedNums; // Positive, real numbers
+	QRegularExpressionValidator allowedNums; // Positive, real numbers
 	bool firstDelete = true; // Ask if they're sure they want to delete something the firstDelete
 						     // time they try
 	//Maximum dwell time
@@ -255,7 +256,7 @@ private:
 public:
 	QString name;
 	int index;
-	QRegExpValidator allowedNums;
+	QRegularExpressionValidator allowedNums;
 	QIntValidator allowedPrios;
 	
 	// Transformations list	
