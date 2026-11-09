@@ -842,8 +842,8 @@ void Dose::getContour(QVector <QVector <QLineF> > *con,
             }
 }
 
-int Dose::interp(int x1, int x2, double y1, double y2, double y0) {
-    return int(x1+(y0-y1)*(x2-x1)/(y2-y1));
+int Dose::interp(int y1, int y2, double x1, double x2, double x) {
+    return int(y1 + (x-x1) * (y2-y1) / (x2-x1));
 }
 
 QImage Dose::getColourMap(QString axis, double ai, double af, double bi, double bf, double d, int res,
@@ -1205,99 +1205,90 @@ void Dose::getDVs(QVector <QVector <DV> > *data, QVector <EGSPhant*> *masks, QVe
 		std::sort((*data)[i].begin(), (*data)[i].end(), DV_sorter);
 }
 
-QString Dose::getMetricCSV(QVector <DV> *data, double volume, QString name, QString DxStr, QString DccStr, QString VxStr, QString pDStr) {
-	QString names, units, average, uncertainty, voxels, volumes, minimum, maximum;
-	QStringList Dx, Vx, Dcc, temp;
+QString Dose::getMetricCSV(
+	QVector <DV> *data, double volume, QString name, QString DxStr, QString DccStr, QString VxStr, QString pDStr) {
+	
+	// parse the textboxes on the AnalyzeResults -> DVH -> Metrics tab
 	QVector <double> xD, xV, ccD;
-	double pD, minD = 1000000000, maxD = 0, minE = 0, maxE = 0;
-	
-	QString text = "";
-	
+	QStringList Dx, Vx, Dcc, temp;
 	if (DxStr.length()) {
 		temp = DxStr.replace(' ',',').split(',');
 		for (int i = 0; i < temp.size(); i++) {
 			xD.append(temp[i].toDouble());
-			Dx.append("");
+			Dx.append("n/a,n/a,");
 		}
 		std::sort(xD.begin(), xD.end());
 	}
-	
 	if (VxStr.length()) {
 		temp = VxStr.replace(' ',',').split(',');
 		for (int i = 0; i < temp.size(); i++) {
 			xV.append(temp[i].toDouble());
-			Vx.append("");
+			Vx.append("n/a,n/a,");
 		}
 		std::sort(xV.begin(), xV.end());
 	}
-	
 	if (DccStr.length()) {
 		temp = DccStr.replace(' ',',').split(',');
 		for (int i = 0; i < temp.size(); i++) {
 			ccD.append(temp[i].toDouble());
-			Dcc.append("");
+			Dcc.append("n/a,n/a,");
 		}
 		std::sort(ccD.begin(), ccD.end());
 	}
-	
-	pD = pDStr.toDouble();
+	double pD = pDStr.toDouble();  // prescription dose
 	
 	// Generate metric data
 	double volumeTally = 0, doseTally = 0, doseTallyErr = 0, doseTallyErr2 = 0, countTally = 0, absError = 0;
-	int vIndex = 0, dIndex = xD.size()-1, ccIndex = ccD.size()-1;
-	for (; ccIndex >= 0 && ccD[ccIndex] > volume; ccIndex--) {
-		Dcc[ccIndex] += "n/a,n/a,";
-	}
-	for (int j = 0; j < data->size(); j++) {		
+	double minD = 1e9, maxD = 0, minE = 0.1*minD, maxE = 0.1*maxD;
+	int vIndex = 0, dIndex = xD.size()-1;
+	int ccIndex = ccD.size()-1;	while (ccIndex >= 0 && ccD[ccIndex] > volume) {ccIndex--;}
+	for (int ivox = 0; ivox < data->size(); ivox++) {		
+
 		countTally    += 1.0;
-		volumeTally   += data->at(j).vol;
-		doseTally     += data->at(j).dose;
-		absError       = data->at(j).dose*data->at(j).err;
+		volumeTally   += data->at(ivox).vol;
+		doseTally     += data->at(ivox).dose;
+		absError       = data->at(ivox).dose * data->at(ivox).err;
 		doseTallyErr  += absError;
 		doseTallyErr2 += absError*absError;
-		maxE = maxD<data->at(j).dose?absError:maxE;
-		maxD = maxD<data->at(j).dose?data->at(j).dose:maxD;
-		minE = minD>data->at(j).dose?absError:minE;
-		minD = minD>data->at(j).dose?data->at(j).dose:minD;
+            if (data->at(ivox).dose > maxD) {
+                maxD = data->at(ivox).dose;
+                maxE = absError;
+            }
+            if (data->at(ivox).dose < minD) {
+                minD = data->at(ivox).dose;
+                minE = absError;
+            }
 		
-		// Append Dx values as we go
-		if (dIndex >= 0) {
-			if ((volume-volumeTally)/volume*100.0 < xD[dIndex] && j) {
-				Dx[dIndex] += QString::number(data->at(j-1).dose)+","+QString::number(data->at(j-1).dose*data->at(j-1).err)+",";
-				dIndex--;
-			}
+		// update Vx entries whenever a threshold is passed
+		while (vIndex < xV.size() && data->at(ivox).dose >= pD * xV[vIndex] / 100.) {
+			double vol = volume-volumeTally+data->at(ivox).vol;
+			Vx[vIndex] = QString::number(100. * vol / volume) + ",,";
+			vIndex++;
+		}
+		if (ivox < 1) {continue;}  // the following metrics go back one index
+		
+		// update Dx entries whenever a threshold is passed
+		while (dIndex >= 0 && volume-volumeTally < volume * xD[dIndex] / 100.) {
+			Dx[dIndex] = QString::number(data->at(ivox-1).dose) + ","
+			           + QString::number(data->at(ivox-1).dose*data->at(ivox-1).err) + ",";
+			dIndex--;
 		}
 		
-		// Append Dcc values as we go
-		if (ccIndex >= 0) {
-			if ((volume-volumeTally) < ccD[ccIndex] && j) {
-				Dcc[ccIndex] += QString::number(data->at(j-1).dose)+","+QString::number(data->at(j-1).dose*data->at(j-1).err)+",";
-				ccIndex--;
-			}
+		// update Dcc entries whenever a threshold is passed
+		while (ccIndex >= 0 && volume-volumeTally < ccD[ccIndex]) {
+			Dcc[ccIndex] = QString::number(data->at(ivox-1).dose) + ","
+			             + QString::number(data->at(ivox-1).dose*data->at(ivox-1).err) + ",";
+			ccIndex--;
 		}
 	}
-	
-	if (volume > 0 && data->size()) {
-		for (int j = 0; j < xV.size(); j++) {
-			double volDose = 0, threshold = xV[j]*pD/100.0;
-			for (int k = 0; k < data->size(); k++)
-				if (data->at(k).dose >= threshold)
-					volDose += data->at(k).vol;
-			Vx[j] += QString::number(volDose/volume*100.0)+",,";
-		}
+	// Fill in unfulfilled Vx thresholds
+	while(vIndex < xV.size() && volume > 0){
+		Vx[vIndex] = QString::number(0) + ",,";
+		vIndex++;
 	}
-	else {
-		for (int j = 0; j < xV.size(); j++)
-			Vx[j] += "n/a,n/a,";
-	}
-	
-	for (int j = dIndex; j >= 0; j--) 
-		Dx[j] += "n/a,n/a,";
-	
-	for (int j = ccIndex; j >= 0; j--) 
-		Dcc[j] += "n/a,n/a,";
-	
 	// Calculate global metrics
+	QString names, units, average, uncertainty, voxels, volumes, minimum, maximum, text;
+	
 	doseTally     /= countTally; // Average dose
 	doseTallyErr  /= countTally; // Average uncertainty
 	doseTallyErr2 = sqrt(doseTallyErr2/countTally); // Propagated average dose uncertainty

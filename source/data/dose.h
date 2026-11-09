@@ -104,31 +104,49 @@ public:
     // Scale this by factor
     int scale(double factor);
 
-    // Get isodose points
-    void getContour(QVector <QVector <QLineF> > *con, QVector <double> doses,
-                    QString axis, double depth, double ai, double af,
-                    double bi, double bf, int res);
-    int interp(int x1, int x2, double y1, double y2, double y0);
+	// Get isodose points
+	void getContour(QVector <QVector <QLineF> > *con, QVector <double> doses,
+	                QString axis, double depth, double ai, double af,
+	                double bi, double bf, int res);
+
+	/*! \brief
+	  Linear interpolation from two known points (x1, y1) and (x2, y2). 
+	  Returns y(x) = mx + b, with b = y1 and m = (y1-y0)/(x1-x0).
+	*/
+	int interp(int y1, int y2, double x1, double x2, double x);
 
 	// Get colourmap
 	QImage getColourMap(QString axis, double ai, double af, double bi, double bf, double d, int res,
 						double di, double df, QColor min, QColor mid, QColor max);
 	
-	// Get sorted dose data for making DVH plots and tallying volume, with all possible filter parameters being their own function
+	// Get sorted dose data for making DVH plots and tallying volume, 
+    // with all possible filter parameters being their own function
 	void getDV(QVector <DV> *data, double* volume, int n = 1);
 	void getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, double* volume, int n = 1);
 	void getDV(QVector <DV> *data, EGSPhant* mask, double* volume, int n = 1);
 	void getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSPhant* mask, double* volume, int n = 1);
 	void getDV(QVector <DV> *data, double* volume, double minDose, double maxDose, int n = 1);
-	void getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, double* volume, double minDose, double maxDose, int n = 1);
+	void getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, double* volume, 
+	           double minDose, double maxDose, int n = 1);
 	void getDV(QVector <DV> *data, EGSPhant* mask, double* volume, double minDose, double maxDose, int n = 1);
-	void getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSPhant* mask, double* volume, double minDose, double maxDose, int n = 1);
+	void getDV(QVector <DV> *data, EGSPhant* media, QString allowedChars, EGSPhant* mask, double* volume, 
+	           double minDose, double maxDose, int n = 1);
 	
 	// Get sorted dose data for final metric extraction using masks
 	void getDVs(QVector <QVector <DV> > *data, QVector <EGSPhant*> *masks, QVector <double> *volume);
 	
-	// Generate metric outputs
-	QString getMetricCSV(QVector <DV> *data, double volume, QString name, QString DxStr, QString DccStr, QString VxStr, QString pDStr);
+	/*! \brief
+      Generate metric outputs to be output to a .csv file.
+      `data` is a list of DVs (doses and volumes) that is assumed to be sorted by dose from low to high.
+      `volume` is the nominal net volume of the organ or region.
+      `name` is the title string for the organ or region.
+      `DXstr` contains the thresholds for Dx%, e.g. "90,99,99.9".
+      `DccStr` contains the thresholds for Dxcc, e.g. "0.1,0.5,1,2".
+      `VxStr` contains the thresholds for Vx, e.g. "90,99".
+      `pdStr` contains the prescription dose, as a string, e.g. "145".
+    */ 
+	QString getMetricCSV(
+        QVector <DV> *data, double volume, QString name, QString DxStr, QString DccStr, QString VxStr, QString pDStr);
 };
 
 #endif

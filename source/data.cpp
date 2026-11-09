@@ -38,7 +38,10 @@
 */
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <algorithm>  // min and max
+
+#include <algorithm>
+using std::min;
+using std::max;
 
 struct stat info; // required struct for using sys/stat
 
@@ -135,7 +138,7 @@ int Data::loadDefaults() {
     QTextStream *input;
 	QString text;
 	
-	muen_location = lib_location+"/muen/brachy_xcom_1.5MeV.muendat";
+	muen_location = lib_location+"/muen/materials_1500keV.muendat";
 	material_location = lib_location+"/media/material.dat";
 	transport_location = lib_location+"/transport/low_energy_default";
 	mar_location = gui_location+"/database/MAR_defaults.txt";
@@ -638,8 +641,8 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 						short int convertedHU = rescaleFlag == 2 ? rescaleM*temp+rescaleB : temp;
 						
 						HU.last()[int(int(s/2)/xPix.last())][int(s/2)%xPix.last()] = convertedHU;
-						minCTHU = std::min(minCTHU, convertedHU);
-						maxCTHU = std::max(maxCTHU, convertedHU);
+						minCTHU = min(minCTHU, convertedHU);
+						maxCTHU = max(maxCTHU, convertedHU);
 					}
 				else
 					for (unsigned int s = 0; s < tempAtt->vl; s+=2) {
@@ -648,8 +651,8 @@ int Data::buildEgsphant(EGSPhant* phant, QString* log, int contourNum, int defau
 						short int convertedHU = rescaleFlag == 2 ? rescaleM*temp+rescaleB : temp;
 						
 						HU.last()[int(int(s/2)/xPix.last())][int(s/2)%xPix.last()] = convertedHU;
-						minCTHU = std::min(minCTHU, convertedHU);
-						maxCTHU = std::max(maxCTHU, convertedHU);
+						minCTHU = min(minCTHU, convertedHU);
+						maxCTHU = max(maxCTHU, convertedHU);
 					}
 			}
 		}

@@ -88,7 +88,7 @@
 #----------------------------------------------------------------------------------------------------
 :start scoring options:
 	score energy deposition = no
-	muen file               = /home/EGSnrc_CLRP/egs_home/egs_brachy/lib/muen/brachy_xcom_1.5MeV_egsphant.muendat
+	muen file               = /home/EGSnrc_CLRP/egs_home/egs_brachy/lib/muen/materials_1500keV.muendat
 	muen for media          = WATER_0.998
 	dose scaling factor     = 9.75289e+12
 :stop scoring options:
